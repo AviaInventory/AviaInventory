@@ -1,0 +1,109 @@
+/* AviaInventory design tokens — aviation / instrument-panel inspired */
+:root {
+  /* Color */
+  --aviation-primary: #0d5bd7;
+  --aviation-dark: #062a4a;
+  --aviation-light: #f4f8fc;
+  --aviation-accent: #f4a72c;
+  --aviation-success: #16805d;
+  --aviation-warning: #c67a13;
+  --aviation-error: #c64545;
+  --aviation-white: #ffffff;
+  --aviation-muted: #61758b;
+  --aviation-border: #dbe5ef;
+
+  --background: var(--aviation-light);
+  --foreground: var(--aviation-dark);
+
+  /* Typography */
+  --font-display-family: "Space Grotesk", "Trebuchet MS", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+  --font-code: "IBM Plex Mono", "Cascadia Mono", Consolas, monospace;
+
+  --type-h1: 3rem;
+  --type-h2: 2.25rem;
+  --type-h3: 1.75rem;
+  --type-h4: 1.375rem;
+  --type-body-lg: 1.125rem;
+  --type-body: 1rem;
+  --type-body-sm: 0.875rem;
+  --type-caption: 0.75rem;
+  --type-label: 0.8125rem;
+
+  --leading-tight: 1.1;
+  --leading-snug: 1.25;
+  --leading-body: 1.5;
+
+  /* Spacing — 4px base */
+  --aviation-space-0: 0;
+  --aviation-space-1: 0.25rem;
+  --aviation-space-2: 0.5rem;
+  --aviation-space-3: 0.75rem;
+  --aviation-space-4: 1rem;
+  --aviation-space-5: 1.25rem;
+  --aviation-space-6: 1.5rem;
+  --aviation-space-8: 2rem;
+  --aviation-space-10: 2.5rem;
+  --aviation-space-12: 3rem;
+  --aviation-space-16: 4rem;
+  --aviation-space-20: 5rem;
+  --aviation-space-24: 6rem;
+
+  /* Radius */
+  --aviation-radius-sm: 0.375rem;
+  --aviation-radius-md: 0.625rem;
+  --aviation-radius-lg: 0.875rem;
+  --aviation-radius-xl: 1.125rem;
+  --aviation-radius-pill: 9999px;
+
+  /* Elevation */
+  --aviation-shadow-sm: 0 1px 2px rgb(22 35 43 / 0.08);
+  --aviation-shadow-md: 0 6px 18px rgb(22 35 43 / 0.10);
+  --aviation-shadow-lg: 0 14px 36px rgb(22 35 43 / 0.14);
+  --aviation-shadow-xl: 0 24px 60px rgb(22 35 43 / 0.18);
+}
+
+/* Token-driven base elements. Components may still compose Tailwind utilities,
+   but their palette and typography resolve through these semantic tokens. */
+html { font-family: var(--font-body); }
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display-family);
+  color: var(--aviation-dark);
+  letter-spacing: -0.025em;
+}
+
+code, pre, kbd, samp,
+.part-number, .part-number input, .price, [data-code], [data-price] {
+  font-family: var(--font-code);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Semantic utility aliases used by the application palette. */
+.bg-aviation-primary { background-color: var(--aviation-primary) !important; }
+.bg-aviation-dark { background-color: var(--aviation-dark) !important; }
+.bg-aviation-light { background-color: var(--aviation-light) !important; }
+.bg-aviation-accent { background-color: var(--aviation-accent) !important; }
+.bg-aviation-success { background-color: var(--aviation-success) !important; }
+.bg-aviation-warning { background-color: var(--aviation-warning) !important; }
+.bg-aviation-error { background-color: var(--aviation-error) !important; }
+.text-aviation-primary { color: var(--aviation-primary) !important; }
+.text-aviation-dark { color: var(--aviation-dark) !important; }
+.text-aviation-light { color: var(--aviation-light) !important; }
+.text-aviation-accent { color: var(--aviation-accent) !important; }
+.text-aviation-success { color: var(--aviation-success) !important; }
+.text-aviation-warning { color: var(--aviation-warning) !important; }
+.text-aviation-error { color: var(--aviation-error) !important; }
+.border-aviation-border { border-color: var(--aviation-border) !important; }
+.ring-aviation-primary { --tw-ring-color: var(--aviation-primary) !important; }
+
+/* Status tint surfaces */
+.bg-aviation-success-soft { background-color: color-mix(in srgb, var(--aviation-success) 10%, white) !important; }
+.bg-aviation-warning-soft { background-color: color-mix(in srgb, var(--aviation-warning) 12%, white) !important; }
+.bg-aviation-error-soft { background-color: color-mix(in srgb, var(--aviation-error) 10%, white) !important; }

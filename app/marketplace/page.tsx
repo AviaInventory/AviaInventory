@@ -1,0 +1,8 @@
+import type { Metadata } from "next";
+import MarketplaceGrid from "@/components/marketplace/MarketplaceGrid";
+import MarketplaceSidebar from "@/components/marketplace/MarketplaceSidebar";
+import { getMarketplaceFacetOptions, getMarketplacePartsForSeo, parseMarketplaceSearchParams } from "@/lib/marketplace-server";
+export const revalidate=60;
+export const metadata:Metadata={title:"Aircraft Parts Marketplace | AviaInventory",description:"Search aircraft parts from trusted aviation suppliers worldwide. Filter by condition, certification, category, manufacturer and supplier location."};
+interface Props{searchParams:Promise<Record<string,string|string[]|undefined>>;}
+export default async function MarketplacePage({searchParams}:Props){const params=await searchParams;const filters=parseMarketplaceSearchParams(params);const [parts,facets]=await Promise.all([getMarketplacePartsForSeo(24,filters),getMarketplaceFacetOptions()]);return <main className="mx-auto w-full max-w-[1500px] px-4 py-8 sm:px-6 sm:py-10 lg:px-8"><div className="mb-6 min-w-0 sm:mb-10"><p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-aviation-accent">Parts marketplace</p><h1 className="mt-2 text-3xl font-bold tracking-tight text-aviation-primary sm:text-4xl">Aircraft Parts Marketplace</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-aviation-muted sm:text-base">Search aircraft parts from trusted suppliers around the world.</p></div><div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start lg:gap-8"><MarketplaceSidebar manufacturers={facets.manufacturers} countries={facets.countries}/><MarketplaceGrid initialParts={parts}/></div></main>}

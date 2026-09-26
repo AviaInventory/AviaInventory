@@ -1,0 +1,8 @@
+-- Supplier listing wizard
+--
+-- This UI redesign intentionally uses the existing public.parts columns only.
+-- No new database fields are required for the wizard introduced in this release.
+-- Draft and Published remain values of parts.status.
+-- Certification remains supplier-declared via trace_certificate and is not a
+-- verification assertion. Existing document_urls/image_urls continue to store
+-- uploaded assets.

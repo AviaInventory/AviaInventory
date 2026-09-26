@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AviaInventory – Admin Navigation Security Preview</title>
+<meta name="robots" content="noindex,nofollow,noarchive">
+<style>
+body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:#f2f7f6;color:#12303a}.bar{height:78px;background:#fff;border-bottom:1px solid #d8e2e3;display:flex;align-items:center;padding:0 32px;box-sizing:border-box;gap:32px}.brand{font-weight:800;font-size:23px;color:#123f4d;margin-right:auto}.nav{display:flex;gap:30px;font-size:14px;font-weight:650}.actions{display:flex;gap:10px;align-items:center}.button{padding:11px 18px;border:1px solid #cbd8da;border-radius:9px;background:#fff}.primary{background:#123f4d;color:#fff;border-color:#123f4d}.note{max-width:900px;margin:60px auto;padding:32px;background:#fff;border:1px solid #d8e2e3;border-radius:18px;box-shadow:0 10px 30px #12303a12}.pill{display:inline-block;padding:5px 10px;border-radius:999px;background:#e6f3ef;color:#12604f;font-size:12px;font-weight:700}.code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#f5f7f7;padding:2px 6px;border-radius:5px}.ok{margin-top:20px;padding:16px;background:#f0f8f5;border-left:4px solid #1b8068;border-radius:8px}@media(max-width:700px){.bar{padding:0 14px;height:68px;gap:10px}.nav{display:none}.brand{font-size:18px}.button{padding:10px 12px}.note{margin:25px 14px;padding:22px}}
+</style>
+</head>
+<body>
+<header class="bar"><div class="brand">AviaInventory</div><nav class="nav"><span>Home</span><span>Marketplace</span><span>Register</span></nav><div class="actions"><div class="button">Login</div><div class="button primary">Register</div></div></header>
+<main class="note"><span class="pill">PUBLIC NAVIGATION</span><h1>Admin link removed</h1><p>The public navigation contains only Home, Marketplace, Register, Login and Register. There is no visible Admin link.</p><div class="ok"><strong>Private admin entry:</strong> <span class="code">/platform-console/login</span><br><br>It is intentionally unlinked, served with <span class="code">noindex, nofollow</span> metadata, and blocked in <span class="code">robots.txt</span>.</div><h2>Admin dashboard protection</h2><p>The existing admin dashboard remains protected by the admin session cookie. If an unauthenticated administrator reaches the dashboard, it redirects to the private login route.</p></main>
+</body></html>
