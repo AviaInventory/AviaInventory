@@ -769,7 +769,7 @@ export async function deleteRFQ(
 async function hydrateQuotes(
   rows: Record<string, unknown>[]
 ): Promise<Quote[]> {
-  const quoteRows = rows as Quote[];
+  const quoteRows = rows as unknown as Quote[];
 
   const supplierMap =
     await getSuppliersByIds(
