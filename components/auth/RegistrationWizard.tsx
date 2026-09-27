@@ -114,7 +114,8 @@ export default function RegistrationWizard() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved) as Partial<FormValues> & { step?: number };
-        const normalizedAccountType = parsed.accountType === "supplier" ? "hybrid" : parsed.accountType;
+        const savedAccountType = parsed.accountType as string | undefined;
+        const normalizedAccountType = savedAccountType === "supplier" ? "hybrid" : parsed.accountType;
         form.reset({ ...defaults, ...parsed, accountType: normalizedAccountType, password: "", confirmPassword: "" });
         setStep(Math.min(parsed.step || 1, totalSteps));
       }

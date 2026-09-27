@@ -193,7 +193,7 @@ export default function QuotationDetails({
 
           <Detail
             title="Certification"
-            value={quote.certification}
+            value={Array.isArray(quote.certification) ? quote.certification.join(", ") : quote.certification}
           />
 
           <Detail

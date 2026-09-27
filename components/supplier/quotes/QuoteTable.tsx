@@ -99,7 +99,7 @@ export default function QuoteTable() {
         search={search}
         onSearchChange={setSearch}
         status={status}
-        onStatusChange={setStatus}
+        onStatusChange={(value) => setStatus(value as Quote["status"] | "All")}
       />
 
       <div className="overflow-x-auto">
