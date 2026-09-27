@@ -394,7 +394,10 @@ export default function BuyerRFQDetailsPage() {
           ATTACHMENTS
       ====================================================== */}
 
-      {rfq.attachments?.length > 0 && (
+      {(() => {
+        const attachments = rfq.attachments ?? [];
+
+        return attachments.length > 0 && (
         <section className="rounded-2xl bg-white p-8 shadow">
 
           <h2 className="text-2xl font-bold text-aviation-primary">
@@ -403,7 +406,7 @@ export default function BuyerRFQDetailsPage() {
 
           <div className="mt-6 space-y-3">
 
-            {rfq.attachments.map(
+            {attachments.map(
               (url, index) => {
 
                 const fileName =
@@ -434,7 +437,8 @@ export default function BuyerRFQDetailsPage() {
 
           </div>
         </section>
-      )}
+      );
+      })()}
 
       {/* =====================================================
           SUPPLIER QUOTATIONS

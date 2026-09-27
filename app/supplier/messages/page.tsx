@@ -323,6 +323,9 @@ export default function SupplierMessagesPage() {
                   rfqId={
                     selectedConversation.rfq.id
                   }
+                  buyerId={
+                    selectedConversation.rfq.buyer_id
+                  }
                 />
               ) : (
                 <div className="flex h-full min-h-[360px] items-center justify-center sm:min-h-[500px] text-aviation-muted">

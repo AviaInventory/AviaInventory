@@ -334,7 +334,7 @@ export async function createPart(formData: PartFormData, onUploadProgress?: (com
     if (createError) throw createError;
 
     try {
-      const imageDrafts: ListingImageDraft[] = formData.imageDrafts ?? (formData.images ?? []).map((file): ListingImageDraft => ({ id: crypto.randomUUID(), file, previewUrl: "", filename: file.name, altText: `${formData.manufacturer || "Aircraft part"} ${formData.partNumber}`, uploadStatus: "Ready", progress: 0, isPrimary: false }));
+      const imageDrafts: ListingImageDraft[] = formData.imageDrafts ? formData.imageDrafts.map((item): ListingImageDraft => ({ ...item, isPrimary: Boolean(item.isPrimary) })) : (formData.images ?? []).map((file): ListingImageDraft => ({ id: crypto.randomUUID(), file, previewUrl: "", filename: file.name, altText: `${formData.manufacturer || "Aircraft part"} ${formData.partNumber}`, uploadStatus: "Ready", progress: 0, isPrimary: false }));
       const imageUploads = await uploadFiles("part-images", user.id, imageDrafts.map((item) => item.file), onUploadProgress);
       imageUploads.forEach((item) => createdStoragePaths.push({ bucket: "part-images", path: item.path }));
       const documentDrafts: ListingDocumentDraft[] = formData.documentDrafts ?? (formData.documents ?? []).map((file): ListingDocumentDraft => ({ id: crypto.randomUUID(), documentType: "Supporting document", file, uploadStatus: "Ready", progress: 0 }));
@@ -394,7 +394,7 @@ export async function updatePart(partId: string, formData: PartFormData, onUploa
     const existingImages: ListingImageAsset[] = formData.existingImages ?? (existing.image_urls ?? []).map((url: string, index: number) => ({
       id: `legacy-${index}-${url}`, storagePath: null, publicUrl: url, filename: url.split("/").pop() || "part-image", altText: `${formData.manufacturer || "Aircraft part"} ${formData.partNumber}`, sortOrder: index, isPrimary: index === 0,
     }));
-    const imageDrafts: ListingImageDraft[] = formData.imageDrafts ?? (formData.images ?? []).map((file): ListingImageDraft => ({ id: crypto.randomUUID(), file, previewUrl: "", filename: file.name, altText: `${formData.manufacturer || "Aircraft part"} ${formData.partNumber}`, uploadStatus: "Ready", progress: 0, isPrimary: false }));
+    const imageDrafts: ListingImageDraft[] = formData.imageDrafts ? formData.imageDrafts.map((item): ListingImageDraft => ({ ...item, isPrimary: Boolean(item.isPrimary) })) : (formData.images ?? []).map((file): ListingImageDraft => ({ id: crypto.randomUUID(), file, previewUrl: "", filename: file.name, altText: `${formData.manufacturer || "Aircraft part"} ${formData.partNumber}`, uploadStatus: "Ready", progress: 0, isPrimary: false }));
     const newImageUploads = await uploadFiles("part-images", user.id, imageDrafts.map((item) => item.file), onUploadProgress);
     const documentDrafts: ListingDocumentDraft[] = formData.documentDrafts ?? (formData.documents ?? []).map((file): ListingDocumentDraft => ({ id: crypto.randomUUID(), documentType: "Supporting document", file, uploadStatus: "Ready", progress: 0 }));
     const newDocumentUploads = await uploadFiles("documents", user.id, documentDrafts.map((item) => item.file), onUploadProgress);
