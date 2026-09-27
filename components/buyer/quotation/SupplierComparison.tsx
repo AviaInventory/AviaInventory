@@ -92,7 +92,7 @@ export default function SupplierComparison({
 
               <InfoCard
                 title="Certification"
-                value={quote.certification || "-"}
+                value={quote.certification?.length ? quote.certification.join(", ") : "-"}
               />
 
               <InfoCard

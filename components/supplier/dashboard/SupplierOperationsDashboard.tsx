@@ -57,7 +57,7 @@ interface DashboardState {
 
 const initial: DashboardState = {
   parts: [], rfqs: [], quotes: [], orders: [], unreadMessages: 0,
-  verification: null, expiringDocs: [], shipments: 0, invoices: 0, loading: true,
+  verification: null, expiringDocs: [], shipments: 0, invoices: 0, promotions: [], loading: true,
 };
 
 export default function SupplierOperationsDashboard() {

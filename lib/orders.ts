@@ -66,10 +66,6 @@ export interface OrderServiceResponse<T = unknown> {
   error?: string;
 }
 
-/* ==========================================================
-   SUPABASE RESPONSE TYPES
-========================================================== */
-
 interface SupabaseOrderRow {
   id: string;
   rfq_id: string;
@@ -88,35 +84,23 @@ interface SupabaseOrderRow {
   buyer_message: string | null;
   created_at: string;
   updated_at: string;
-
-  part:
-    | {
-        id: string;
-        part_number: string;
-        description: string | null;
-        manufacturer: string | null;
-      }[]
-    | null;
-
-  supplier:
-    | {
-        id: string;
-        company_name: string | null;
-        business_type?: string | null;
-        website?: string | null;
-        country?: string | null;
-        city?: string | null;
-      }[]
-    | null;
+  part: {
+    id: string;
+    part_number: string;
+    description: string | null;
+    manufacturer: string | null;
+  }[] | null;
+  supplier: {
+    id: string;
+    company_name: string | null;
+    business_type?: string | null;
+    website?: string | null;
+    country?: string | null;
+    city?: string | null;
+  }[] | null;
 }
 
-/* ==========================================================
-   NORMALIZE SUPABASE ORDER
-========================================================== */
-
-function normalizeOrder(
-  row: SupabaseOrderRow
-): Order {
+function normalizeOrder(row: SupabaseOrderRow): Order {
   return {
     id: row.id,
     rfq_id: row.rfq_id,
@@ -135,11 +119,7 @@ function normalizeOrder(
     buyer_message: row.buyer_message,
     created_at: row.created_at,
     updated_at: row.updated_at,
-
-    // Supabase returns these relationships as arrays.
-    // Our application uses a single related object.
     part: row.part?.[0] ?? null,
-
     supplier: row.supplier?.[0] ?? null,
   };
 }
@@ -245,10 +225,7 @@ export async function getBuyerOrders(): Promise<Order[]> {
       return [];
     }
 
-    const rows =
-      (data ?? []) as unknown as SupabaseOrderRow[];
-
-    return rows.map(normalizeOrder);
+    return (data ?? []).map((row) => normalizeOrder(row as unknown as SupabaseOrderRow));
 
   } catch (error) {
     console.error(
@@ -295,10 +272,7 @@ export async function getRecentBuyerOrders(
       return [];
     }
 
-    const rows =
-      (data ?? []) as unknown as SupabaseOrderRow[];
-
-    return rows.map(normalizeOrder);
+    return (data ?? []).map((row) => normalizeOrder(row as unknown as SupabaseOrderRow));
 
   } catch (error) {
     console.error(
@@ -351,14 +325,7 @@ export async function getBuyerOrder(
       return null;
     }
 
-    if (!data) {
-      return null;
-    }
-
-    const row =
-      data as unknown as SupabaseOrderRow;
-
-    return normalizeOrder(row);
+    return normalizeOrder(data as unknown as SupabaseOrderRow);
 
   } catch (error) {
     console.error(
@@ -407,14 +374,7 @@ export async function getOrderByQuote(
       return null;
     }
 
-    if (!data) {
-      return null;
-    }
-
-    const row =
-      data as unknown as SupabaseOrderRow;
-
-    return normalizeOrder(row);
+    return data ? normalizeOrder(data as unknown as SupabaseOrderRow) : null;
 
   } catch (error) {
     console.error(
@@ -463,14 +423,7 @@ export async function getOrderByRFQ(
       return null;
     }
 
-    if (!data) {
-      return null;
-    }
-
-    const row =
-      data as unknown as SupabaseOrderRow;
-
-    return normalizeOrder(row);
+    return data ? normalizeOrder(data as unknown as SupabaseOrderRow) : null;
 
   } catch (error) {
     console.error(
@@ -565,10 +518,7 @@ export async function getBuyerOrdersByStatus(
       return [];
     }
 
-    const rows =
-      (data ?? []) as unknown as SupabaseOrderRow[];
-
-    return rows.map(normalizeOrder);
+    return (data ?? []).map((row) => normalizeOrder(row as unknown as SupabaseOrderRow));
 
   } catch (error) {
     console.error(
@@ -642,12 +592,11 @@ export function formatOrderStatus(
     return "Unknown";
   }
 
-  return (
-    status.charAt(0).toUpperCase() +
-    status.slice(1)
-  );
+  return status
+    .charAt(0)
+    .toUpperCase() +
+    status.slice(1);
 }
-
 /* ==========================================================
    GET SUPPLIER ORDERS
 ========================================================== */
@@ -656,41 +605,22 @@ export async function getSupplierOrders(): Promise<Order[]> {
   try {
     const user = await getCurrentUser();
 
-    if (!user) {
-      return [];
-    }
+    if (!user) return [];
 
-    const {
-      data,
-      error,
-    } = await supabase
+    const { data, error } = await supabase
       .from("orders")
       .select(ORDER_SELECT)
       .eq("supplier_id", user.id)
-      .order("created_at", {
-        ascending: false,
-      });
+      .order("created_at", { ascending: false });
 
     if (error) {
-      console.error(
-        "GET SUPPLIER ORDERS ERROR:",
-        error
-      );
-
+      console.error("GET SUPPLIER ORDERS ERROR:", error);
       return [];
     }
 
-    const rows =
-      (data ?? []) as unknown as SupabaseOrderRow[];
-
-    return rows.map(normalizeOrder);
-
+    return (data ?? []).map((row) => normalizeOrder(row as unknown as SupabaseOrderRow));
   } catch (error) {
-    console.error(
-      "GET SUPPLIER ORDERS EXCEPTION:",
-      error
-    );
-
+    console.error("GET SUPPLIER ORDERS EXCEPTION:", error);
     return [];
   }
 }
@@ -704,15 +634,9 @@ export async function getSupplierOrder(
 ): Promise<Order | null> {
   try {
     const user = await getCurrentUser();
+    if (!user || !orderId) return null;
 
-    if (!user || !orderId) {
-      return null;
-    }
-
-    const {
-      data,
-      error,
-    } = await supabase
+    const { data, error } = await supabase
       .from("orders")
       .select(ORDER_SELECT)
       .eq("id", orderId)
@@ -720,29 +644,13 @@ export async function getSupplierOrder(
       .maybeSingle();
 
     if (error) {
-      console.error(
-        "GET SUPPLIER ORDER ERROR:",
-        error
-      );
-
+      console.error("GET SUPPLIER ORDER ERROR:", error);
       return null;
     }
 
-    if (!data) {
-      return null;
-    }
-
-    const row =
-      data as unknown as SupabaseOrderRow;
-
-    return normalizeOrder(row);
-
+    return data ? normalizeOrder(data as unknown as SupabaseOrderRow) : null;
   } catch (error) {
-    console.error(
-      "GET SUPPLIER ORDER EXCEPTION:",
-      error
-    );
-
+    console.error("GET SUPPLIER ORDER EXCEPTION:", error);
     return null;
   }
 }
@@ -754,22 +662,12 @@ export async function getSupplierOrder(
 export async function updateSupplierOrderStatus(
   orderId: string,
   status: string
-): Promise<OrderServiceResponse<Order>> {
+): Promise<OrderServiceResponse> {
   try {
     const user = await getCurrentUser();
 
     if (!user) {
-      return {
-        success: false,
-        error: "User not authenticated.",
-      };
-    }
-
-    if (!orderId) {
-      return {
-        success: false,
-        error: "Order ID is required.",
-      };
+      return { success: false, error: "User not authenticated." };
     }
 
     const allowedStatuses = [
@@ -783,65 +681,32 @@ export async function updateSupplierOrderStatus(
     ];
 
     if (!allowedStatuses.includes(status)) {
-      return {
-        success: false,
-        error: "Invalid order status.",
-      };
+      return { success: false, error: "Invalid order status." };
     }
 
-    const {
-      data,
-      error,
-    } = await supabase
+    const { data, error } = await supabase
       .from("orders")
-      .update({
-        status,
-        updated_at: new Date().toISOString(),
-      })
+      .update({ status, updated_at: new Date().toISOString() })
       .eq("id", orderId)
       .eq("supplier_id", user.id)
-      .select(ORDER_SELECT)
+      .select("*")
       .maybeSingle();
 
     if (error) {
-      console.error(
-        "UPDATE SUPPLIER ORDER STATUS ERROR:",
-        error
-      );
-
-      return {
-        success: false,
-        error: error.message,
-      };
+      console.error("UPDATE SUPPLIER ORDER STATUS ERROR:", error);
+      return { success: false, error: error.message };
     }
 
     if (!data) {
-      return {
-        success: false,
-        error: "Order not found.",
-      };
+      return { success: false, error: "Order not found." };
     }
 
-    const row =
-      data as unknown as SupabaseOrderRow;
-
-    return {
-      success: true,
-      data: normalizeOrder(row),
-    };
-
+    return { success: true, data };
   } catch (error) {
-    console.error(
-      "UPDATE SUPPLIER ORDER STATUS EXCEPTION:",
-      error
-    );
-
+    console.error("UPDATE SUPPLIER ORDER STATUS EXCEPTION:", error);
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Unable to update order.",
+      error: error instanceof Error ? error.message : "Unable to update order.",
     };
   }
 }

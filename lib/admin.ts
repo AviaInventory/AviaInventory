@@ -27,6 +27,18 @@ export interface AdminOrderRow {
   part?: { part_number: string; manufacturer: string | null } | null;
 }
 
+interface AdminOrderQueryRow {
+  id: string;
+  part_id: string | null;
+  quantity: number | null;
+  unit_price: number | null;
+  currency: string | null;
+  total_amount: number | null;
+  status: string | null;
+  created_at: string | null;
+  part: { part_number: string; manufacturer: string | null }[] | null;
+}
+
 export interface DashboardStats {
   totalUsers: number;
   totalBuyers: number;
@@ -115,5 +127,16 @@ export async function getAdminOrders(): Promise<AdminOrderRow[]> {
     return [];
   }
 
-  return (data ?? []) as AdminOrderRow[];
+  const rows = (data ?? []) as unknown as AdminOrderQueryRow[];
+  return rows.map((row): AdminOrderRow => ({
+    id: row.id,
+    part_id: row.part_id,
+    quantity: Number(row.quantity ?? 0),
+    unit_price: Number(row.unit_price ?? 0),
+    currency: row.currency ?? "USD",
+    total_amount: Number(row.total_amount ?? 0),
+    status: row.status ?? "",
+    created_at: row.created_at,
+    part: row.part?.[0] ?? null,
+  }));
 }

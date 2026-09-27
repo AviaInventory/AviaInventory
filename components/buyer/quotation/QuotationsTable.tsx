@@ -33,11 +33,8 @@ export default function QuotationsTable() {
     try {
       setLoading(true);
 
-      const result = await getBuyerQuotes();
-
-      if (result.success && result.data) {
-        setQuotes(result.data);
-      }
+      const data = await getBuyerQuotes();
+      setQuotes(data);
     } catch (error) {
       console.error(error);
     } finally {

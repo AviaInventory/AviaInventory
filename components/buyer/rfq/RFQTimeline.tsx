@@ -67,7 +67,7 @@ export default function RFQTimeline({
       title: "RFQ Cancelled",
       description:
         "This RFQ was cancelled by the buyer.",
-      date: rfq.updated_at,
+      date: rfq.created_at,
       completed: true,
       current: true,
     });

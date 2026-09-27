@@ -97,9 +97,9 @@ export default function QuoteTable() {
 
       <QuoteFilters
         search={search}
-        setSearch={setSearch}
+        onSearchChange={setSearch}
         status={status}
-        setStatus={setStatus}
+        onStatusChange={setStatus}
       />
 
       <div className="overflow-x-auto">

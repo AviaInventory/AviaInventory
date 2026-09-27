@@ -5,7 +5,7 @@ import { Clock3, MessageSquare, Star, CheckCircle2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { acceptQuote, getQuotesForRFQ, updateQuoteStatus, type Quote } from "@/lib/rfqs";
+import { acceptQuote, getQuotesForRFQ, updateQuoteStatus, QuoteStatus, type Quote } from "@/lib/rfqs";
 
 function useCountdown(validUntil: string) {
   const [now, setNow] = useState(() => Date.now());
@@ -72,7 +72,7 @@ export default function RFQComparisonView({ rfqId, initialQuotes }: Props) {
       if (!result.success) throw new Error(typeof result.error === "string" ? result.error : "Unable to accept response.");
 
       for (const other of quotes.filter((item) => item.id !== quote.id && item.status === "Sent")) {
-        await updateQuoteStatus(other.id, "Rejected");
+        await updateQuoteStatus(other.id, QuoteStatus.Rejected);
       }
 
       const supplierId = quote.supplier_id;

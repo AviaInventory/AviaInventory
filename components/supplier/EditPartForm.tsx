@@ -32,6 +32,16 @@ export default function EditPartForm({
         return;
       }
 
+      const priceType: PartFormData["priceType"] =
+        data.price_type === "fixed" ||
+        data.price_type === "negotiable" ||
+        data.price_type === "request_quote"
+          ? data.price_type
+          : "request_quote";
+
+      const priceBasis: PartFormData["priceBasis"] =
+        data.price_basis === "lot" ? "lot" : "unit";
+
       setPart({
         partNumber: data.part_number ?? "",
         alternatePartNumber: data.alternate_part_number ?? "",
@@ -69,11 +79,9 @@ export default function EditPartForm({
         currency:
           data.currency ?? "USD",
 
-        priceType:
-          data.price_type ?? "fixed",
+        priceType,
 
-        priceBasis:
-          data.price_basis ?? "unit",
+        priceBasis,
 
         lotSize:
           data.lot_size ?? null,

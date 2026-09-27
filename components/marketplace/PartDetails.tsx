@@ -16,6 +16,7 @@ interface Part {
   supplier_name?: string;
   supplier_country?: string;
   supplier_verification_status?: string;
+  verified_certification_types?: string[];
 
   part_number: string;
   alternate_part_number: string;

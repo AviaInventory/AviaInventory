@@ -4,7 +4,7 @@ import { cloneElement, isValidElement, useEffect, useMemo, useRef, useState } fr
 import type { ElementType, ReactElement, ReactNode } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { Check, ChevronLeft, ChevronRight, FileText, ImagePlus, Info, Plane, Save, ShieldCheck, Tag, Warehouse, X, AlertTriangle } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, FileText, Info, Plane, Save, ShieldCheck, Tag, Warehouse, X, AlertTriangle } from "lucide-react";
 
 import { createPart, updatePart, getSupplierListingCertificationDocuments, getSupplierListingImages, getSupplierListingDocuments, transitionListingStatus, LISTING_CERTIFICATION_TYPES } from "@/lib/parts";
 import { getCurrentSupplierBuyerSummary } from "@/lib/suppliers";
@@ -175,6 +175,15 @@ function CertificationDocumentRow({ document, index, onChange, onRemove }: {
     </div>
     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs"><Badge tone="neutral">Supplier declared</Badge><Badge tone="warning">Upload ready · Pending review</Badge><span className="text-aviation-muted">Uploaded files begin as Not verified. Only AviaInventory reviewers can mark them Verified.</span></div>
   </div>;
+}
+
+function BuyerHelp({ children }: { children: ReactNode }) {
+  return (
+    <div className="mt-5 flex gap-3 rounded-lg border border-aviation-border bg-aviation-light p-4 text-sm leading-6 text-aviation-muted">
+      <Info className="mt-0.5 shrink-0 text-aviation-primary" size={17} aria-hidden="true" />
+      <p>{children}</p>
+    </div>
+  );
 }
 
 export default function AddPartForm({ initialData, mode = "create", partId }: AddPartFormProps) {

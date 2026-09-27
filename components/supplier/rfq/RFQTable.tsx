@@ -16,6 +16,28 @@ import RFQEmptyState from "./RFQEmptyState";
 
 const PAGE_SIZE = 10;
 
+function TableSkeleton({
+  rows = 6,
+  columns = 7,
+}: {
+  rows?: number;
+  columns?: number;
+}) {
+  return (
+    <div className="overflow-hidden rounded-2xl bg-white shadow">
+      <div className="animate-pulse">
+        {Array.from({ length: rows }).map((_, rowIndex) => (
+          <div key={rowIndex} className="flex items-center gap-6 border-b px-6 py-5">
+            {Array.from({ length: columns }).map((_, columnIndex) => (
+              <div key={columnIndex} className="h-4 flex-1 rounded bg-gray-200" />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function RFQTable() {
   const [rfqs, setRFQs] = useState<RFQ[]>([]);
   const [loading, setLoading] = useState(true);

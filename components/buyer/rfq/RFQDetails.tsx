@@ -333,7 +333,7 @@ export default function RFQDetails({
       ====================================================== */}
 
       {rfq.distribution_method === "selected" &&
-        rfq.supplier_ids?.length > 0 && (
+        (rfq.supplier_ids ?? []).length > 0 && (
 
         <section className="rounded-2xl bg-white p-8 shadow">
 
@@ -343,7 +343,7 @@ export default function RFQDetails({
 
           <div className="flex flex-wrap gap-3">
 
-            {rfq.supplier_ids.map((supplierId) => (
+            {(rfq.supplier_ids ?? []).map((supplierId) => (
               <span
                 key={supplierId}
                 className="rounded-full bg-aviation-light px-4 py-2 text-sm text-aviation-dark"
@@ -361,7 +361,7 @@ export default function RFQDetails({
          ATTACHMENTS
       ====================================================== */}
 
-      {rfq.attachments?.length > 0 && (
+      {(rfq.attachments ?? []).length > 0 && (
 
         <section className="rounded-2xl bg-white p-8 shadow">
 
@@ -371,7 +371,7 @@ export default function RFQDetails({
 
           <div className="space-y-3">
 
-            {rfq.attachments.map((attachment, index) => (
+            {(rfq.attachments ?? []).map((attachment, index) => (
               <a
                 key={attachment}
                 href={attachment}
