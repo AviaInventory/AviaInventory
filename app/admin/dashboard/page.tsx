@@ -150,6 +150,7 @@ export default async function AdminDashboard() {
         </section>
 
         <div className="flex flex-wrap gap-3 text-sm">
+          <Link href="/admin/dashboard/supplier-verifications" className="inline-flex items-center gap-2 rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">Review Supplier Verification</Link>
           <Link href="/admin/dashboard/listing-certifications" className="inline-flex items-center gap-2 rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">Review Listing Certifications</Link>
           <Link href="/admin/dashboard/subscriptions" className="rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">Subscriptions</Link>
           <Link href="/marketplace" className="rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">View Marketplace</Link>
