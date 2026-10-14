@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowRightLeft, Check, Loader2, Store } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { safeNextPath } from "@/lib/auth-redirect";
 
 export default function HybridAccountCard({ activeRole }: { activeRole: "buyer" | "supplier" }) {
+  const router = useRouter();
   const [roles, setRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
@@ -23,6 +26,10 @@ export default function HybridAccountCard({ activeRole }: { activeRole: "buyer" 
         : data?.account_type === "supplier" ? ["supplier"] : data?.account_type === "admin" ? ["admin"] : ["buyer"];
       setRoles(nextRoles);
       setLoading(false);
+      // Sent here from Pricing ("Enable selling to choose this plan"): open the confirmation directly.
+      if (!nextRoles.includes("supplier") && safeNextPath(new URLSearchParams(window.location.search).get("next"))) {
+        setConfirmOpen(true);
+      }
     }
     load();
     return () => { mounted = false; };
@@ -42,7 +49,10 @@ export default function HybridAccountCard({ activeRole }: { activeRole: "buyer" 
       setRoles(["buyer", "supplier"]);
       setMessage("Buyer & Supplier access is enabled. You can now switch between Buying and Selling without signing in again.");
       setConfirmOpen(false);
-      window.location.reload();
+      // Return to where the user came from (e.g. /pricing), otherwise refresh in place.
+      const next = safeNextPath(new URLSearchParams(window.location.search).get("next"));
+      if (next) router.push(next);
+      router.refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to upgrade your account.");
     } finally {
@@ -69,7 +79,7 @@ export default function HybridAccountCard({ activeRole }: { activeRole: "buyer" 
   if (!roles.includes(activeRole)) return null;
 
   return (
-    <section className="rounded-[var(--aviation-radius-xl)] border border-aviation-border bg-white p-6 shadow-sm">
+    <section id="enable-selling" className="rounded-[var(--aviation-radius-xl)] border border-aviation-border bg-white p-6 shadow-sm">
       <div className="flex items-start gap-4">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-aviation-success-soft text-aviation-primary"><Store size={21} /></span>
         <div><h2 className="font-semibold">Enable both Buying & Selling</h2><p className="mt-1 text-sm text-aviation-muted">Upgrade this company account so the same login can buy parts and sell inventory.</p></div>

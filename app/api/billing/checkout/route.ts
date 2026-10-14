@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { accountBillingType, isPlanAllowed, type BillingInterval, type PlanCode } from "@/lib/billing/plans";
 import { changeSubscriptionPlan, createCheckoutSession } from "@/lib/billing/stripe";
+import { SITE } from "@/lib/site-config";
 
 export async function POST(request: Request) {
   try {
@@ -27,6 +28,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error("BILLING CHECKOUT ERROR:", error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to start secure checkout." }, { status: 500 });
+    // Provider errors (missing price IDs, API keys, …) are not meaningful to customers.
+    const devDetail = process.env.NODE_ENV !== "production" && error instanceof Error ? ` [dev: ${error.message}]` : "";
+    return NextResponse.json(
+      { error: `Online payment isn't available right now. Please try again later or contact us at ${SITE.email}.${devDetail}` },
+      { status: 503 },
+    );
   }
 }

@@ -9,18 +9,20 @@ import PlanCards from "@/components/billing/PlanCards";
 
 export default function SubscriptionDashboard({ subscription, accountType, hasBillingPortal, invoices }: { subscription: SubscriptionAccess | null; accountType: "buyer" | "hybrid"; hasBillingPortal: boolean; invoices: Array<{ id:string; status:string; amount_due_cents:number; amount_paid_cents:number; currency:string; hosted_invoice_url:string|null; invoice_pdf_url:string|null; created_at:string; paid_at:string|null }> }) {
   const [portalLoading, setPortalLoading] = useState(false);
+  const [portalError, setPortalError] = useState("");
   const expired = !subscription?.effectiveActive || subscription.effectiveStatus === "trial_expired" || subscription.effectiveStatus === "expired";
   const daysRemaining = subscription?.trialEndsAt ? Math.max(0, Math.ceil((new Date(subscription.trialEndsAt).getTime() - Date.now()) / 86_400_000)) : null;
   const currentPlan = subscription ? PLAN_DEFINITIONS[subscription.planCode] : null;
 
   async function openPortal() {
+    setPortalError("");
     setPortalLoading(true);
     try {
       const response = await fetch("/api/billing/portal", { method: "POST" });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error ?? "Unable to open billing management.");
       window.location.assign(body.url);
-    } catch (error) { window.alert(error instanceof Error ? error.message : "Unable to open billing management."); }
+    } catch (error) { setPortalError(error instanceof Error ? error.message : "Unable to open billing management."); }
     finally { setPortalLoading(false); }
   }
 
@@ -30,6 +32,7 @@ export default function SubscriptionDashboard({ subscription, accountType, hasBi
 
     <section className="rounded-2xl border border-aviation-border bg-white p-5 shadow-sm sm:p-6">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between"><div><p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-aviation-accent">CURRENT PLAN</p><h2 className="mt-1 text-2xl font-bold text-aviation-dark">{subscription?.planName ?? "No active subscription"}</h2><p className="mt-1 text-sm text-aviation-muted">{subscription?.status === "trialing" && daysRemaining !== null ? `${daysRemaining} days remaining` : subscription?.billingInterval && currentPlan ? formatUsd(subscription.billingInterval === "month" ? currentPlan.monthlyUsdCents : currentPlan.annualUsdCents, subscription.billingInterval) : "Select a paid plan to activate billing."}</p></div>{hasBillingPortal && <button type="button" onClick={openPortal} disabled={portalLoading} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-aviation-border px-4 py-2.5 text-sm font-semibold text-aviation-dark">{portalLoading?<Loader2 size={16} className="animate-spin"/>:<ExternalLink size={16}/>} Manage billing</button>}</div>
+      {portalError && <div role="alert" className="mt-4 rounded-xl bg-aviation-error-soft p-4 text-sm text-aviation-error">{portalError}</div>}
       {subscription?.trialEndsAt && <div className="mt-5 rounded-xl bg-aviation-light p-4 text-sm"><p className="font-semibold text-aviation-dark">Free Trial</p><p className="mt-1 text-aviation-muted">Trial ends {new Date(subscription.trialEndsAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}. No automatic charge occurs at trial expiry.</p></div>}
       {subscription?.effectiveActive && <div className="mt-5 grid gap-3 sm:grid-cols-2"><div className="rounded-xl border border-aviation-border p-4"><p className="text-xs uppercase tracking-wider text-aviation-muted">Status</p><p className="mt-1 font-semibold capitalize">{subscription.effectiveStatus.replaceAll("_", " ")}</p></div><div className="rounded-xl border border-aviation-border p-4"><p className="text-xs uppercase tracking-wider text-aviation-muted">Next billing date</p><p className="mt-1 font-semibold">{subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).toLocaleDateString("en-GB") : "—"}</p></div></div>}
     </section>
