@@ -21,7 +21,7 @@ Implemented in the uploaded source package:
 
 Apply:
 
-`supabase/migrations/20260917_progressive_onboarding.sql`
+`supabase/migrations/20260917000200_progressive_onboarding.sql`
 
 before deploying the updated registration flow so the new profile fields exist.
 
@@ -30,4 +30,4 @@ before deploying the updated registration flow so the new profile fields exist.
 
 The supplier workspace now includes `/supplier/verification` with seven verification states: Draft, Submitted, Under Review, More Information Required, Verified, Suspended and Rejected. Suppliers can manage a private compliance document register with issue/expiry dates, issuing authority, version, verification state and reviewer notes. Expiry warnings cover expired documents and documents expiring within 30/90 days.
 
-Migration: `supabase/migrations/20260917_supplier_verification_compliance.sql`. The `supplier-verification-documents` Storage bucket is private and its RLS policies restrict objects to the owning supplier or platform administrators. Public supplier/profile/listing surfaces expose only verification status metadata; document files and reviewer notes are not public.
+Migration: `supabase/migrations/20260917000400_supplier_verification_compliance.sql`. The `supplier-verification-documents` Storage bucket is private and its RLS policies restrict objects to the owning supplier or platform administrators. Public supplier/profile/listing surfaces expose only verification status metadata; document files and reviewer notes are not public.

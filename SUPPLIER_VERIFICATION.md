@@ -40,7 +40,7 @@ For automated email/SMS notifications, connect the same summary query to a sched
 
 Apply:
 
-`supabase/migrations/20260917_supplier_verification_compliance.sql`
+`supabase/migrations/20260917000400_supplier_verification_compliance.sql`
 
 The migration is designed to be additive and creates the verification metadata, document register, private Storage bucket, RLS policies, supplier submission RPC, admin review RPC, and summary RPC.
 

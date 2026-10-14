@@ -32,7 +32,7 @@ Implemented a unified B2B company account centre at `/account/profile` with a pe
 
 ## Supabase migration
 
-Apply `supabase/migrations/20260917_account_management_center.sql` after the existing AviaInventory migrations.
+Apply `supabase/migrations/20260917000100_account_management_center.sql` after the existing AviaInventory migrations.
 
 ## Important integration note
 

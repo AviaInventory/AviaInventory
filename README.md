@@ -52,7 +52,7 @@ Supplier listings now use the protected lifecycle `Draft -> Published -> Reserve
 
 ## Account model
 
-AviaInventory now exposes two public account choices: **Buyer** and **Buyer & Supplier**. Buyer accounts can upgrade to enable the existing Supplier workspace without creating a second company account. Legacy Supplier-only profiles are migrated to Buyer & Supplier by `20260923_simplify_public_account_types.sql`.
+AviaInventory now exposes two public account choices: **Buyer** and **Buyer & Supplier**. Buyer accounts can upgrade to enable the existing Supplier workspace without creating a second company account. Legacy Supplier-only profiles are migrated to Buyer & Supplier by `20260923000100_simplify_public_account_types.sql`.
 
 ## Subscription & Billing
 

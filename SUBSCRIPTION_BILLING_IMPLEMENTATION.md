@@ -19,7 +19,7 @@ Implemented against the existing two-account AviaInventory model: **Buyer** and 
 - `lib/billing/entitlements.ts` — effective subscription state and entitlement evaluation.
 - `lib/billing/subscription.ts` — server-side subscription retrieval and route protection.
 - `lib/billing/stripe.ts` — provider abstraction currently implemented with Stripe Checkout, Billing Portal, subscription plan changes and signed webhooks.
-- `supabase/migrations/20260923_subscriptions_billing_paid_plans.sql` — subscription, billing, premium visibility and marketing schema/RLS.
+- `supabase/migrations/20260923000200_subscriptions_billing_paid_plans.sql` — subscription, billing, premium visibility and marketing schema/RLS.
 
 ## Required environment variables
 

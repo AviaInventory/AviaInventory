@@ -39,7 +39,7 @@ Generic `window.confirm()` is removed from supplier listing deletion/document re
 
 ## Migration order
 
-`20260917_zzz_listing_lifecycle.sql` intentionally runs after the supplier operations migration because the transaction-protection function reads `supplier_shipments` and `supplier_invoices`.
+`20260917001200_listing_lifecycle.sql` intentionally runs after the supplier operations migration because the transaction-protection function reads `supplier_shipments` and `supplier_invoices`.
 
 ## Validation note
 
