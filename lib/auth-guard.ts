@@ -1,37 +1,26 @@
-import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { resolveRoles } from "@/lib/auth-redirect";
 import type { AccountType } from "@/types/auth";
 
-export async function requireRole(
-  allowedRoles: AccountType[]
-) {
+/**
+ * Server-side role gate for layouts and pages. Signed-out users are normally caught
+ * earlier by the proxy (which preserves ?next=); this is the authoritative check.
+ */
+export async function requireRole(allowedRoles: AccountType[]) {
   const supabase = await createClient();
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login");
-  }
+  if (!user) redirect("/login");
 
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
+  const { data: profile, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
-  if (error || !profile) {
-    redirect("/login");
-  }
+  if (error || !profile) redirect("/login");
 
-  const roles = Array.isArray(profile.account_roles) && profile.account_roles.length
-    ? profile.account_roles
-    : [profile.account_type];
-
-  if (!allowedRoles.some((role) => roles.includes(role))) {
-    redirect("/");
-  }
+  const roles = resolveRoles(profile);
+  if (!allowedRoles.some((role) => roles.includes(role))) redirect("/");
 
   return profile;
 }
