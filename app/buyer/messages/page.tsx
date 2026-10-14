@@ -2,403 +2,158 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ArrowRight, MessageSquare } from "lucide-react";
 
-import {
-  getBuyerRFQs,
-  getRFQMessages,
-  formatDate,
-  type RFQ,
-  type RFQMessage,
-} from "@/lib/rfqs";
-
-import { MessageSquare, ArrowRight } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { getBuyerRFQs, getRFQMessages, formatDate, type RFQ, type RFQMessage } from "@/lib/rfqs";
+import RFQMessageThread from "@/components/buyer/rfq/RFQMessageThread";
 import EmptyState from "@/components/dashboard/EmptyState";
 
+/** One buyer ↔ supplier thread about one RFQ (a broadcast RFQ can have several). */
 interface Conversation {
+  key: string;
   rfq: RFQ;
-  messages: RFQMessage[];
-  latestMessage?: RFQMessage;
+  supplierId: string;
+  supplierName: string;
+  latestMessage: RFQMessage;
   unreadCount: number;
 }
 
 export default function BuyerMessagesPage() {
-  const [conversations, setConversations] =
-    useState<Conversation[]>([]);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState<string | null>(null);
-
-  /* ==========================================================
-     LOAD BUYER MESSAGES
-  ========================================================== */
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadMessages();
+    let active = true;
+
+    async function load() {
+      try {
+        const [{ data: { user } }, rfqs] = await Promise.all([supabase.auth.getUser(), getBuyerRFQs()]);
+        if (!user) return;
+
+        const perRfq = await Promise.all(rfqs.map(async (rfq) => ({ rfq, messages: await getRFQMessages(rfq.id) })));
+
+        const threads = new Map<string, Conversation>();
+        for (const { rfq, messages } of perRfq) {
+          for (const message of messages) {
+            const outgoing = message.sender_id === user.id;
+            const supplierId = outgoing ? message.recipient_id : message.sender_id;
+            const supplier = outgoing ? message.recipient : message.sender;
+            const key = `${rfq.id}:${supplierId}`;
+            const thread = threads.get(key) ?? {
+              key,
+              rfq,
+              supplierId,
+              supplierName: supplier?.company_name || supplier?.full_name || "Supplier",
+              latestMessage: message,
+              unreadCount: 0,
+            };
+            if (new Date(message.created_at) > new Date(thread.latestMessage.created_at)) thread.latestMessage = message;
+            // Only messages sent to the buyer can be unread by the buyer.
+            if (!outgoing && !message.is_read) thread.unreadCount += 1;
+            threads.set(key, thread);
+          }
+        }
+
+        const sorted = [...threads.values()].sort(
+          (a, b) => new Date(b.latestMessage.created_at).getTime() - new Date(a.latestMessage.created_at).getTime(),
+        );
+        if (!active) return;
+        setConversations(sorted);
+        setSelectedKey((current) => current ?? sorted[0]?.key ?? null);
+      } catch (err) {
+        console.error("GET BUYER MESSAGES ERROR:", err);
+        if (active) setError("We couldn't load your messages. Please refresh the page.");
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      active = false;
+    };
   }, []);
 
-  async function loadMessages() {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const rfqs = await getBuyerRFQs();
-
-      const results: Conversation[] = [];
-
-      for (const rfq of rfqs) {
-        try {
-          const messages =
-            await getRFQMessages(rfq.id);
-
-          if (messages.length === 0) {
-            continue;
-          }
-
-          const sortedMessages =
-            [...messages].sort(
-              (a, b) =>
-                new Date(
-                  b.created_at
-                ).getTime() -
-                new Date(
-                  a.created_at
-                ).getTime()
-            );
-
-          /*
-           * We do not need a separate messages table
-           * query here. All messages are already linked
-           * to the RFQ.
-           */
-
-          results.push({
-            rfq,
-            messages,
-            latestMessage:
-              sortedMessages[0],
-            unreadCount:
-              messages.filter(
-                (message) =>
-                  !message.is_read
-              ).length,
-          });
-        } catch (messageError) {
-          console.error(
-            `GET MESSAGES ERROR FOR RFQ ${rfq.id}:`,
-            messageError
-          );
-        }
-      }
-
-      /*
-       * Show conversations with the newest
-       * activity first.
-       */
-
-      results.sort((a, b) => {
-        const aDate =
-          a.latestMessage
-            ? new Date(
-                a.latestMessage.created_at
-              ).getTime()
-            : 0;
-
-        const bDate =
-          b.latestMessage
-            ? new Date(
-                b.latestMessage.created_at
-              ).getTime()
-            : 0;
-
-        return bDate - aDate;
-      });
-
-      setConversations(results);
-    } catch (err) {
-      console.error(
-        "GET BUYER MESSAGES ERROR:",
-        err
-      );
-
-      setError(
-        "Unable to load your messages."
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  /* ==========================================================
-     LOADING
-  ========================================================== */
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-aviation-light p-6 lg:p-10">
-
-        <div className="mx-auto max-w-7xl">
-
-          <div className="rounded-2xl bg-white p-12 text-center shadow-sm">
-
-            <MessageSquare
-              size={36}
-              className="mx-auto text-aviation-muted"
-            />
-
-            <p className="mt-4 text-aviation-muted">
-              Loading messages...
-            </p>
-
-          </div>
-
-        </div>
-
-      </main>
-    );
-  }
-
-  /* ==========================================================
-     ERROR
-  ========================================================== */
-
-  if (error) {
-    return (
-      <main className="min-h-screen bg-aviation-light p-6 lg:p-10">
-
-        <div className="mx-auto max-w-7xl">
-
-          <div className="rounded-2xl bg-white p-12 text-center shadow-sm">
-
-            <MessageSquare
-              size={36}
-              className="mx-auto text-aviation-light"
-            />
-
-            <h2 className="mt-4 text-xl font-bold text-aviation-dark">
-              Unable to Load Messages
-            </h2>
-
-            <p className="mt-2 text-aviation-muted">
-              {error}
-            </p>
-
-            <button
-              type="button"
-              onClick={loadMessages}
-              className="mt-6 rounded-xl bg-aviation-primary px-6 py-3 font-semibold text-white hover:bg-aviation-primary"
-            >
-              Try Again
-            </button>
-
-          </div>
-
-        </div>
-
-      </main>
-    );
-  }
-
-  /* ==========================================================
-     PAGE
-  ========================================================== */
+  const selected = conversations.find((conversation) => conversation.key === selectedKey) ?? null;
 
   return (
-    <main className="min-h-screen bg-aviation-light p-6 lg:p-10">
+    <div className="space-y-6">
+      <section>
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--aviation-muted)]">Supplier conversations</p>
+        <h1 className="mt-1 text-3xl font-bold text-aviation-primary">Messages</h1>
+        <p className="mt-1 text-sm text-[var(--aviation-muted)]">Questions and replies with suppliers about your RFQs.</p>
+      </section>
 
-      <div className="mx-auto max-w-7xl">
-
-        {/* ====================================================
-           PAGE HEADER
-        ==================================================== */}
-
-        <div>
-
-          <div className="flex items-center gap-3">
-
-            <div className="rounded-xl bg-aviation-success-soft p-3 text-aviation-primary">
-              <MessageSquare size={24} />
-            </div>
-
-            <div>
-
-              <h1 className="text-3xl font-bold text-aviation-primary">
-                Messages
-              </h1>
-
-              <p className="mt-1 text-aviation-muted">
-                Communicate with suppliers regarding
-                your RFQs and quotations.
-              </p>
-
-            </div>
-
-          </div>
-
+      {loading ? (
+        <div className="rounded-2xl border border-aviation-border bg-white p-10 text-center text-[var(--aviation-muted)]">Loading messages…</div>
+      ) : error ? (
+        <div role="alert" className="rounded-2xl bg-aviation-error-soft p-6 text-aviation-error">
+          {error}
         </div>
-
-        {/* ====================================================
-           EMPTY STATE
-        ==================================================== */}
-
-        {conversations.length === 0 ? (
-
-          <div className="mt-8"><EmptyState icon={MessageSquare} eyebrow="NO CONVERSATIONS YET" title="Your message inbox is clear" description="Supplier conversations begin around RFQs. Create or review an RFQ to start procurement communication." actionLabel="Open RFQs" actionHref="/buyer/rfqs" /></div>
-
-        ) : (
-
-          /* ==================================================
-             CONVERSATIONS
-          ================================================== */
-
-          <section className="mt-8 space-y-4">
-
-            {conversations.map(
-              (conversation) => {
-
-                const {
-                  rfq,
-                  latestMessage,
-                  unreadCount,
-                } = conversation;
-
-                const partNumber =
-                  rfq.part?.part_number ??
-                  rfq.part_number ??
-                  "Custom RFQ";
-
-                const preview =
-                  latestMessage?.message ??
-                  "No message";
-
-                return (
-                  <Link
-                    key={rfq.id}
-                    href={`/buyer/rfqs/${rfq.id}`}
-                    className="group block"
-                  >
-
-                    <div
-                      className={`rounded-2xl bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-                        unreadCount > 0
-                          ? "border-l-4 border-aviation-border"
-                          : ""
-                      }`}
-                    >
-
-                      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-
-                        {/* LEFT */}
-
-                        <div className="flex min-w-0 items-start gap-4">
-
-                          <div className="rounded-xl bg-aviation-success-soft p-3 text-aviation-primary">
-
-                            <MessageSquare
-                              size={22}
-                            />
-
-                          </div>
-
-                          <div className="min-w-0">
-
-                            <div className="flex flex-wrap items-center gap-3">
-
-                              <h2 className="font-bold text-aviation-primary">
-
-                                {partNumber}
-
-                              </h2>
-
-                              {unreadCount > 0 && (
-
-                                <span className="rounded-full bg-aviation-primary px-3 py-1 text-xs font-semibold text-white">
-
-                                  {unreadCount} new
-                                </span>
-
-                              )}
-
-                            </div>
-
-                            <p className="mt-1 text-sm text-aviation-muted">
-
-                              RFQ #
-                              {rfq.id
-                                .slice(0, 8)
-                                .toUpperCase()}
-
-                              {" • "}
-
-                              Created{" "}
-                              {formatDate(
-                                rfq.created_at
-                              )}
-
-                            </p>
-
-                            <p
-                              className={`mt-3 line-clamp-2 ${
-                                unreadCount > 0
-                                  ? "font-semibold text-aviation-dark"
-                                  : "text-aviation-muted"
-                              }`}
-                            >
-                              {preview}
-                            </p>
-
-                          </div>
-
-                        </div>
-
-                        {/* RIGHT */}
-
-                        <div className="flex shrink-0 items-center gap-4">
-
-                          {latestMessage && (
-
-                            <div className="text-right">
-
-                              <p className="text-xs text-aviation-muted">
-                                Last message
-                              </p>
-
-                              <p className="mt-1 text-sm text-aviation-muted">
-                                {new Date(
-                                  latestMessage.created_at
-                                ).toLocaleString(
-                                  "en-GB"
-                                )}
-                              </p>
-
-                            </div>
-
-                          )}
-
-                          <ArrowRight
-                            size={20}
-                            className="text-aviation-muted transition group-hover:translate-x-1 group-hover:text-aviation-primary"
-                          />
-
-                        </div>
-
-                      </div>
-
+      ) : conversations.length === 0 ? (
+        <EmptyState
+          icon={MessageSquare}
+          title="No messages yet"
+          description="When you message a supplier about a quotation, or a supplier writes to you about an RFQ, the conversation appears here."
+          actionLabel="View my RFQs"
+          actionHref="/buyer/rfqs"
+        />
+      ) : (
+        <section className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <nav aria-label="Conversations" className="space-y-2">
+            {conversations.map((conversation) => {
+              const active = conversation.key === selectedKey;
+              return (
+                <button
+                  key={conversation.key}
+                  type="button"
+                  onClick={() => setSelectedKey(conversation.key)}
+                  aria-current={active ? "true" : undefined}
+                  className={`w-full rounded-xl border p-4 text-left transition-colors ${
+                    active ? "border-aviation-primary bg-aviation-success-soft" : "border-aviation-border bg-white hover:border-aviation-primary/50"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-aviation-dark">{conversation.supplierName}</p>
+                      <p className="truncate text-xs text-[var(--aviation-muted)]">
+                        RFQ #{conversation.rfq.id.slice(0, 8).toUpperCase()}
+                        {conversation.rfq.part_number ? ` · ${conversation.rfq.part_number}` : ""}
+                      </p>
                     </div>
+                    {conversation.unreadCount > 0 && (
+                      <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-aviation-primary px-2 text-xs font-bold text-white">
+                        {conversation.unreadCount}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-sm text-[var(--aviation-muted)]">{conversation.latestMessage.message}</p>
+                  <p className="mt-1 text-xs text-[var(--aviation-muted)]">{formatDate(conversation.latestMessage.created_at)}</p>
+                </button>
+              );
+            })}
+          </nav>
 
+          <div className="min-w-0 space-y-3">
+            {selected && (
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-semibold text-aviation-dark">
+                    {selected.supplierName} · RFQ #{selected.rfq.id.slice(0, 8).toUpperCase()}
+                  </p>
+                  <Link href={`/buyer/rfqs/${selected.rfq.id}`} className="inline-flex items-center gap-1 text-sm font-semibold text-aviation-primary hover:underline">
+                    Open RFQ <ArrowRight size={15} aria-hidden="true" />
                   </Link>
-                );
-              }
+                </div>
+                <RFQMessageThread key={selected.key} rfqId={selected.rfq.id} supplierId={selected.supplierId} />
+              </>
             )}
-
-          </section>
-
-        )}
-
-      </div>
-
-    </main>
+          </div>
+        </section>
+      )}
+    </div>
   );
 }

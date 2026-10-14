@@ -569,11 +569,16 @@ export default function BuyerRFQDetailsPage() {
 
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
                       setSelectedSupplierId(
                         quote.supplier_id
-                      )
-                    }
+                      );
+                      // The conversation renders below the quotes; bring it into view.
+                      window.setTimeout(() => {
+                        document.getElementById("supplier-conversation")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        document.getElementById("buyer-message-input")?.focus({ preventScroll: true });
+                      }, 100);
+                    }}
                     className="rounded-xl border border-aviation-border px-5 py-3 text-sm font-semibold text-aviation-primary transition hover:bg-aviation-success-soft"
                   >
                     Message Supplier
@@ -596,7 +601,7 @@ export default function BuyerRFQDetailsPage() {
       ====================================================== */}
 
       {selectedSupplierId && (
-        <section className="rounded-2xl bg-white p-8 shadow">
+        <section id="supplier-conversation" className="scroll-mt-28 rounded-2xl bg-white p-8 shadow">
 
           <div className="mb-5 flex items-center justify-between">
 

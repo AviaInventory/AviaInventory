@@ -25,6 +25,7 @@ export default function RFQMessageThread({
 
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
 
   useEffect(() => {
     loadMessages();
@@ -50,6 +51,7 @@ export default function RFQMessageThread({
 
     try {
       setSending(true);
+      setSendError("");
 
       const result =
         await sendRFQMessage(
@@ -62,6 +64,11 @@ export default function RFQMessageThread({
         console.error(
           "SEND MESSAGE ERROR:",
           result.error
+        );
+        setSendError(
+          typeof result.error === "string"
+            ? result.error
+            : "Your message wasn't sent. Check your connection and try again."
         );
 
         return;
@@ -127,38 +134,27 @@ export default function RFQMessageThread({
 
         ) : (
 
-          messages.map((item) => (
+          messages.map((item) => {
+            const fromBuyer = item.sender_id === buyerId;
 
-            <div
-              key={item.id}
-              className="rounded-xl bg-white p-4 shadow-sm"
-            >
-
-              <div className="flex items-center justify-between">
-
-                <div>
-                  <p className="font-semibold text-aviation-primary">
-                    {item.sender?.company_name ||
-                      item.sender?.full_name ||
-                      "User"}
-                  </p>
-
-                  <p className="text-xs text-aviation-muted">
-                    {new Date(
-                      item.created_at
-                    ).toLocaleString("en-GB")}
+            return (
+              <div key={item.id} className={`flex ${fromBuyer ? "justify-start" : "justify-end"}`}>
+                <div className={`max-w-[80%] rounded-2xl p-4 shadow-sm ${fromBuyer ? "border bg-white" : "bg-aviation-primary text-white"}`}>
+                  <div className="flex items-center justify-between gap-4">
+                    <p className={`text-sm font-semibold ${fromBuyer ? "text-aviation-primary" : "text-white"}`}>
+                      {fromBuyer ? item.sender?.company_name || item.sender?.full_name || "Buyer" : "You"}
+                    </p>
+                    <p className={`text-xs ${fromBuyer ? "text-[var(--aviation-muted)]" : "text-aviation-light"}`}>
+                      {new Date(item.created_at).toLocaleString("en-GB")}
+                    </p>
+                  </div>
+                  <p className={`mt-3 whitespace-pre-wrap leading-6 ${fromBuyer ? "text-aviation-dark" : "text-white"}`}>
+                    {item.message}
                   </p>
                 </div>
-
               </div>
-
-              <p className="mt-3 whitespace-pre-wrap text-aviation-dark">
-                {item.message}
-              </p>
-
-            </div>
-
-          ))
+            );
+          })
 
         )}
 
@@ -177,6 +173,12 @@ export default function RFQMessageThread({
           rows={4}
           className="w-full rounded-xl border border-aviation-border p-4 outline-none transition focus:border-aviation-border focus:ring-2 focus:ring-aviation-primary"
         />
+
+        {sendError && (
+          <p role="alert" className="mt-3 rounded-lg bg-aviation-error-soft px-3 py-2 text-sm text-aviation-error">
+            {sendError}
+          </p>
+        )}
 
         <div className="mt-3 flex justify-end">
 

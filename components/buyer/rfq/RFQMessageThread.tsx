@@ -34,6 +34,9 @@ export default function RFQMessageThread({
   const [sending, setSending] =
     useState(false);
 
+  // Shown under the reply box when a message could not be sent.
+  const [sendError, setSendError] = useState("");
+
   /* ==========================================================
      LOAD MESSAGES
   ========================================================== */
@@ -90,6 +93,7 @@ export default function RFQMessageThread({
 
     try {
       setSending(true);
+      setSendError("");
 
       const result =
         await sendRFQMessage(
@@ -103,6 +107,11 @@ export default function RFQMessageThread({
           "SEND BUYER MESSAGE ERROR:",
           result.error
         );
+        setSendError(
+          typeof result.error === "string"
+            ? result.error
+            : "Your message wasn't sent. Check your connection and try again."
+        );
 
         return;
       }
@@ -115,6 +124,7 @@ export default function RFQMessageThread({
         "SEND BUYER MESSAGE ERROR:",
         error
       );
+      setSendError("Your message wasn't sent. Check your connection and try again.");
     } finally {
       setSending(false);
     }
@@ -224,7 +234,7 @@ export default function RFQMessageThread({
                       }`}
                     >
                       {isSupplier
-                        ? "Supplier"
+                        ? item.sender?.company_name || item.sender?.full_name || "Supplier"
                         : "You"}
                     </p>
 
@@ -271,6 +281,8 @@ export default function RFQMessageThread({
       <div>
 
         <textarea
+          id="buyer-message-input"
+          aria-label="Message to the supplier"
           value={message}
           onChange={(event) =>
             setMessage(event.target.value)
@@ -292,6 +304,12 @@ export default function RFQMessageThread({
           disabled={sending}
           className="w-full resize-none rounded-xl border border-aviation-border p-4 outline-none transition focus:border-aviation-border focus:ring-2 focus:ring-aviation-primary disabled:bg-aviation-light"
         />
+
+        {sendError && (
+          <p role="alert" className="mt-3 rounded-lg bg-aviation-error-soft px-3 py-2 text-sm text-aviation-error">
+            {sendError}
+          </p>
+        )}
 
         <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
