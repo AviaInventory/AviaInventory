@@ -106,20 +106,17 @@ alter table public.parts add constraint parts_lot_size_quantity_check
 -- Restrictive policies make the boundary hold even if an older permissive policy exists.
 drop policy if exists "Listing visibility restrictive boundary" on public.parts;
 create policy "Listing visibility restrictive boundary"
-  as restrictive
-  on public.parts for select to anon, authenticated
+  on public.parts as restrictive for select to anon, authenticated
   using (status = 'Published' or supplier_id = auth.uid() or public.is_platform_admin());
 
 drop policy if exists "Listing write restrictive boundary" on public.parts;
 create policy "Listing write restrictive boundary"
-  as restrictive
-  on public.parts for insert to authenticated
+  on public.parts as restrictive for insert to authenticated
   with check (supplier_id = auth.uid() or public.is_platform_admin());
 
 drop policy if exists "Listing update restrictive boundary" on public.parts;
 create policy "Listing update restrictive boundary"
-  as restrictive
-  on public.parts for update to authenticated
+  on public.parts as restrictive for update to authenticated
   using (supplier_id = auth.uid() or public.is_platform_admin())
   with check (supplier_id = auth.uid() or public.is_platform_admin());
 
