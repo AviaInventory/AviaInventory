@@ -309,6 +309,7 @@ async function hydrateRFQs(
     const part = row.part_id
       ? partMap.get(row.part_id)
       : undefined;
+    const details = parseRFQMessage(row.message);
 
     return {
       ...row,
@@ -317,17 +318,19 @@ async function hydrateRFQs(
         ? supplierMap.get(row.supplier_id)
         : undefined,
       part,
-      part_number: part?.part_number ?? null,
+      ...details,
+      part_number: part?.part_number ?? details.part_number ?? null,
       description:
         part?.description ??
+        details.description ??
         row.message ??
         null,
       quote_count: quoteCounts.get(row.id) ?? 0,
 
-      /* These fields are not columns in the current rfqs table. */
-      required_date: null,
-      delivery_location: null,
-      notes: row.message,
+      /* Parsed from rfqs.message: they are not columns in the rfqs table. */
+      required_date: details.required_date || null,
+      delivery_location: details.delivery_location || null,
+      notes: details.notes || null,
       attachments: [],
       supplier_ids: row.supplier_id
         ? [row.supplier_id]
@@ -337,6 +340,61 @@ async function hydrateRFQs(
         : "broadcast",
     } as RFQ;
   });
+}
+
+/* ==========================================================
+   RFQ DETAILS <-> MESSAGE TEXT
+   The rfqs table has no columns for most RFQ details, so they are
+   stored as "Label: value" lines in rfqs.message. These two helpers
+   are the only place that format is written or read.
+========================================================== */
+
+type RFQDetailKey =
+  | "part_number" | "description" | "preferred_condition" | "certification_required"
+  | "ata_chapter" | "category" | "aircraft_manufacturer" | "aircraft_model"
+  | "engine_manufacturer" | "engine_model" | "required_date" | "delivery_location" | "notes";
+
+const RFQ_DETAIL_LABELS: [RFQDetailKey, string][] = [
+  ["part_number", "Part Number"],
+  ["description", "Description"],
+  ["preferred_condition", "Preferred Condition"],
+  ["certification_required", "Certification Required"],
+  ["ata_chapter", "ATA Chapter"],
+  ["category", "Category"],
+  ["aircraft_manufacturer", "Aircraft Manufacturer"],
+  ["aircraft_model", "Aircraft Model"],
+  ["engine_manufacturer", "Engine Manufacturer"],
+  ["engine_model", "Engine Model"],
+  ["required_date", "Required Date"],
+  ["delivery_location", "Delivery Location"],
+  ["notes", "Notes"],
+];
+
+export function composeRFQMessage(details: Partial<Record<RFQDetailKey, string | null | undefined>>): string {
+  return RFQ_DETAIL_LABELS.map(([key, label]) => `${label}: ${String(details[key] ?? "").trim() || "-"}`).join("\n");
+}
+
+export function parseRFQMessage(message: string | null | undefined): Partial<Record<RFQDetailKey, string>> {
+  const byLabel = new Map(RFQ_DETAIL_LABELS.map(([key, label]) => [label.toLowerCase(), key]));
+  const result: Partial<Record<RFQDetailKey, string>> = {};
+  let current: RFQDetailKey | null = null;
+
+  for (const line of (message ?? "").split("\n")) {
+    const match = line.match(/^([A-Za-z ]+):\s?(.*)$/);
+    const key = match ? byLabel.get(match[1].trim().toLowerCase()) : undefined;
+    // Older RFQs stored "Aircraft: <make> <model>" and "Engine: <make> <model>" on one line.
+    const legacy = match && !key ? { aircraft: "aircraft_model", engine: "engine_model" }[match[1].trim().toLowerCase()] : undefined;
+    const target = (key ?? legacy) as RFQDetailKey | undefined;
+
+    if (match && target) {
+      current = target;
+      result[target] = match[2].trim() === "-" ? "" : match[2].trim();
+    } else if (current) {
+      // Multi-line values (e.g. long notes) continue until the next label.
+      result[current] = `${result[current] ?? ""}\n${line}`.trim();
+    }
+  }
+  return result;
 }
 
 /* ==========================================================
@@ -363,21 +421,11 @@ export async function createRFQ(
       );
     }
 
-    const message = [
-      `Part Number: ${rfq.part_number.trim()}`,
-      `Description: ${rfq.description.trim()}`,
-      `Preferred Condition: ${rfq.preferred_condition || "-"}`,
-      `Certification Required: ${rfq.certification_required || "-"}`,
-      `ATA Chapter: ${rfq.ata_chapter || "-"}`,
-      `Category: ${rfq.category || "-"}`,
-      `Aircraft: ${rfq.aircraft_manufacturer || ""} ${rfq.aircraft_model || ""}`.trim(),
-      `Engine: ${rfq.engine_manufacturer || ""} ${rfq.engine_model || ""}`.trim(),
-      `Required Date: ${rfq.required_date || "-"}`,
-      `Delivery Location: ${rfq.delivery_location || "-"}`,
-      `Notes: ${rfq.notes || "-"}`,
-    ]
-      .filter(Boolean)
-      .join("\n");
+    if (supplierId === user.id) {
+      return handleError("You can't request a quote from your own company.");
+    }
+
+    const message = composeRFQMessage(rfq);
 
     const { data, error } = await supabase
       .from("rfqs")
@@ -530,29 +578,10 @@ export async function updateRFQ(
       payload.quantity = Number(updates.quantity);
     }
 
-    const messageParts = [
-      updates.part_number
-        ? `Part Number: ${updates.part_number.trim()}`
-        : "",
-      updates.description
-        ? `Description: ${updates.description.trim()}`
-        : "",
-      updates.preferred_condition
-        ? `Preferred Condition: ${updates.preferred_condition}`
-        : "",
-      updates.certification_required
-        ? `Certification Required: ${updates.certification_required}`
-        : "",
-      updates.delivery_location
-        ? `Delivery Location: ${updates.delivery_location}`
-        : "",
-      updates.notes
-        ? `Notes: ${updates.notes}`
-        : "",
-    ].filter(Boolean);
-
-    if (messageParts.length) {
-      payload.message = messageParts.join("\n");
+    // The edit form sends every field, so rebuild the whole message rather than
+    // dropping the ones not listed here (ATA chapter, aircraft, engine, dates...).
+    if (updates.part_number !== undefined || updates.description !== undefined) {
+      payload.message = composeRFQMessage(updates);
     }
 
     if (
@@ -560,6 +589,21 @@ export async function updateRFQ(
     ) {
       payload.supplier_id =
         updates.supplier_ids?.[0] ?? null;
+    }
+
+    if (payload.supplier_id && payload.supplier_id === user.id) {
+      return handleError("You can't request a quote from your own company.");
+    }
+
+    const { data: existing } = await supabase
+      .from("rfqs")
+      .select("status")
+      .eq("id", id)
+      .eq("buyer_id", user.id)
+      .maybeSingle();
+
+    if (existing && existing.status !== RFQStatus.Pending) {
+      return handleError("This RFQ can no longer be edited because suppliers have already responded to it.");
     }
 
     const { data, error } = await supabase

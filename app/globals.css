@@ -108,13 +108,16 @@ html { scroll-behavior: smooth; }
 .aviation-table-wrap table { width: 100%; }
 
 /* Long aviation identifiers, emails and URLs never create horizontal page
-   overflow. */
+   overflow. `break-word` (not `anywhere`) only breaks a word when it would
+   overflow; `anywhere` also lets tables shrink columns to one letter wide,
+   which stacked headers like "Quantity" vertically when zoomed in. */
 main, section, article, td, th, p, h1, h2, h3, h4, label, a, button {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
+.font-mono { overflow-wrap: break-word; }
 
-/* Preserve intentional no-wrap controls/tags. */
-.font-mono { overflow-wrap: anywhere; }
+/* Column headings stay on one line; the table scrolls sideways instead. */
+.aviation-table-wrap th, table th { white-space: nowrap; }
 
 @media (max-width: 767px) {
   /* Comfortable page gutters without wasting narrow-screen width. */

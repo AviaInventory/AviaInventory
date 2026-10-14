@@ -119,10 +119,6 @@ export default function StatsCards() {
           return;
         }
 
-        console.log(
-          "DASHBOARD USER:",
-          user.id
-        );
 
         /* ==================================================
            ACTIVE RFQs

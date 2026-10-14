@@ -67,10 +67,6 @@ export default function RecentlyAddedParts() {
         return;
       }
 
-      console.log(
-        "RECENTLY ADDED PARTS:",
-        data
-      );
 
       setParts(data || []);
     } catch (error) {

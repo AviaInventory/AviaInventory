@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 import { createQuote } from "@/lib/rfqs";
@@ -8,6 +9,7 @@ import type {
   RFQ,
   CreateQuoteData,
 } from "@/lib/rfqs";
+import RequiredMark from "@/components/ui/RequiredMark";
 
 interface Props {
   rfq: RFQ;
@@ -16,6 +18,7 @@ interface Props {
 export default function QuoteForm({
   rfq,
 }: Props) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const [certificationText, setCertificationText] =
@@ -88,14 +91,14 @@ export default function QuoteForm({
 
       toast.success("Quotation submitted successfully.");
 
-      setCertificationText("");
-
-      setFormData(initialState);
+      // Back to the RFQ list. `loading` stays on so the button can't be pressed again
+      // while the list loads.
+      router.push("/supplier/rfqs");
+      router.refresh();
     } catch (error) {
       console.error(error);
 
       toast.error("Something went wrong while submitting your quotation.");
-    } finally {
       setLoading(false);
     }
   }
@@ -119,7 +122,7 @@ export default function QuoteForm({
           <div>
 
             <label className="mb-2 block font-medium">
-              Unit Price *
+              Unit Price <RequiredMark />
             </label>
 
             <input
@@ -174,7 +177,7 @@ export default function QuoteForm({
           <div>
 
             <label className="mb-2 block font-medium">
-              Lead Time *
+              Lead Time <RequiredMark />
             </label>
 
             <input
@@ -248,7 +251,7 @@ export default function QuoteForm({
           <div>
 
             <label className="mb-2 block font-medium">
-              Quote Valid Until *
+              Quote Valid Until <RequiredMark />
             </label>
 
             <input

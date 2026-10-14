@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Menu, Search, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import UserMenu from "./UserMenu";
+import { useSessionProfile } from "./useSessionProfile";
 
 const navItems = [
   { label: "Home", href: "/" },
@@ -22,6 +24,8 @@ function isActive(pathname: string, href: string) {
 export default function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  // undefined while the session loads: render nothing there rather than flash "Login".
+  const profile = useSessionProfile();
 
   return (
     <header className="sticky top-0 z-[100] border-b border-[#dbe5ef] bg-white/95 shadow-[0_4px_20px_rgba(6,35,63,0.08)] backdrop-blur-xl">
@@ -63,18 +67,26 @@ export default function Navbar() {
           >
             <Search size={20} strokeWidth={2} />
           </Link>
-          <Link
-            href="/login"
-            className="hidden min-h-11 items-center rounded-lg border border-[#d5e0eb] bg-white px-5 py-2 text-sm font-semibold text-[#12304d] hover:border-[#0d5bd7] hover:text-[#0d5bd7] sm:inline-flex"
-          >
-            Login
-          </Link>
-          <Link
-            href="/register"
-            className="hidden min-h-11 items-center rounded-lg bg-[#0d5bd7] px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#084aa9] sm:inline-flex"
-          >
-            Get Started
-          </Link>
+          {profile ? (
+            <UserMenu profile={profile} onNavigate={() => setMobileOpen(false)} />
+          ) : profile === null ? (
+            <>
+              <Link
+                href="/login"
+                className="hidden min-h-11 items-center rounded-lg border border-[#d5e0eb] bg-white px-5 py-2 text-sm font-semibold text-[#12304d] hover:border-[#0d5bd7] hover:text-[#0d5bd7] sm:inline-flex"
+              >
+                Login
+              </Link>
+              <Link
+                href="/register"
+                className="hidden min-h-11 items-center rounded-lg bg-[#0d5bd7] px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#084aa9] sm:inline-flex"
+              >
+                Get Started
+              </Link>
+            </>
+          ) : (
+            <span className="hidden h-11 w-40 sm:inline-block" aria-hidden="true" />
+          )}
           <button
             type="button"
             aria-expanded={mobileOpen}
@@ -106,7 +118,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {mobileOpen && (
+      {mobileOpen && profile === null && (
         <div id="mobile-site-navigation" className="border-t border-[#dbe5ef] bg-white px-4 pb-4 pt-2 shadow-lg lg:hidden">
           <div className="grid gap-2 sm:grid-cols-2">
             <Link href="/login" onClick={() => setMobileOpen(false)} className="rounded-xl border border-[#d5e0eb] px-4 py-3 text-center text-sm font-semibold text-[#12304d]">Login</Link>

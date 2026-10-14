@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { supabase } from "@/lib/supabase";
@@ -27,12 +27,24 @@ export default function RFQForm({
   const [message, setMessage] =
     useState("");
 
+  // True when the signed-in company owns this listing (Buyer & Supplier accounts).
+  const [ownListing, setOwnListing] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => setOwnListing(user?.id === supplierId));
+  }, [supplierId]);
+
   /* ==========================================================
      SUBMIT RFQ
   ========================================================== */
 
   async function submitRFQ() {
     if (loading) return;
+
+    if (ownListing) {
+      alert("You can't request a quote from your own company.");
+      return;
+    }
 
     /* ========================================================
        BASIC VALIDATION
@@ -94,13 +106,6 @@ export default function RFQForm({
         return;
       }
 
-      console.log(
-        "AUTHENTICATED USER:",
-        {
-          id: user.id,
-          email: user.email,
-        }
-      );
 
       /* ======================================================
          GET PROFILE
@@ -146,10 +151,6 @@ export default function RFQForm({
               .toLowerCase()
           : null;
 
-      console.log(
-        "RFQ ACCOUNT TYPE:",
-        normalizedAccountType
-      );
 
       if (
         normalizedAccountType !==
@@ -238,10 +239,6 @@ export default function RFQForm({
         return;
       }
 
-      console.log(
-        "BUYER CONFIRMED:",
-        buyer
-      );
 
       /* ======================================================
          PREVENT BUYER FROM QUOTING THEIR OWN PART
@@ -305,10 +302,6 @@ export default function RFQForm({
         return;
       }
 
-      console.log(
-        "SUPPLIER CONFIRMED:",
-        supplier
-      );
 
       /* ======================================================
          VERIFY PART
@@ -362,10 +355,6 @@ export default function RFQForm({
         return;
       }
 
-      console.log(
-        "PART FOUND:",
-        part
-      );
 
       /* ======================================================
          VERIFY PART SUPPLIER
@@ -425,20 +414,8 @@ export default function RFQForm({
          CREATE RFQ
       ====================================================== */
 
-      console.log(
-        "CREATING RFQ:",
-        {
-          buyer_id: user.id,
-          supplier_id: supplierId,
-          part_id: partId,
-          quantity,
-          message:
-            message.trim() || null,
-        }
-      );
 
       const {
-        data,
         error: rfqError,
       } = await supabase
         .from("rfqs")
@@ -484,10 +461,6 @@ export default function RFQForm({
          SUCCESS
       ====================================================== */
 
-      console.log(
-        "RFQ CREATED SUCCESSFULLY:",
-        data
-      );
 
       alert(
         "RFQ submitted successfully."
@@ -519,6 +492,17 @@ export default function RFQForm({
   /* ==========================================================
      PAGE
   ========================================================== */
+
+  if (ownListing) {
+    return (
+      <div className="rounded-xl border border-aviation-border bg-aviation-light p-5 text-sm">
+        <p className="font-semibold text-aviation-dark">This is your listing</p>
+        <p className="mt-1 text-[var(--aviation-muted)]">
+          Buyers can request a quote here. You can edit this listing from your Selling workspace.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>

@@ -22,15 +22,15 @@ export default function RoleSwitcher({ active }: { active: "buyer" | "supplier" 
     <div className="flex items-center gap-1 rounded-xl border border-aviation-border bg-aviation-light p-1" aria-label="Workspace switcher">
       <Link
         href="/buyer/dashboard"
-        className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition ${active === "buyer" ? "bg-white text-aviation-primary shadow-sm" : "text-aviation-muted hover:text-aviation-dark"}`}
+        className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition ${active === "buyer" ? "bg-white text-aviation-primary shadow-sm" : "text-[var(--aviation-muted)] hover:text-aviation-dark"}`}
         aria-current={active === "buyer" ? "page" : undefined}
       >
         <ShoppingCart size={15} /> Buying
       </Link>
-      <ArrowRightLeft size={14} className="text-aviation-muted" aria-hidden="true" />
+      <ArrowRightLeft size={14} className="text-[var(--aviation-muted)]" aria-hidden="true" />
       <Link
         href="/supplier/dashboard"
-        className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition ${active === "supplier" ? "bg-white text-aviation-primary shadow-sm" : "text-aviation-muted hover:text-aviation-dark"}`}
+        className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition ${active === "supplier" ? "bg-white text-aviation-primary shadow-sm" : "text-[var(--aviation-muted)] hover:text-aviation-dark"}`}
         aria-current={active === "supplier" ? "page" : undefined}
       >
         <Store size={15} /> Selling

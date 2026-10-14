@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { getApprovedSuppliers } from "@/lib/suppliers";
+import { supabase } from "@/lib/supabase";
 
 interface Supplier {
   id: string;
@@ -26,17 +27,19 @@ export default function SupplierSelector({
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    loadSuppliers();
+    let active = true;
+    Promise.all([getApprovedSuppliers(), supabase.auth.getUser()])
+      .then(([data, { data: { user } }]) => {
+        // A Buyer & Supplier account must not send an RFQ to its own company.
+        if (active) setSuppliers(data.filter((supplier) => supplier.id !== user?.id));
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
-
-  async function loadSuppliers() {
-    try {
-      const data = await getApprovedSuppliers();
-      setSuppliers(data);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   const filteredSuppliers = useMemo(() => {
     return suppliers.filter((supplier) => {

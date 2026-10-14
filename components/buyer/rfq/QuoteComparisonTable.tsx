@@ -151,15 +151,7 @@ export default function QuoteComparisonTable({
           ? result.data
           : null;
 
-      console.log(
-        "ACCEPTED QUOTE:",
-        quoteId
-      );
 
-      console.log(
-        "CREATED ORDER ID:",
-        orderId
-      );
 
       /* ======================================================
          REFRESH QUOTES

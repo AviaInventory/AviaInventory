@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft, Building2, Globe, MapPin, Package, Star, Tags } from "lucide-react";
 import { getPublicSupplierProfile } from "@/lib/homepage-data";
 import VerificationStatusBadge from "@/components/supplier/verification/VerificationStatusBadge";
@@ -23,9 +24,7 @@ export default async function PublicSupplierProfile({ params }: Props) {
   const { id } = await params;
   const data = await getPublicSupplierProfile(id);
 
-  if (!data) {
-    return <main className="min-h-screen bg-aviation-light p-8"><div className="mx-auto max-w-4xl rounded-2xl bg-white p-10 text-center"><h1 className="text-2xl font-bold text-aviation-dark">Supplier not found</h1><Link href="/" className="mt-5 inline-flex font-semibold text-aviation-primary">Return home</Link></div></main>;
-  }
+  if (!data) notFound();
 
   const { supplier, reviews, rating, reviewCount, listingCount } = data;
 
@@ -39,7 +38,7 @@ export default async function PublicSupplierProfile({ params }: Props) {
             <div className="flex items-start gap-4">
               <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-aviation-primary text-white"><Building2 size={34} /></div>
               <div>
-                <div className="flex flex-wrap items-center gap-2"><h1 className="text-3xl font-bold text-aviation-dark sm:text-4xl">{supplier.company_name || "Verified Supplier"}</h1><VerificationStatusBadge status={supplier.verification_status || "Draft"} compact /></div>
+                <div className="flex flex-wrap items-center gap-2"><h1 className="text-3xl font-bold text-aviation-dark sm:text-4xl">{supplier.company_name || "Supplier"}</h1><VerificationStatusBadge status={supplier.verification_status || "Draft"} compact /></div>
                 <p className="mt-2 text-aviation-muted">{supplier.business_type || "Aviation supplier"}</p>
                 <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-aviation-muted">
                   {supplier.country && <span className="inline-flex items-center gap-2"><MapPin size={15} />{supplier.city ? `${supplier.city}, ${supplier.country}` : supplier.country}</span>}

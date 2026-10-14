@@ -50,10 +50,6 @@ export default function SupplierProfilePage() {
         error: userError,
       } = await supabase.auth.getUser();
 
-      console.log("========== PROFILE DEBUG ==========");
-      console.log("USER:", user);
-      console.log("USER ID:", user?.id);
-      console.log("USER ERROR:", userError);
 
       if (userError) {
         console.error("USER ERROR:", userError);
@@ -71,12 +67,6 @@ export default function SupplierProfilePage() {
         .eq("id", user.id)
         .single();
 
-      console.log(
-		"PROFILE DATA FULL:",
-  		JSON.stringify(data, null, 2)
-		);
-      console.log("PROFILE ERROR:", error);
-      console.log("==================================");
 
       if (error) {
         console.error("GET PROFILE ERROR:", error);

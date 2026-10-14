@@ -7,6 +7,7 @@ import { AlertTriangle, BadgeCheck, Bell, Building2, Check, ChevronRight, FileCh
 import { supabase } from "@/lib/supabase";
 import { documentExpiryState } from "@/lib/supplier-verification";
 import VerificationStatusBadge from "@/components/supplier/verification/VerificationStatusBadge";
+import RequiredMark from "@/components/ui/RequiredMark";
 
 const categories=["Airframes","Engines","Avionics","Components","Landing Gear","Consumables","Electrical","Safety Equipment"];
 const procurement=["Price","Lead time","Certification","Traceability","Supplier reputation","OEM documentation","Location","Availability","Warranty"];
@@ -37,7 +38,7 @@ export default function AccountSection({section}:{section:string}){
 
 function Header({eyebrow,title,description,action}:{eyebrow:string;title:string;description:string;action?:React.ReactNode}){return <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="font-mono text-[10px] uppercase tracking-[0.18em] text-aviation-accent">{eyebrow}</p><h2 className="mt-1 text-2xl font-bold text-aviation-dark sm:text-3xl">{title}</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-aviation-muted">{description}</p></div>{action}</div>}
 function Card({children,className=""}:{children:React.ReactNode;className?:string}){return <section className={`rounded-[var(--aviation-radius-xl)] border border-aviation-border bg-white p-5 shadow-sm sm:p-6 ${className}`}>{children}</section>}
-function Field({label,required=false,children,help}:{label:string;required?:boolean;children:React.ReactNode;help?:string}){return <label className="block text-sm font-semibold text-aviation-dark"><span>{label} {required&&<span className="text-red-600">*</span>}</span>{help&&<span className="mt-1 block text-xs font-normal leading-5 text-aviation-muted">{help}</span>}<div className="mt-2">{children}</div></label>}
+function Field({label,required=false,children,help}:{label:string;required?:boolean;children:React.ReactNode;help?:string}){return <label className="block text-sm font-semibold text-aviation-dark"><span>{label} {required&&<RequiredMark />}</span>{help&&<span className="mt-1 block text-xs font-normal leading-5 text-aviation-muted">{help}</span>}<div className="mt-2">{children}</div></label>}
 function Input(props:React.InputHTMLAttributes<HTMLInputElement>){return <input {...props} className={`min-h-11 w-full rounded-xl border border-aviation-border bg-white px-3 text-sm text-aviation-dark outline-none transition focus:border-aviation-primary focus:ring-2 focus:ring-aviation-primary/15 disabled:bg-aviation-light ${props.className||""}`}/>}
 function Select(props:React.SelectHTMLAttributes<HTMLSelectElement>){return <select {...props} className="min-h-11 w-full rounded-xl border border-aviation-border bg-white px-3 text-sm text-aviation-dark outline-none focus:border-aviation-primary focus:ring-2 focus:ring-aviation-primary/15"/>}
 function Textarea(props:React.TextareaHTMLAttributes<HTMLTextAreaElement>){return <textarea {...props} className="min-h-28 w-full rounded-xl border border-aviation-border bg-white px-3 py-3 text-sm text-aviation-dark outline-none focus:border-aviation-primary focus:ring-2 focus:ring-aviation-primary/15"/>}

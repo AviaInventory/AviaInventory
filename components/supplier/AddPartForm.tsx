@@ -13,6 +13,7 @@ import BuyerListingPreview from "./BuyerListingPreview";
 import ListingCertificationDocuments from "./ListingCertificationDocuments";
 import type { CertificationDocumentDraft, ListingDocumentAsset, ListingImageAsset, PartFormData } from "./types";
 import ListingAssetManager from "./ListingAssetManager";
+import RequiredMark from "@/components/ui/RequiredMark";
 
 interface AddPartFormProps {
   initialData?: PartFormData;
@@ -117,7 +118,7 @@ function Field({
     <div>
       <div className="mb-2 flex items-center gap-2">
         <label htmlFor={id} className="text-sm font-semibold text-aviation-dark">
-          {label} {required && <span aria-hidden="true" className="text-aviation-error">*</span>}
+          {label} {required && <RequiredMark />}
         </label>
         {recommended && (
           <span className="rounded-full bg-aviation-warning-soft px-2 py-0.5 text-[11px] font-semibold text-aviation-warning">

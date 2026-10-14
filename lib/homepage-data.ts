@@ -67,7 +67,7 @@ export async function getHomepageSupplierSummaries(limit = 3): Promise<SupplierS
       verification_status?: string | null;
     }, index: number) => ({
       id: row.id,
-      company_name: row.company_name || "Verified Supplier",
+      company_name: row.company_name || "Supplier",
       country: row.country,
       city: row.city,
       listings: Number(row.listing_count ?? 0),
@@ -92,15 +92,22 @@ export interface SupplierReview {
   reviewer_name: string;
 }
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function getPublicSupplierProfile(supplierId: string) {
+  // Anything that isn't a UUID would make Postgres raise 22P02 instead of "not found".
+  if (!UUID_PATTERN.test(supplierId)) return null;
+
   const supabase = getPublicSupabase();
 
-  const [{ data: supplier, error: supplierError }, { data: reviews, error: reviewError }] = await Promise.all([
+  // Country lives on profiles, not suppliers (selecting suppliers.country caused a 500).
+  const [{ data: supplier, error: supplierError }, { data: owner }, { data: reviews, error: reviewError }] = await Promise.all([
     supabase
       .from("suppliers")
-      .select("id,company_name,business_type,website,address,city,country,supplier_categories,verification_status,verification_completion")
+      .select("id,company_name,business_type,website,address,city,supplier_categories,verification_status,verification_completion")
       .eq("id", supplierId)
       .maybeSingle(),
+    supabase.from("profiles").select("country").eq("id", supplierId).maybeSingle(),
     supabase
       .from("supplier_reviews")
       .select("id,rating,title,comment,created_at,reviewer_id")
@@ -139,7 +146,7 @@ export async function getPublicSupplierProfile(supplierId: string) {
     .eq("status", "Published");
 
   return {
-    supplier,
+    supplier: { ...supplier, country: (owner?.country as string | null) ?? null },
     reviews: normalizedReviews,
     rating,
     reviewCount: normalizedReviews.length,

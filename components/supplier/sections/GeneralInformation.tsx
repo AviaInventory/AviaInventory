@@ -2,6 +2,7 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import type { PartFormData } from "../types";
+import RequiredMark from "@/components/ui/RequiredMark";
 
 interface Props {
   formData: PartFormData;
@@ -34,7 +35,7 @@ export default function GeneralInformation({
         <div>
 
           <label className="mb-2 block font-medium">
-            Part Number *
+            Part Number <RequiredMark />
           </label>
 
           <input
@@ -80,7 +81,7 @@ export default function GeneralInformation({
         <div>
 
           <label className="mb-2 block font-medium">
-            Manufacturer *
+            Manufacturer <RequiredMark />
           </label>
 
           <input
@@ -128,7 +129,7 @@ export default function GeneralInformation({
       <div className="mt-6">
 
         <label className="mb-2 block font-medium">
-          Description *
+          Description <RequiredMark />
         </label>
 
         <textarea

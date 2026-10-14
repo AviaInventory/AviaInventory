@@ -22,6 +22,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       className="h-full antialiased"
     >
       <body className="min-h-screen bg-aviation-light flex flex-col">
