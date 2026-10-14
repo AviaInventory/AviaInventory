@@ -8,6 +8,10 @@ import CallToAction from "@/components/home/CallToAction";
 import Footer from "@/components/layout/Footer";
 import { getHomepageCategoryCounts, getHomepageSupplierSummaries } from "@/lib/homepage-data";
 
+// Rebuild at most every 60 s (like /marketplace and /suppliers). Without this the page was
+// generated once at deploy time and new suppliers/listings never appeared on it.
+export const revalidate = 60;
+
 export default async function Home() {
   const [categoryCounts, supplierSummaries] = await Promise.all([
     getHomepageCategoryCounts(),
