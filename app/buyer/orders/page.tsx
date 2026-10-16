@@ -209,333 +209,57 @@ export default function BuyerOrdersPage() {
       )}
 
       {/* ====================================================
-          DESKTOP ORDERS TABLE
+          ORDERS LIST
+          One card per order that reflows by available width
+          (any zoom level or screen) instead of a wide table.
       ==================================================== */}
 
       {orders.length > 0 && (
-
-        <div className="overflow-hidden rounded-2xl bg-white shadow">
-
-          <div className="hidden overflow-x-auto md:block">
-
-            <div className="aviation-table-wrap"><table className="min-w-full">
-
-              <thead className="bg-aviation-light">
-
-                <tr>
-
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-aviation-dark">
-                    Order
-                  </th>
-
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-aviation-dark">
-                    Part
-                  </th>
-
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-aviation-dark">
-                    Supplier
-                  </th>
-
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-aviation-dark">
-                    Quantity
-                  </th>
-
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-aviation-dark">
-                    Total
-                  </th>
-
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-aviation-dark">
-                    Status
-                  </th>
-
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-aviation-dark">
-                    Date
-                  </th>
-
-                  <th className="px-6 py-4 text-right text-sm font-semibold text-aviation-dark">
-                    Action
-                  </th>
-
-                </tr>
-
-              </thead>
-
-              <tbody>
-
-                {orders.map((order) => (
-
-                  <tr
-                    key={order.id}
-                    className="border-b last:border-b-0 transition hover:bg-aviation-light"
-                  >
-
-                    {/* ORDER */}
-
-                    <td className="whitespace-nowrap px-6 py-5">
-
-                      <p className="font-semibold text-aviation-primary">
-                        #
-                        {order.id
-                          .slice(0, 8)
-                          .toUpperCase()}
-                      </p>
-
-                      <p className="mt-1 text-xs text-aviation-muted">
-                        {formatOrderDate(
-                          order.created_at
-                        )}
-                      </p>
-
-                    </td>
-
-                    {/* PART */}
-
-                    <td className="px-6 py-5">
-
-                      <div className="flex items-start gap-3">
-
-                        <div className="mt-0.5 rounded-lg bg-aviation-light p-2">
-                          <Package
-                            size={17}
-                            className="text-aviation-muted"
-                          />
-                        </div>
-
-                        <div>
-
-                          <p className="font-semibold text-aviation-dark">
-                            {order.part
-                              ?.part_number ??
-                              "Aviation Part"}
-                          </p>
-
-                          {order.part
-                            ?.description && (
-                            <p className="mt-1 max-w-xs truncate text-sm text-aviation-muted">
-                              {
-                                order.part
-                                  .description
-                              }
-                            </p>
-                          )}
-
-                        </div>
-
-                      </div>
-
-                    </td>
-
-                    {/* SUPPLIER */}
-
-                    <td className="px-6 py-5">
-
-                      <div className="flex items-center gap-2">
-
-                        <Building2
-                          size={17}
-                          className="text-aviation-muted"
-                        />
-
-                        <span className="font-medium text-aviation-dark">
-                          {order.supplier
-                            ?.company_name ??
-                            "Supplier"}
-                        </span>
-
-                      </div>
-
-                    </td>
-
-                    {/* QUANTITY */}
-
-                    <td className="whitespace-nowrap px-6 py-5 text-aviation-dark">
-                      {order.quantity.toLocaleString()}
-                    </td>
-
-                    {/* TOTAL */}
-
-                    <td className="whitespace-nowrap px-6 py-5 font-semibold text-aviation-primary">
-
-                      {formatOrderAmount(
-                        order.total_amount,
-                        order.currency
-                      )}
-
-                    </td>
-
-                    {/* STATUS */}
-
-                    <td className="px-6 py-5">
-
-                      <StatusBadge
-                        status={
-                          order.status
-                        }
-                      />
-
-                    </td>
-
-                    {/* DATE */}
-
-                    <td className="whitespace-nowrap px-6 py-5 text-sm text-aviation-muted">
-
-                      {formatOrderDate(
-                        order.created_at
-                      )}
-
-                    </td>
-
-                    {/* ACTION */}
-
-                    <td className="px-6 py-5 text-right">
-
-                      <Link
-                        href={`/buyer/orders/${order.id}`}
-                        className="inline-flex items-center gap-1.5 font-semibold text-aviation-primary hover:underline"
-                      >
-
-                        <Eye size={16} />
-
-                        View
-
-                      </Link>
-
-                    </td>
-
-                  </tr>
-
-                ))}
-
-              </tbody>
-
-            </table></div>
-
-          </div>
-
-          {/* ==================================================
-              MOBILE ORDERS
-          ================================================== */}
-
-          <div className="divide-y md:hidden">
-
-            {orders.map((order) => (
-
-              <div
-                key={order.id}
-                className="p-5"
+        <ul className="space-y-3">
+          {orders.map((order) => (
+            <li key={order.id}>
+              <Link
+                href={`/buyer/orders/${order.id}`}
+                className="group block rounded-2xl border border-aviation-border bg-white p-4 shadow-sm transition hover:border-aviation-primary/40 hover:shadow-md sm:p-5"
               >
-
-                {/* HEADER */}
-
-                <div className="flex items-start justify-between gap-4">
-
-                  <div>
-
+                <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold text-aviation-primary">
-                      Order #
-                      {order.id
-                        .slice(0, 8)
-                        .toUpperCase()}
+                      Order #{order.id.slice(0, 8).toUpperCase()}
+                      <span className="ml-2 font-normal text-aviation-muted">· {formatOrderDate(order.created_at)}</span>
                     </p>
-
-                    <h2 className="mt-1 font-bold text-aviation-dark">
-                      {order.part
-                        ?.part_number ??
-                        "Aviation Part"}
+                    <h2 className="mt-1 flex items-center gap-2 text-lg font-bold text-aviation-dark">
+                      <Package size={18} className="shrink-0 text-aviation-muted" aria-hidden="true" />
+                      <span className="aviation-break-anywhere">{order.part?.part_number ?? "Aviation part"}</span>
                     </h2>
-
+                    {order.part?.description && (
+                      <p className="mt-1 line-clamp-1 text-sm text-aviation-muted">{order.part.description}</p>
+                    )}
                   </div>
-
-                  <StatusBadge
-                    status={
-                      order.status
-                    }
-                  />
-
+                  <StatusBadge status={order.status} />
                 </div>
 
-                {/* DETAILS */}
+                <dl className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
+                  <OrderFact label="Supplier">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Building2 size={15} className="shrink-0 text-aviation-muted" aria-hidden="true" />
+                      {order.supplier?.company_name ?? "Supplier"}
+                    </span>
+                  </OrderFact>
+                  <OrderFact label="Quantity">{order.quantity.toLocaleString()}</OrderFact>
+                  <OrderFact label="Unit price">{formatOrderAmount(order.unit_price, order.currency)}</OrderFact>
+                  <OrderFact label="Total">
+                    <span className="text-aviation-primary">{formatOrderAmount(order.total_amount, order.currency)}</span>
+                  </OrderFact>
+                </dl>
 
-                <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-
-                  <MobileDetail
-                    label="Supplier"
-                    value={
-                      order.supplier
-                        ?.company_name ??
-                      "Supplier"
-                    }
-                  />
-
-                  <MobileDetail
-                    label="Quantity"
-                    value={order.quantity.toLocaleString()}
-                  />
-
-                  <MobileDetail
-                    label="Unit Price"
-                    value={formatOrderAmount(
-                      order.unit_price,
-                      order.currency
-                    )}
-                  />
-
-                  <MobileDetail
-                    label="Total"
-                    value={formatOrderAmount(
-                      order.total_amount,
-                      order.currency
-                    )}
-                  />
-
-                  <MobileDetail
-                    label="Created"
-                    value={formatOrderDate(
-                      order.created_at
-                    )}
-                  />
-
-                </div>
-
-                {/* DESCRIPTION */}
-
-                {order.part
-                  ?.description && (
-
-                  <p className="mt-4 line-clamp-2 text-sm leading-6 text-aviation-muted">
-                    {
-                      order.part
-                        .description
-                    }
-                  </p>
-
-                )}
-
-                {/* VIEW BUTTON */}
-
-                <Link
-                  href={`/buyer/orders/${order.id}`}
-                  className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-aviation-primary px-4 py-3 font-semibold text-white transition hover:bg-aviation-primary"
-                >
-
-                  <Eye size={17} />
-
-                  View Order
-
-                  <ChevronRight
-                    size={17}
-                  />
-
-                </Link>
-
-              </div>
-
-            ))}
-
-          </div>
-
-        </div>
-
+                <p className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-aviation-primary group-hover:underline">
+                  <Eye size={16} aria-hidden="true" /> View order <ChevronRight size={16} aria-hidden="true" />
+                </p>
+              </Link>
+            </li>
+          ))}
+        </ul>
       )}
 
     </div>
@@ -543,27 +267,24 @@ export default function BuyerOrdersPage() {
 }
 
 /* ==========================================================
-   MOBILE DETAIL
+   ORDER FACT
 ========================================================== */
 
-function MobileDetail({
+function OrderFact({
   label,
-  value,
+  children,
 }: {
   label: string;
-  value: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border bg-aviation-light p-3">
-
-      <p className="text-xs font-medium uppercase tracking-wide text-aviation-muted">
+    <div className="min-w-0 rounded-xl bg-aviation-light px-3 py-2.5">
+      <dt className="text-xs font-medium uppercase tracking-wide text-aviation-muted">
         {label}
-      </p>
-
-      <p className="mt-1 font-semibold text-aviation-dark">
-        {value}
-      </p>
-
+      </dt>
+      <dd className="mt-1 font-semibold text-aviation-dark">
+        {children}
+      </dd>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Menu, Search, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import NotificationBell from "./NotificationBell";
 import UserMenu from "./UserMenu";
 import { useSessionProfile } from "./useSessionProfile";
 
@@ -68,7 +69,10 @@ export default function Navbar() {
             <Search size={20} strokeWidth={2} />
           </Link>
           {profile ? (
-            <UserMenu profile={profile} onNavigate={() => setMobileOpen(false)} />
+            <>
+              <NotificationBell />
+              <UserMenu profile={profile} onNavigate={() => setMobileOpen(false)} />
+            </>
           ) : profile === null ? (
             <>
               <Link

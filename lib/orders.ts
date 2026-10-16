@@ -1,6 +1,7 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
+import { parseRFQMessage } from "@/lib/rfqs";
 
 /* ==========================================================
    TYPES
@@ -84,23 +85,25 @@ interface SupabaseOrderRow {
   buyer_message: string | null;
   created_at: string;
   updated_at: string;
-  part: {
-    id: string;
-    part_number: string;
-    description: string | null;
-    manufacturer: string | null;
-  }[] | null;
-  supplier: {
-    id: string;
-    company_name: string | null;
-    business_type?: string | null;
-    website?: string | null;
-    country?: string | null;
-    city?: string | null;
-  }[] | null;
+  // PostgREST returns many-to-one embeds as a single object (older typings used arrays).
+  part: OneOrMany<NonNullable<Order["part"]>>;
+  supplier: OneOrMany<NonNullable<Order["supplier"]>>;
+  rfq: OneOrMany<{ message: string | null }>;
+}
+
+type OneOrMany<T> = T | T[] | null;
+
+function one<T>(value: OneOrMany<T> | undefined): T | null {
+  return Array.isArray(value) ? value[0] ?? null : value ?? null;
 }
 
 function normalizeOrder(row: SupabaseOrderRow): Order {
+  // Orders created from a free-text RFQ have no catalogue part; use the RFQ's part details.
+  const details = parseRFQMessage(one(row.rfq)?.message);
+  const part = one(row.part) ?? (details.part_number
+    ? { id: "", part_number: details.part_number, description: details.description || null, manufacturer: null }
+    : null);
+
   return {
     id: row.id,
     rfq_id: row.rfq_id,
@@ -119,8 +122,8 @@ function normalizeOrder(row: SupabaseOrderRow): Order {
     buyer_message: row.buyer_message,
     created_at: row.created_at,
     updated_at: row.updated_at,
-    part: row.part?.[0] ?? null,
-    supplier: row.supplier?.[0] ?? null,
+    part,
+    supplier: one(row.supplier),
   };
 }
 
@@ -152,6 +155,10 @@ const ORDER_SELECT = `
     part_number,
     description,
     manufacturer
+  ),
+
+  rfq:rfqs (
+    message
   ),
 
   supplier:suppliers (

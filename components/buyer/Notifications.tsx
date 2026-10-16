@@ -10,6 +10,7 @@ interface Notification {
   id: string;
   title: string;
   message: string | null;
+  link: string | null;
   is_read: boolean;
   created_at: string;
 }
@@ -59,6 +60,7 @@ export default function Notifications() {
             id,
             title,
             message,
+            link,
             is_read,
             created_at
           `)
@@ -100,6 +102,11 @@ export default function Notifications() {
       mounted = false;
     };
   }, []);
+
+  function markRead(id: string) {
+    // Fire-and-forget: navigation proceeds while the row is marked read.
+    void supabase.from("notifications").update({ is_read: true }).eq("id", id);
+  }
 
   /* ==========================================================
      FORMAT DATE
@@ -149,10 +156,10 @@ export default function Notifications() {
         </div>
 
         <Link
-          href="/buyer/dashboard"
+          href="/account/notifications"
           className="text-sm font-semibold text-aviation-primary hover:underline"
         >
-          View All
+          Settings
         </Link>
 
       </div>
@@ -217,9 +224,11 @@ export default function Notifications() {
 
             {notifications.map(
               (notification) => (
-                <div
+                <Link
                   key={notification.id}
-                  className={`py-4 ${
+                  href={notification.link ?? "/buyer/dashboard"}
+                  onClick={() => markRead(notification.id)}
+                  className={`block rounded-lg px-2 py-4 hover:bg-aviation-light ${
                     !notification.is_read
                       ? "bg-aviation-success-soft/40"
                       : ""
@@ -268,7 +277,7 @@ export default function Notifications() {
 
                   </div>
 
-                </div>
+                </Link>
               )
             )}
 

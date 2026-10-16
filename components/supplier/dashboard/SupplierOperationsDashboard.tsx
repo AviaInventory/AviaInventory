@@ -72,13 +72,14 @@ export default function SupplierOperationsDashboard() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const [partsRes, rfqs, quotes, orders, unreadRes, supplierRes, summaryRes, docsRes, shipmentsRes, invoicesRes, promotionsRes] = await Promise.all([
+        const [partsRes, rfqs, quotes, orders, unreadRes, supplierRes, privateRes, summaryRes, docsRes, shipmentsRes, invoicesRes, promotionsRes] = await Promise.all([
           supabase.from("parts").select("id,part_number,description,status,quantity,unit_price,price_type,trace_certificate,category,created_at").eq("supplier_id", user.id).order("created_at", { ascending: false }),
           getSupplierRFQs(),
           getSupplierQuotes(),
           getSupplierOrders(),
           supabase.from("messages").select("id", { count: "exact", head: true }).eq("recipient_id", user.id).eq("is_read", false),
-          supabase.from("suppliers").select("verification_status,verification_completion,verification_missing_information").eq("id", user.id).maybeSingle(),
+          supabase.from("suppliers").select("verification_status,verification_completion").eq("id", user.id).maybeSingle(),
+          supabase.rpc("get_my_supplier_private"),
           supabase.rpc("get_supplier_verification_summary", { p_supplier_id: user.id }),
           supabase.from("supplier_verification_documents").select("id,document_name,expiry_date,verification_status").eq("supplier_id", user.id).neq("verification_status", "Replaced").not("expiry_date", "is", null).order("expiry_date", { ascending: true }),
           supabase.from("supplier_shipments").select("id", { count: "exact", head: true }).eq("supplier_id", user.id),
@@ -101,7 +102,7 @@ export default function SupplierOperationsDashboard() {
             completion: Number(supplierRes.data.verification_completion ?? 0),
             expiring: Number(summary?.expiring_document_count ?? expiringDocs.filter(d => documentExpiryState(d.expiry_date).key !== "expired").length),
             expired: Number(summary?.expired_document_count ?? expiringDocs.filter(d => documentExpiryState(d.expiry_date).key === "expired").length),
-            missing: supplierRes.data.verification_missing_information ?? [],
+            missing: (privateRes.data?.[0]?.verification_missing_information as string[] | undefined) ?? [],
           } : null,
           expiringDocs,
           shipments: shipmentsRes.count ?? 0,

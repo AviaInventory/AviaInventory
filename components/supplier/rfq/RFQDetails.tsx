@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import ScrollToHash from "@/components/common/ScrollToHash";
 
 import {
   getRFQById,
@@ -93,6 +94,7 @@ export default function RFQDetails({
 
   return (
     <div className="space-y-6">
+      <ScrollToHash />
 
       {/* ======================================================
          HEADER
@@ -344,7 +346,7 @@ export default function RFQDetails({
          MESSAGE BUYER
       ====================================================== */}
 
-      <section className="rounded-2xl bg-white p-8 shadow">
+      <section id="buyer-conversation" className="scroll-mt-28 rounded-2xl bg-white p-8 shadow">
 
         <RFQMessageThread
           rfqId={rfq.id}

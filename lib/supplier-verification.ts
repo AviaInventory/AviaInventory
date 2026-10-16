@@ -42,13 +42,16 @@ export interface SupplierVerificationSummary {
   expired_document_count: number;
 }
 
+/** The signed-in supplier's own verification workspace (supplierId must be the current user). */
 export async function getSupplierVerification(supplierId: string) {
-  const [{ data: supplier, error: supplierError }, { data: documents, error: documentsError }, { data: summary, error: summaryError }, { data: profile, error: profileError }] = await Promise.all([
+  const [{ data: publicFields, error: supplierError }, { data: privateRows, error: privateError }, { data: documents, error: documentsError }, { data: summary, error: summaryError }, { data: profile, error: profileError }] = await Promise.all([
     supabase
       .from("suppliers")
-      .select("id,company_name,business_type,website,address,city,verification_status,verification_completion,verification_comments,verification_missing_information,verification_submitted_at,verification_reviewed_at")
+      .select("id,company_name,business_type,website,city,verification_status,verification_completion")
       .eq("id", supplierId)
       .single(),
+    // Address, registration number and reviewer comments are readable only by their owner.
+    supabase.rpc("get_my_supplier_private"),
     supabase
       .from("supplier_verification_documents")
       .select("*")
@@ -61,9 +64,20 @@ export async function getSupplierVerification(supplierId: string) {
   ]);
 
   if (supplierError) throw supplierError;
+  if (privateError) throw privateError;
   if (documentsError) throw documentsError;
   if (summaryError) throw summaryError;
   if (profileError) throw profileError;
+
+  const privateFields = (privateRows as Array<Record<string, unknown>> | null)?.[0] ?? {};
+  const supplier = {
+    ...publicFields,
+    address: (privateFields.address as string | null) ?? null,
+    verification_comments: (privateFields.verification_comments as string | null) ?? null,
+    verification_missing_information: (privateFields.verification_missing_information as string[] | null) ?? [],
+    verification_submitted_at: (privateFields.verification_submitted_at as string | null) ?? null,
+    verification_reviewed_at: (privateFields.verification_reviewed_at as string | null) ?? null,
+  };
 
   return {
     supplier,

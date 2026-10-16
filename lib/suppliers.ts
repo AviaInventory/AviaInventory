@@ -38,8 +38,6 @@ export async function getApprovedSuppliers(): Promise<Supplier[]> {
       company_name,
       business_type,
       website,
-      registration_number,
-      address,
       city,
       supplier_categories,
       verification_status,
@@ -97,8 +95,8 @@ export async function getApprovedSuppliers(): Promise<Supplier[]> {
       logo_url: null,
       description: null,
       business_type: supplier.business_type ?? null,
-      registration_number:
-        supplier.registration_number ?? null,
+      // Private to the supplier (see migration 20261016000200).
+      registration_number: null,
       verification_status: supplier.verification_status ?? "Draft",
       verification_completion: Number(supplier.verification_completion ?? 0),
     };
@@ -122,8 +120,6 @@ export async function getSupplierById(
       company_name,
       business_type,
       website,
-      registration_number,
-      address,
       city,
       supplier_categories,
       verification_status,
@@ -166,8 +162,8 @@ export async function getSupplierById(
       logo_url: null,
       description: null,
       business_type: supplier.business_type ?? null,
-      registration_number:
-        supplier.registration_number ?? null,
+      // Private to the supplier (see migration 20261016000200).
+      registration_number: null,
       verification_status: supplier.verification_status ?? "Draft",
       verification_completion: Number(supplier.verification_completion ?? 0),
     },

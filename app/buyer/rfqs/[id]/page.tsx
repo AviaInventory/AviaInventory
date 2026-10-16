@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import ScrollToHash from "@/components/common/ScrollToHash";
 import { useParams, useRouter } from "next/navigation";
 
 import {
@@ -188,6 +189,7 @@ export default function BuyerRFQDetailsPage() {
 
   return (
     <div className="space-y-8">
+      <ScrollToHash />
 
       {/* =====================================================
           HEADER
@@ -262,7 +264,7 @@ export default function BuyerRFQDetailsPage() {
           SUPPLIER QUOTATIONS
       ====================================================== */}
 
-      <section className="rounded-2xl bg-white p-8 shadow">
+      <section id="quotations" className="scroll-mt-28 rounded-2xl bg-white p-8 shadow">
 
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
 

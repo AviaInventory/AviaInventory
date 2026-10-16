@@ -104,7 +104,7 @@ export async function getPublicSupplierProfile(supplierId: string) {
   const [{ data: supplier, error: supplierError }, { data: owner }, { data: reviews, error: reviewError }] = await Promise.all([
     supabase
       .from("suppliers")
-      .select("id,company_name,business_type,website,address,city,supplier_categories,verification_status,verification_completion")
+      .select("id,company_name,business_type,website,city,supplier_categories,verification_status,verification_completion")
       .eq("id", supplierId)
       .maybeSingle(),
     supabase.from("profiles").select("country").eq("id", supplierId).maybeSingle(),
