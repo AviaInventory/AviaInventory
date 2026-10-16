@@ -97,7 +97,12 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  // True once we know whether to save: there was no draft, or the user chose continue/start new.
   const [draftLoaded, setDraftLoaded] = useState(false);
+  // An unfinished registration saved in this browser, offered (not applied) on arrival.
+  const [savedDraft, setSavedDraft] = useState<(Partial<FormValues> & { step?: number; savedAt?: string }) | null>(null);
+  // Set after a successful registration so the auto-save can't write the finished account back.
+  const completedRef = useRef(false);
   const [confirmationSentTo, setConfirmationSentTo] = useState<string | null>(null);
   const formTopRef = useRef<HTMLDivElement>(null);
   // Country chosen before the current one, so its dial code can be swapped out of the phone number.
@@ -126,28 +131,49 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
   const totalSteps = steps.length;
 
   useEffect(() => {
+    let draft: typeof savedDraft = null;
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved) as Partial<FormValues> & { step?: number };
-        const savedAccountType = parsed.accountType as string | undefined;
-        const normalizedAccountType = savedAccountType === "supplier" ? "hybrid" : parsed.accountType;
-        form.reset({ ...defaults, ...parsed, accountType: normalizedAccountType, password: "", confirmPassword: "" });
-        setStep(Math.min(parsed.step || 1, totalSteps));
-      }
+      if (saved) draft = JSON.parse(saved);
     } catch { /* ignore corrupt local drafts */ }
-    // An explicit link such as "Become a Supplier" (/register?type=supplier) wins over a saved draft.
+    // An explicit link such as "Become a Supplier" (/register?type=supplier) sets the account type.
     if (initialAccountType) form.setValue("accountType", initialAccountType);
-    previousCountryRef.current = form.getValues("country");
-    setDraftLoaded(true);
-    // Runs once on mount; totalSteps changing with the account type must not reload the draft.
+    // Only offer drafts that contain something worth resuming.
+    if (draft && (draft.email || draft.companyName || draft.fullName)) {
+      setSavedDraft(draft);
+    } else {
+      setDraftLoaded(true);
+    }
+    // Runs once on mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function resumeDraft() {
+    if (!savedDraft) return;
+    const savedAccountType = savedDraft.accountType as string | undefined;
+    const normalizedAccountType = savedAccountType === "supplier" ? "hybrid" : savedDraft.accountType;
+    form.reset({ ...defaults, ...savedDraft, accountType: normalizedAccountType ?? defaults.accountType, password: "", confirmPassword: "" } as FormValues);
+    previousCountryRef.current = savedDraft.country ?? "";
+    setStep(Math.max(1, savedDraft.step || 1));
+    setSavedDraft(null);
+    setDraftLoaded(true);
+  }
+
+  function startNewRegistration() {
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* storage unavailable */ }
+    form.reset({ ...defaults, accountType: initialAccountType ?? defaults.accountType } as FormValues);
+    previousCountryRef.current = "";
+    setStep(1);
+    setSavedDraft(null);
+    setDraftLoaded(true);
+  }
+
   useEffect(() => {
-    if (!draftLoaded) return;
+    if (!draftLoaded || completedRef.current) return;
     const { password: _password, confirmPassword: _confirmPassword, ...safeDraft } = data;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...safeDraft, step, savedAt: new Date().toISOString() }));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...safeDraft, step, savedAt: new Date().toISOString() }));
+    } catch { /* storage unavailable (private mode): drafts just aren't saved */ }
   }, [data, step, draftLoaded]);
 
   const profileCompletion = useMemo(() => {
@@ -175,7 +201,7 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
       company: ["companyName", "businessType"],
       buying: [], selling: [], compliance: [], logistics: [], security: ["password", "confirmPassword", "agreeTerms"],
     };
-    const fields = fieldsByStep[steps[step - 1].key] || [];
+    const fields = fieldsByStep[steps[Math.min(step, totalSteps) - 1].key] || [];
     const valid = fields.length ? await form.trigger(fields) : true;
     if (!valid) return;
     if (step < totalSteps) changeStep(step + 1);
@@ -189,7 +215,8 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
       setLoading(false);
       return;
     }
-    localStorage.removeItem(STORAGE_KEY);
+    completedRef.current = true;
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* storage unavailable */ }
     if (result.needsEmailConfirmation) {
       setConfirmationSentTo(values.email.trim());
       setLoading(false);
@@ -210,7 +237,7 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
   const setArray = (name: keyof FormValues) => (next: string[]) => form.setValue(name, next as never, { shouldDirty: true, shouldTouch: true });
 
   const renderStep = () => {
-    const key = steps[step - 1].key;
+    const key = steps[Math.min(step, totalSteps) - 1].key;
     if (key === "identity") return <>
       <div className="mb-7"><p className="text-xs font-bold uppercase tracking-[0.16em] text-aviation-primary">Start with the essentials</p><h2 className="mt-2 text-2xl font-bold text-aviation-primary">Your aviation marketplace account</h2><p className="mt-2 text-sm leading-6 text-aviation-muted">Only the information needed to create your account is required now. You can build the rest of your profile later.</p></div>
       <div className="grid gap-5 md:grid-cols-2"><Field label="Full name" name="fullName" register={form.register} required error={form.formState.errors.fullName?.message} placeholder="Jane Smith" /><Field label="Business email" name="email" register={form.register} required error={form.formState.errors.email?.message} placeholder="jane@company.com" type="email" /><div><label htmlFor="country" className="mb-2 block text-sm font-semibold text-aviation-dark">Country<RequiredMark /></label><select id="country" {...form.register("country", { onChange: (event) => { const next = findCountryByName(event.target.value); if (next) form.setValue("phone", phoneWithDialCode(form.getValues("phone"), findCountryByName(previousCountryRef.current), next)); previousCountryRef.current = event.target.value; } })} aria-invalid={Boolean(form.formState.errors.country)} className={`min-h-11 w-full rounded-xl border bg-white px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-aviation-primary/20 ${form.formState.errors.country ? "border-red-500" : "border-aviation-border focus:border-aviation-primary"}`}><option value="">Select your country</option>{COUNTRIES.map((country) => <option key={country.code} value={country.name}>{country.name} ({country.dialCode})</option>)}</select>{form.formState.errors.country?.message && <p className="mt-1 text-xs font-medium text-red-600">{form.formState.errors.country.message}</p>}</div><Field label="Phone number" name="phone" register={form.register} required error={form.formState.errors.phone?.message} placeholder="Select your country first" type="tel" /></div>
@@ -229,6 +256,22 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
       <section className="min-w-0">
         <div className="mb-6"><div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-aviation-primary">Create your account</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-aviation-primary sm:text-4xl">Join AviaInventory</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-aviation-muted">A professional workspace for sourcing and supplying aircraft parts.</p></div><div className="rounded-xl border border-aviation-border bg-white px-4 py-3 text-sm"><span className="font-semibold">{profileCompletion}% profile complete</span><span className="ml-2 text-aviation-muted">· draft saved automatically</span></div></div></div>
         <div className="mb-6 rounded-2xl border border-aviation-border bg-white p-4 shadow-sm sm:p-6"><p className="mb-1 text-sm font-bold text-aviation-dark">Choose your account</p><p className="mb-3 text-xs text-aviation-muted">You can upgrade from Buyer to Buyer & Supplier at any time without creating another company account.</p><div className="grid gap-3 md:grid-cols-2">{accountCards.map((card) => { const selected = accountType === card.type; return <button key={card.type} type="button" onClick={() => { form.setValue("accountType", card.type, { shouldDirty: true }); setStep(1); }} disabled={loading} className={`h-full min-h-11 rounded-xl border p-4 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-aviation-primary/30 ${selected ? "border-aviation-primary bg-aviation-success-soft" : "border-aviation-border hover:border-aviation-primary/50"}`}><span className="flex items-start justify-between gap-3"><span><span className="block text-sm font-bold text-aviation-dark">{card.title}</span><span className="mt-1 block text-xs leading-5 text-aviation-muted">{card.text}</span></span><Check size={19} aria-hidden="true" className={`shrink-0 text-aviation-primary ${selected ? "" : "invisible"}`}/></span></button>; })}</div></div>
+        {savedDraft && (
+          <div role="status" className="mb-6 flex flex-col gap-4 rounded-2xl border border-aviation-primary/30 bg-aviation-success-soft p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+            <div>
+              <p className="font-semibold text-aviation-dark">
+                You have an unfinished registration{savedDraft.companyName ? ` for ${savedDraft.companyName}` : savedDraft.email ? ` for ${savedDraft.email}` : ""}.
+              </p>
+              <p className="mt-0.5 text-sm text-[var(--aviation-muted)]">
+                {savedDraft.savedAt ? `Saved ${new Date(savedDraft.savedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} on this device. ` : ""}Continue where you left off, or start a new registration.
+              </p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <button type="button" onClick={resumeDraft} className="min-h-11 rounded-xl bg-aviation-primary px-4 py-2 text-sm font-semibold text-white">Continue</button>
+              <button type="button" onClick={startNewRegistration} className="min-h-11 rounded-xl border border-aviation-border bg-white px-4 py-2 text-sm font-semibold text-aviation-dark">Start new</button>
+            </div>
+          </div>
+        )}
         <div ref={formTopRef} className="mb-6 scroll-mt-28 rounded-2xl border border-aviation-border bg-white p-4 shadow-sm sm:p-6"><StepIndicator currentStep={step} totalSteps={totalSteps} labels={steps.map((s) => s.label)} /></div>
         <form onSubmit={submit} noValidate><div className="rounded-2xl border border-aviation-border bg-white p-5 shadow-sm sm:p-8">{renderStep()}</div><div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between"><button type="button" disabled={step === 1 || loading} onClick={() => changeStep(Math.max(1, step - 1))} className="min-h-11 rounded-xl border border-aviation-border bg-white px-5 py-3 text-sm font-bold text-aviation-dark disabled:cursor-not-allowed disabled:opacity-40"><ChevronLeft className="mr-1 inline" size={18}/>Back</button><div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center"><button type="button" onClick={() => { toast.success("Your onboarding draft is saved. You can continue later from this device."); router.push("/"); }} className="min-h-11 rounded-xl px-5 py-3 text-sm font-bold text-aviation-primary hover:bg-aviation-light"><Save className="mr-2 inline" size={17}/>Save & continue later</button>{step < totalSteps ? <button key="continue" type="button" onClick={goNext} disabled={loading} className="min-h-11 rounded-xl bg-aviation-primary px-6 py-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">Continue <ChevronRight className="ml-1 inline" size={18}/></button> : <button key="submit" type="submit" disabled={loading} className="min-h-11 rounded-xl bg-aviation-primary px-6 py-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{loading ? "Creating account…" : "Create AviaInventory account"}</button>}</div></div></form>
         <div className="mt-5 flex items-start gap-3 rounded-xl border border-aviation-border bg-aviation-light p-4 text-xs leading-5 text-aviation-muted"><Info size={16} className="mt-0.5 shrink-0 text-aviation-primary"/><p><strong className="text-aviation-dark">Progressive onboarding:</strong> only account-creation essentials are required. Supplier verification, documents and detailed procurement preferences can be completed later from your account workspace.</p></div>

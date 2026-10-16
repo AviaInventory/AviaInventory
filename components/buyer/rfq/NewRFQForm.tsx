@@ -10,6 +10,7 @@ import {
 } from "@/lib/rfqs";
 
 import SupplierSelector from "./SupplierSelector";
+import { RFQ_CERTIFICATION_OPTIONS } from "@/lib/rfq-options";
 
 export default function NewRFQForm() {
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function NewRFQForm() {
     engine_model: "",
     delivery_location: "",
     notes: "",
-    distribution_method: "selected",
+    distribution_method: "broadcast",
     supplier_ids: [],
     attachments: [],
   });
@@ -144,7 +145,7 @@ export default function NewRFQForm() {
     if (
       !formData.certification_required.trim()
     ) {
-      return "Please specify the certification requirement.";
+      return "Choose the certification you need, or \"Not required\".";
     }
 
     if (
@@ -154,10 +155,10 @@ export default function NewRFQForm() {
     }
 
     if (
-      !formData.supplier_ids ||
-      formData.supplier_ids.length !== 1
+      formData.distribution_method === "selected" &&
+      formData.supplier_ids?.length !== 1
     ) {
-      return "Please select exactly one supplier.";
+      return "Choose the supplier to send this RFQ to, or send it to all suppliers.";
     }
 
     return null;
@@ -639,8 +640,7 @@ export default function NewRFQForm() {
             label="Certification Required"
             required
           >
-            <input
-              type="text"
+            <select
               required
               disabled={disabled}
               value={
@@ -652,9 +652,15 @@ export default function NewRFQForm() {
                   e.target.value
                 )
               }
-              placeholder="e.g. FAA 8130-3 / EASA Form 1"
               className={inputClass}
-            />
+            >
+              <option value="">Select certification</option>
+              {RFQ_CERTIFICATION_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
           </Field>
 
           <Field
@@ -689,24 +695,61 @@ export default function NewRFQForm() {
 
       <section className="rounded-2xl bg-white p-8 shadow">
         <h2 className="mb-2 text-2xl font-bold text-aviation-primary">
-          Supplier
+          Who should receive this RFQ?
         </h2>
 
-        <p className="mb-6 text-sm text-aviation-muted">
-          Select the supplier that should receive this RFQ.
-          The current RFQ database stores one supplier per request.
+        <p className="mb-6 text-sm text-[var(--aviation-muted)]">
+          Sending to all suppliers gets you more quotations to compare.
         </p>
 
-        <SupplierSelector
-          selectedSuppliers={formData.supplier_ids}
-          onChange={(supplierIds) =>
-            setFormData((prev) => ({
-              ...prev,
-              supplier_ids: supplierIds.slice(-1),
-              distribution_method: "selected",
-            }))
-          }
-        />
+        <div className="grid gap-3 sm:grid-cols-2">
+          {([
+            { value: "broadcast", title: "All suppliers", detail: "Every supplier on AviaInventory sees it in their RFQ inbox and can quote." },
+            { value: "selected", title: "A specific supplier", detail: "Only the supplier you choose sees it." },
+          ] as const).map((option) => (
+            <label
+              key={option.value}
+              className={`flex cursor-pointer gap-3 rounded-xl border p-4 transition-colors ${
+                formData.distribution_method === option.value ? "border-aviation-primary bg-aviation-success-soft" : "border-aviation-border hover:border-aviation-primary/50"
+              }`}
+            >
+              <input
+                type="radio"
+                name="distribution_method"
+                value={option.value}
+                checked={formData.distribution_method === option.value}
+                disabled={disabled}
+                onChange={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    distribution_method: option.value,
+                    supplier_ids: option.value === "broadcast" ? [] : prev.supplier_ids,
+                  }))
+                }
+                className="mt-1"
+              />
+              <span>
+                <span className="block font-semibold text-aviation-dark">{option.title}</span>
+                <span className="mt-0.5 block text-sm text-[var(--aviation-muted)]">{option.detail}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+
+        {formData.distribution_method === "selected" && (
+          <div className="mt-6">
+            <SupplierSelector
+              selectedSuppliers={formData.supplier_ids}
+              onChange={(supplierIds) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  supplier_ids: supplierIds.slice(-1),
+                  distribution_method: "selected",
+                }))
+              }
+            />
+          </div>
+        )}
       </section>
 
       {/* =====================================================

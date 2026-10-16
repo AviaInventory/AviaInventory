@@ -259,188 +259,6 @@ export default function BuyerRFQDetailsPage() {
       </div>
 
       {/* =====================================================
-          PART INFORMATION
-      ====================================================== */}
-
-      <section className="rounded-2xl bg-white p-8 shadow">
-
-        <h2 className="text-2xl font-bold text-aviation-primary">
-          Part Information
-        </h2>
-
-        <div className="mt-6 grid gap-6 md:grid-cols-2">
-
-          <InfoItem
-            label="Part Number"
-            value={rfq.part_number}
-          />
-
-          <InfoItem
-            label="Category"
-            value={rfq.category}
-          />
-
-          <div className="md:col-span-2">
-            <InfoItem
-              label="Description"
-              value={rfq.description}
-            />
-          </div>
-
-          <InfoItem
-            label="Preferred Condition"
-            value={rfq.preferred_condition}
-          />
-
-          <InfoItem
-            label="Certification Required"
-            value={rfq.certification_required}
-          />
-
-          <InfoItem
-            label="ATA Chapter"
-            value={rfq.ata_chapter}
-          />
-
-        </div>
-      </section>
-
-      {/* =====================================================
-          AIRCRAFT / ENGINE
-      ====================================================== */}
-
-      <section className="rounded-2xl bg-white p-8 shadow">
-
-        <h2 className="text-2xl font-bold text-aviation-primary">
-          Aircraft & Engine Information
-        </h2>
-
-        <div className="mt-6 grid gap-6 md:grid-cols-2">
-
-          <InfoItem
-            label="Aircraft Manufacturer"
-            value={rfq.aircraft_manufacturer}
-          />
-
-          <InfoItem
-            label="Aircraft Model"
-            value={rfq.aircraft_model}
-          />
-
-          <InfoItem
-            label="Engine Manufacturer"
-            value={rfq.engine_manufacturer}
-          />
-
-          <InfoItem
-            label="Engine Model"
-            value={rfq.engine_model}
-          />
-
-        </div>
-      </section>
-
-      {/* =====================================================
-          REQUIREMENTS
-      ====================================================== */}
-
-      <section className="rounded-2xl bg-white p-8 shadow">
-
-        <h2 className="text-2xl font-bold text-aviation-primary">
-          Requirements
-        </h2>
-
-        <div className="mt-6 grid gap-6 md:grid-cols-2">
-
-          <InfoItem
-            label="Quantity"
-            value={String(rfq.quantity)}
-          />
-
-          <InfoItem
-            label="Required Date"
-            value={formatDate(rfq.required_date)}
-          />
-
-          <InfoItem
-            label="Delivery Location"
-            value={rfq.delivery_location}
-          />
-
-          <InfoItem
-            label="Distribution"
-            value={
-              rfq.distribution_method ===
-              "broadcast"
-                ? "All Qualified Suppliers"
-                : "Selected Suppliers"
-            }
-          />
-
-        </div>
-
-        {rfq.notes && (
-          <div className="mt-6">
-            <InfoItem
-              label="Additional Notes"
-              value={rfq.notes}
-            />
-          </div>
-        )}
-
-      </section>
-
-      {/* =====================================================
-          ATTACHMENTS
-      ====================================================== */}
-
-      {(() => {
-        const attachments = rfq.attachments ?? [];
-
-        return attachments.length > 0 && (
-        <section className="rounded-2xl bg-white p-8 shadow">
-
-          <h2 className="text-2xl font-bold text-aviation-primary">
-            Attachments
-          </h2>
-
-          <div className="mt-6 space-y-3">
-
-            {attachments.map(
-              (url, index) => {
-
-                const fileName =
-                  decodeURIComponent(
-                    url.split("/").pop() ||
-                      `Attachment ${index + 1}`
-                  );
-
-                return (
-                  <a
-                    key={url}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between rounded-xl border bg-aviation-light p-4 transition hover:bg-aviation-light"
-                  >
-                    <span className="font-medium text-aviation-dark">
-                      {fileName}
-                    </span>
-
-                    <span className="text-sm font-semibold text-aviation-primary">
-                      Open
-                    </span>
-                  </a>
-                );
-              }
-            )}
-
-          </div>
-        </section>
-      );
-      })()}
-
-      {/* =====================================================
           SUPPLIER QUOTATIONS
       ====================================================== */}
 
@@ -628,6 +446,208 @@ export default function BuyerRFQDetailsPage() {
 
         </section>
       )}
+
+      {/* =====================================================
+          RFQ DETAILS (collapsed: buyers come back for the quotes)
+      ====================================================== */}
+
+      <details className="group rounded-2xl bg-white shadow">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-6 sm:p-8">
+          <span>
+            <span className="block text-2xl font-bold text-aviation-primary">RFQ details</span>
+            <span className="mt-1 block text-sm text-[var(--aviation-muted)]">Part, aircraft and engine, requirements and attachments you sent.</span>
+          </span>
+          <span className="shrink-0 rounded-xl border border-aviation-border px-4 py-2 text-sm font-semibold text-aviation-primary">
+            <span className="group-open:hidden">Show</span>
+            <span className="hidden group-open:inline">Hide</span>
+          </span>
+        </summary>
+        <div className="space-y-6 px-4 pb-6 sm:px-8 sm:pb-8">
+      {/* =====================================================
+          PART INFORMATION
+      ====================================================== */}
+
+      <section className="rounded-xl border border-aviation-border p-6">
+
+        <h2 className="text-2xl font-bold text-aviation-primary">
+          Part Information
+        </h2>
+
+        <div className="mt-6 grid gap-6 md:grid-cols-2">
+
+          <InfoItem
+            label="Part Number"
+            value={rfq.part_number}
+          />
+
+          <InfoItem
+            label="Category"
+            value={rfq.category}
+          />
+
+          <div className="md:col-span-2">
+            <InfoItem
+              label="Description"
+              value={rfq.description}
+            />
+          </div>
+
+          <InfoItem
+            label="Preferred Condition"
+            value={rfq.preferred_condition}
+          />
+
+          <InfoItem
+            label="Certification Required"
+            value={rfq.certification_required}
+          />
+
+          <InfoItem
+            label="ATA Chapter"
+            value={rfq.ata_chapter}
+          />
+
+        </div>
+      </section>
+
+      {/* =====================================================
+          AIRCRAFT / ENGINE
+      ====================================================== */}
+
+      <section className="rounded-xl border border-aviation-border p-6">
+
+        <h2 className="text-2xl font-bold text-aviation-primary">
+          Aircraft & Engine Information
+        </h2>
+
+        <div className="mt-6 grid gap-6 md:grid-cols-2">
+
+          <InfoItem
+            label="Aircraft Manufacturer"
+            value={rfq.aircraft_manufacturer}
+          />
+
+          <InfoItem
+            label="Aircraft Model"
+            value={rfq.aircraft_model}
+          />
+
+          <InfoItem
+            label="Engine Manufacturer"
+            value={rfq.engine_manufacturer}
+          />
+
+          <InfoItem
+            label="Engine Model"
+            value={rfq.engine_model}
+          />
+
+        </div>
+      </section>
+
+      {/* =====================================================
+          REQUIREMENTS
+      ====================================================== */}
+
+      <section className="rounded-xl border border-aviation-border p-6">
+
+        <h2 className="text-2xl font-bold text-aviation-primary">
+          Requirements
+        </h2>
+
+        <div className="mt-6 grid gap-6 md:grid-cols-2">
+
+          <InfoItem
+            label="Quantity"
+            value={String(rfq.quantity)}
+          />
+
+          <InfoItem
+            label="Required Date"
+            value={formatDate(rfq.required_date)}
+          />
+
+          <InfoItem
+            label="Delivery Location"
+            value={rfq.delivery_location}
+          />
+
+          <InfoItem
+            label="Distribution"
+            value={
+              rfq.distribution_method ===
+              "broadcast"
+                ? "All Qualified Suppliers"
+                : "Selected Suppliers"
+            }
+          />
+
+        </div>
+
+        {rfq.notes && (
+          <div className="mt-6">
+            <InfoItem
+              label="Additional Notes"
+              value={rfq.notes}
+            />
+          </div>
+        )}
+
+      </section>
+
+      {/* =====================================================
+          ATTACHMENTS
+      ====================================================== */}
+
+      {(() => {
+        const attachments = rfq.attachments ?? [];
+
+        return attachments.length > 0 && (
+        <section className="rounded-xl border border-aviation-border p-6">
+
+          <h2 className="text-2xl font-bold text-aviation-primary">
+            Attachments
+          </h2>
+
+          <div className="mt-6 space-y-3">
+
+            {attachments.map(
+              (url, index) => {
+
+                const fileName =
+                  decodeURIComponent(
+                    url.split("/").pop() ||
+                      `Attachment ${index + 1}`
+                  );
+
+                return (
+                  <a
+                    key={url}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between rounded-xl border bg-aviation-light p-4 transition hover:bg-aviation-light"
+                  >
+                    <span className="font-medium text-aviation-dark">
+                      {fileName}
+                    </span>
+
+                    <span className="text-sm font-semibold text-aviation-primary">
+                      Open
+                    </span>
+                  </a>
+                );
+              }
+            )}
+
+          </div>
+        </section>
+      );
+      })()}
+
+        </div>
+      </details>
+
 
     </div>
   );

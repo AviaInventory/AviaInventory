@@ -9,9 +9,23 @@ import SiteChrome from "@/components/layout/SiteChrome";
 // Next.js font-loader failures when Google font weights cannot be resolved.
 
 export const metadata: Metadata = {
-  title: "AviaInventory",
+  metadataBase: new URL("https://www.aviainventory.com"),
+  title: {
+    default: "AviaInventory | Aircraft Parts Marketplace",
+    template: "%s",
+  },
   description:
-    "The Global Aviation Marketplace connecting buyers and suppliers worldwide.",
+    "AviaInventory is an aircraft parts marketplace connecting airlines, MROs and operators with verified aviation suppliers. Search parts, request quotes and compare offers. Based in Nairobi, Kenya.",
+  applicationName: "AviaInventory",
+  keywords: ["AviaInventory", "Avia Inventory", "aircraft parts", "aviation parts marketplace", "aircraft spares Kenya", "RFQ aircraft parts", "MRO parts"],
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "AviaInventory",
+    url: "https://www.aviainventory.com",
+    title: "AviaInventory | Aircraft Parts Marketplace",
+    description: "Search aircraft parts, request quotes and compare offers from verified aviation suppliers.",
+  },
 };
 
 export default function RootLayout({

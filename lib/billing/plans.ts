@@ -78,3 +78,20 @@ export const ENTITLEMENT_LABELS: Record<string, string> = {
   whatsapp_promotion: "WhatsApp promotion eligibility",
   external_advertising: "External advertising eligibility",
 };
+
+/** Customer-facing names for subscription statuses (the database values stay as they are). */
+const SUBSCRIPTION_STATUS_LABELS: Record<string, string> = {
+  trialing: "Trial Plan",
+  active: "Active",
+  past_due: "Payment overdue",
+  trial_expired: "Trial ended",
+  expired: "Expired",
+  cancelled: "Cancelled",
+  incomplete: "Payment pending",
+  payment_failed: "Payment failed",
+};
+
+export function subscriptionStatusLabel(status: string | null | undefined): string {
+  if (!status) return "Unknown";
+  return SUBSCRIPTION_STATUS_LABELS[status] ?? status.replaceAll("_", " ");
+}

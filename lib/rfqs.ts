@@ -498,7 +498,8 @@ export async function getSupplierRFQs(): Promise<RFQ[]> {
       .select(
         "id, buyer_id, supplier_id, part_id, quantity, message, status, created_at"
       )
-      .eq("supplier_id", user.id)
+      .or(`supplier_id.eq.${user.id},supplier_id.is.null`)
+      .neq("buyer_id", user.id)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -534,7 +535,7 @@ export async function getRFQById(
       )
       .eq("id", id)
       .or(
-        `buyer_id.eq.${user.id},supplier_id.eq.${user.id}`
+        `buyer_id.eq.${user.id},supplier_id.eq.${user.id},supplier_id.is.null`
       )
       .maybeSingle();
 
@@ -755,15 +756,20 @@ export async function createQuote(
         "id, buyer_id, supplier_id, quantity, part_id, message, status, created_at"
       )
       .eq("id", quote.rfq_id)
-      .eq("supplier_id", user.id)
+      .or(`supplier_id.eq.${user.id},supplier_id.is.null`)
+      .neq("buyer_id", user.id)
       .maybeSingle();
 
     if (rfqError) return handleError(rfqError);
 
     if (!rfq) {
       return handleError(
-        "This RFQ is not assigned to your supplier account."
+        "This RFQ is not available to your supplier account."
       );
+    }
+
+    if (rfq.status !== RFQStatus.Pending && rfq.status !== RFQStatus.Quoted) {
+      return handleError("This RFQ is closed and no longer accepts quotations.");
     }
 
     const { data, error } = await supabase
@@ -787,12 +793,7 @@ export async function createQuote(
 
     if (error) return handleError(error);
 
-    await supabase
-      .from("rfqs")
-      .update({ status: RFQStatus.Quoted })
-      .eq("id", rfq.id)
-      .eq("supplier_id", user.id);
-
+    // The quotes_mark_rfq_quoted trigger moves the RFQ from Pending to Quoted.
     const [hydrated] = await hydrateQuotes([data]);
 
     return {
