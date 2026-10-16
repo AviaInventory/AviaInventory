@@ -56,4 +56,4 @@ AviaInventory now exposes two public account choices: **Buyer** and **Buyer & Su
 
 ## Subscription & Billing
 
-See `SUBSCRIPTION_BILLING_IMPLEMENTATION.md` for the implemented plan catalogue, Stripe configuration, Supabase migration and QA/deployment notes.
+See `SUBSCRIPTION_BILLING_IMPLEMENTATION.md` for the implemented plan catalogue, Paystack (card and M-Pesa) configuration, Supabase migration and QA/deployment notes.

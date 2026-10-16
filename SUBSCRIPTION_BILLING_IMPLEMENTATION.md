@@ -18,7 +18,10 @@ Implemented against the existing two-account AviaInventory model: **Buyer** and 
 - `lib/billing/plans.ts` — central application plan/entitlement catalogue.
 - `lib/billing/entitlements.ts` — effective subscription state and entitlement evaluation.
 - `lib/billing/subscription.ts` — server-side subscription retrieval and route protection.
-- `lib/billing/stripe.ts` — provider abstraction currently implemented with Stripe Checkout, Billing Portal, subscription plan changes and signed webhooks.
+- `lib/billing/paystack.ts` — Paystack API: checkout (cards and M-Pesa), on-demand Paystack plans for card renewals, transaction verification, card-management links and webhook signatures.
+- `lib/billing/pricing.ts` — the KES amount charged for a plan (interim fixed USD→KES rate).
+- `lib/billing/apply-payment.ts` — applies a verified charge to the subscription, idempotently (shared by the return page and the webhook).
+- `supabase/migrations/20261017000100_paystack_billing.sql` — Paystack plan cache, subscription token store, payment method columns.
 - `supabase/migrations/20260923000200_subscriptions_billing_paid_plans.sql` — subscription, billing, premium visibility and marketing schema/RLS.
 
 ## Required environment variables
@@ -26,28 +29,25 @@ Implemented against the existing two-account AviaInventory model: **Buyer** and 
 Copy `.env.example` to the deployment environment and configure:
 
 - `NEXT_PUBLIC_APP_URL`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `STRIPE_PRICE_BUYER_BASIC_MONTHLY`
-- `STRIPE_PRICE_BUYER_BASIC_ANNUAL`
-- `STRIPE_PRICE_HYBRID_BASIC_MONTHLY`
-- `STRIPE_PRICE_HYBRID_BASIC_ANNUAL`
-- `STRIPE_PRICE_HYBRID_BRONZE_MONTHLY`
-- `STRIPE_PRICE_HYBRID_BRONZE_ANNUAL`
-- `STRIPE_PRICE_HYBRID_PLATINUM_MONTHLY`
-- `STRIPE_PRICE_HYBRID_PLATINUM_ANNUAL`
+- `PAYSTACK_SECRET_KEY` (server only)
+- `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY`
+- `BILLING_USD_KES_RATE` (interim conversion rate, e.g. 130)
 - `BILLING_GRACE_PERIOD_DAYS` (default 7)
 - `FEATURED_LISTING_LIMIT` (default 5)
 
 Existing Supabase variables remain required.
 
-## Payment setup
+## Payment setup (Paystack)
 
-Create six recurring Stripe Prices matching the amounts above and place their Price IDs in the corresponding environment variables. Configure a Stripe webhook for:
+The Kenyan Paystack account charges in KES (USD is not enabled yet). Plans stay priced in USD and are charged at `USD × BILLING_USD_KES_RATE`, rounded up to KES 50, until the long-term conversion policy is decided.
 
-`/api/billing/webhook`
+- **Card:** a Paystack subscription renews automatically. Paystack plans are created on first use per plan/interval/amount and cached in `paystack_plans`.
+- **M-Pesa** (`mobile_money` channel): pays for one period; the customer renews from the subscription page.
+- After payment Paystack redirects to `/account/subscription?reference=…`; the page confirms it through `/api/billing/verify`, so plans activate even without a webhook (useful locally).
+- Webhook: in Paystack set **Settings → API Keys & Webhooks → Webhook URL** to `https://www.aviainventory.com/api/billing/webhook`. Signatures (`x-paystack-signature`, HMAC-SHA512) are verified; handled events: `charge.success` (incl. card renewals), `subscription.create`, `subscription.not_renew`, `subscription.disable`, `invoice.payment_failed`.
+- Settlement bank accounts (NCBA KES; NCBA USD once USD is enabled) are configured in the Paystack dashboard, not in code.
 
-The webhook must include subscription and invoice lifecycle events used by the application. Stripe signatures are verified before processing, and event IDs are stored for idempotency.
+Test mode: Paystack test card `4084 0840 8408 4081`, any future expiry, CVV `408`, PIN `0000`, OTP `123456`.
 
 ## Subscription behaviour
 
@@ -59,7 +59,7 @@ The webhook must include subscription and invoice lifecycle events used by the a
 - Bronze/Platinum cannot be selected by Buyer-only accounts.
 - Buyer → Hybrid account conversion remains separate from subscription upgrades.
 - Existing business data is never deleted because of subscription state.
-- Paid plan changes use the existing Stripe subscription when one exists, avoiding duplicate paid subscriptions.
+- Changing plan starts a new Paystack payment; once it succeeds, the previous card subscription is disabled so only one plan renews.
 
 ## Premium supplier services
 
@@ -100,8 +100,8 @@ Premium services are subject to AviaInventory review. No fabricated intelligence
 ## Deployment order
 
 1. Apply the Supabase migration.
-2. Configure Stripe Products/Prices and environment variables.
-3. Configure the Stripe webhook endpoint and signing secret.
+2. Set the Paystack keys and `BILLING_USD_KES_RATE` in the environment.
+3. Set the Paystack webhook URL to `/api/billing/webhook` on the production domain.
 4. Install the project's normal dependencies with `npm install`/`npm ci` in the deployment environment.
 5. Run `npm run lint` and `npm run build` in the deployment environment.
 6. Test registration, trial countdown/expiry, checkout, webhook activation, monthly/annual changes, cancellation/past-due handling, Buyer → Hybrid conversion, and supplier premium entitlements.

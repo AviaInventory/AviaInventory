@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2, LockKeyhole } from "lucide-react";
+import { Check, CreditCard, Loader2, LockKeyhole, Smartphone } from "lucide-react";
 import {
   ENTITLEMENT_LABELS,
   allowedPaidPlans,
@@ -22,6 +22,8 @@ type Props = {
    */
   accountType: AccountBillingType | null;
   currentPlanCode?: PlanCode | null;
+  /** Let the current plan be paid again (M-Pesa renewal, or a card that no longer renews). */
+  allowRenewCurrent?: boolean;
   showTrial?: boolean;
   /** Controlled billing interval, e.g. shared with the comparison table. Uncontrolled when omitted. */
   interval?: BillingInterval;
@@ -30,16 +32,36 @@ type Props = {
 
 const GROUP_LABEL: Record<AccountBillingType, string> = { buyer: "BUYER", hybrid: "BUYER + SUPPLIER" };
 
+type PaymentMethod = "card" | "mpesa";
+type KesPrices = Record<string, { month: number; year: number }>;
+
+const METHODS: { value: PaymentMethod; label: string; hint: string; Icon: typeof CreditCard }[] = [
+  { value: "card", label: "Card", hint: "Renews automatically", Icon: CreditCard },
+  { value: "mpesa", label: "M-Pesa", hint: "Pay each period", Icon: Smartphone },
+];
+
 function shortName(plan: PlanDefinition) {
   return plan.name.split(" — ")[0];
 }
 
-export default function PlanCards({ accountType, currentPlanCode, showTrial = true, interval: controlledInterval, onIntervalChange }: Props) {
+export default function PlanCards({ accountType, currentPlanCode, allowRenewCurrent = false, showTrial = true, interval: controlledInterval, onIntervalChange }: Props) {
   const router = useRouter();
   const [localInterval, setLocalInterval] = useState<BillingInterval>("month");
   const interval = controlledInterval ?? localInterval;
   const setInterval = onIntervalChange ?? setLocalInterval;
+  const [method, setMethod] = useState<PaymentMethod>("card");
+  // KES amounts charged at checkout (Paystack charges in KES), shown under the USD price.
+  const [kesPrices, setKesPrices] = useState<KesPrices | null>(null);
   const [loading, setLoading] = useState<PlanCode | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/billing/prices")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body) => { if (active && body?.prices) setKesPrices(body.prices as KesPrices); })
+      .catch(() => { /* the USD price still shows */ });
+    return () => { active = false; };
+  }, []);
   const [error, setError] = useState("");
   // Buyer & Supplier account confirming "Disable selling" to switch to Buyer Basic.
   const [confirmDisable, setConfirmDisable] = useState(false);
@@ -71,14 +93,10 @@ export default function PlanCards({ accountType, currentPlanCode, showTrial = tr
       const response = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ planCode, interval }),
+        body: JSON.stringify({ planCode, interval, method }),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error ?? "Unable to start checkout.");
-      if (body.changed) {
-        router.push("/account/subscription?changed=success");
-        return;
-      }
       if (!body.url) throw new Error("The secure checkout URL was not returned.");
       window.location.assign(body.url);
     } catch (err) {
@@ -92,7 +110,7 @@ export default function PlanCards({ accountType, currentPlanCode, showTrial = tr
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-aviation-border bg-white p-3">
         <div>
           <p className="text-sm font-bold text-aviation-dark">Billing interval</p>
-          <p className="text-xs text-aviation-muted">Choose monthly or annual billing. Prices are in USD.</p>
+          <p className="text-xs text-aviation-muted">Prices are shown in USD and charged in Kenyan shillings (KES).</p>
         </div>
         <div className="flex rounded-lg border border-aviation-border bg-aviation-light p-1" role="group" aria-label="Billing interval">
           {(["month", "year"] as BillingInterval[]).map((value) => (
@@ -109,6 +127,36 @@ export default function PlanCards({ accountType, currentPlanCode, showTrial = tr
         </div>
       </div>
 
+      {accountType !== null && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-aviation-border bg-white p-3">
+          <div>
+            <p className="text-sm font-bold text-aviation-dark">Payment method</p>
+            <p className="text-xs text-aviation-muted">
+              {method === "card"
+                ? "Your card is charged now and on each renewal. Cancel any time."
+                : "Pay with M-Pesa for one period at a time. We'll remind you before it ends."}
+            </p>
+          </div>
+          <div className="flex flex-wrap rounded-lg border border-aviation-border bg-aviation-light p-1" role="group" aria-label="Payment method">
+            {METHODS.map(({ value, label, hint, Icon }) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={method === value}
+                onClick={() => setMethod(value)}
+                className={`flex min-h-11 items-center gap-2 rounded-md px-4 text-left text-sm font-semibold ${method === value ? "bg-white text-aviation-primary shadow-sm" : "text-aviation-muted"}`}
+              >
+                <Icon size={16} aria-hidden="true" />
+                <span>
+                  <span className="block">{label}</span>
+                  <span className="block text-[11px] font-normal">{hint}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {error && (
         <div role="alert" className="rounded-xl bg-aviation-error-soft p-4 text-sm text-aviation-error">
           {error}
@@ -119,6 +167,7 @@ export default function PlanCards({ accountType, currentPlanCode, showTrial = tr
         {plans.map((plan) => {
           const price = interval === "month" ? plan.monthlyUsdCents : plan.annualUsdCents;
           const current = currentPlanCode === plan.code;
+          const locked = current && !allowRenewCurrent;
           return (
             <article
               key={plan.code}
@@ -130,7 +179,10 @@ export default function PlanCards({ accountType, currentPlanCode, showTrial = tr
               <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-aviation-accent">{GROUP_LABEL[plan.accountType]}</p>
               <h2 className="mt-2 text-xl font-bold text-aviation-dark">{shortName(plan)}</h2>
               <div className="mt-4 text-2xl font-bold text-aviation-dark">{formatUsd(price, interval)}</div>
-              <p className="mt-1 text-xs text-aviation-muted">{interval === "year" ? "Billed annually" : "Billed monthly"}</p>
+              <p className="mt-1 text-xs text-aviation-muted">
+                {kesPrices?.[plan.code] ? `Charged as KES ${kesPrices[plan.code][interval].toLocaleString("en-KE")} · ` : ""}
+                {interval === "year" ? "Billed annually" : "Billed monthly"}
+              </p>
               <div className="mt-5 flex-1 space-y-2 border-t border-aviation-border pt-5">
                 {plan.entitlements.map((entitlement) => (
                   <div key={entitlement} className="flex gap-2 text-sm">
@@ -192,12 +244,16 @@ export default function PlanCards({ accountType, currentPlanCode, showTrial = tr
               ) : (
                 <button
                   type="button"
-                  disabled={current || loading !== null}
+                  disabled={locked || loading !== null}
                   onClick={() => checkout(plan.code)}
                   className="mt-6 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-aviation-primary px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {loading === plan.code ? <Loader2 size={16} className="animate-spin" /> : current ? <LockKeyhole size={16} /> : null}
-                  {current ? "Current plan" : loading === plan.code ? "Opening secure checkout…" : `Choose ${shortName(plan)}`}
+                  {loading === plan.code ? <Loader2 size={16} className="animate-spin" /> : locked ? <LockKeyhole size={16} /> : null}
+                  {locked
+                    ? "Current plan"
+                    : loading === plan.code
+                      ? "Opening secure checkout…"
+                      : `${current ? "Renew" : method === "mpesa" ? "Pay with M-Pesa" : "Pay by card"}: ${shortName(plan)}${current ? (method === "mpesa" ? " with M-Pesa" : " by card") : ""}`}
                 </button>
               )}
             </article>

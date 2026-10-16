@@ -30,7 +30,7 @@ export async function requireActiveSubscription(entitlement?: string): Promise<S
   if (roles.includes("admin")) {
     return {
       id: "admin-bypass", userId: user.id, accountType: "hybrid", planCode: "hybrid_platinum", planName: "Admin access", status: "active", billingInterval: null,
-      trialStartedAt: null, trialEndsAt: null, currentPeriodStart: null, currentPeriodEnd: null, cancelAtPeriodEnd: false, cancelledAt: null,
+      trialStartedAt: null, trialEndsAt: null, currentPeriodStart: null, currentPeriodEnd: null, cancelAtPeriodEnd: false, cancelledAt: null, paymentMethod: null, canManageCard: false,
       entitlements: ["marketplace", "buyer_features", "supplier_features", "featured_listings", "promotions", "priority_search", "aviation_intelligence", "newsletter_promotion", "whatsapp_promotion", "external_advertising"],
       effectiveActive: true, effectiveStatus: "active",
     };
