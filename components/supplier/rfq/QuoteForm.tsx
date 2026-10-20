@@ -10,6 +10,7 @@ import type {
   CreateQuoteData,
 } from "@/lib/rfqs";
 import RequiredMark from "@/components/ui/RequiredMark";
+import { QUOTE_CERTIFICATION_OPTIONS } from "@/lib/rfq-options";
 
 interface Props {
   rfq: RFQ;
@@ -21,8 +22,11 @@ export default function QuoteForm({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  const [certificationText, setCertificationText] =
-    useState("");
+  // Start from what the buyer asked for, when it is something a supplier can offer.
+  const requested = rfq.certification_required?.trim() || "";
+  const [certification, setCertification] = useState<string>(
+    (QUOTE_CERTIFICATION_OPTIONS as readonly string[]).includes(requested) ? requested : ""
+  );
 
   const initialState: CreateQuoteData = {
     rfq_id: rfq.id,
@@ -68,6 +72,11 @@ export default function QuoteForm({
       return;
     }
 
+    if (!certification) {
+      toast.error("Choose the certification you will supply, or \"No certification\".");
+      return;
+    }
+
     if (!formData.valid_until) {
       toast.error("Select a quotation validity date.");
       return;
@@ -78,10 +87,7 @@ export default function QuoteForm({
     try {
       const result = await createQuote({
         ...formData,
-        certification: certificationText
-          .split(",")
-          .map((c) => c.trim())
-          .filter(Boolean),
+        certification: [certification],
       });
 
       if (!result.success) {
@@ -227,24 +233,29 @@ export default function QuoteForm({
 
           <div>
 
-            <label className="mb-2 block font-medium">
-              Certifications
+            <label htmlFor="quote-certification" className="mb-2 block font-medium">
+              Certification supplied <RequiredMark />
             </label>
 
-            <input
-              type="text"
+            <select
+              id="quote-certification"
+              required
               disabled={loading}
-              value={certificationText}
-              onChange={(e) =>
-                setCertificationText(e.target.value)
-              }
-              placeholder="FAA 8130-3, EASA Form 1, C of C"
+              value={certification}
+              onChange={(e) => setCertification(e.target.value)}
               className="w-full rounded-xl border p-3 disabled:bg-aviation-light"
-            />
+            >
+              <option value="">Select certification</option>
+              {QUOTE_CERTIFICATION_OPTIONS.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
 
-            <p className="mt-1 text-xs text-aviation-muted">
-              Separate multiple certifications with commas.
-            </p>
+            {requested && (
+              <p className="mt-1 text-xs text-aviation-muted">
+                Buyer requested: <span className="font-semibold text-aviation-dark">{requested}</span>
+              </p>
+            )}
 
           </div>
 

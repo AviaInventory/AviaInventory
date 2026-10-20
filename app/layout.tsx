@@ -3,6 +3,7 @@ import { Toaster } from "react-hot-toast";
 
 import "./globals.css";
 import SiteChrome from "@/components/layout/SiteChrome";
+import StructuredData from "@/components/seo/StructuredData";
 
 // Fonts are intentionally defined in CSS rather than through next/font/google.
 // This keeps the project buildable in offline/restricted environments and avoids
@@ -39,7 +40,9 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className="h-full antialiased"
     >
-      <body className="min-h-screen bg-aviation-light flex flex-col">
+      {/* Browser extensions (e.g. Grammarly) add attributes to <body> before React loads. */}
+      <body className="min-h-screen bg-aviation-light flex flex-col" suppressHydrationWarning>
+        <StructuredData />
         <SiteChrome>{children}</SiteChrome>
         <Toaster
           position="top-right"
