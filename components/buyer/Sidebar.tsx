@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import RoleSwitcher from "@/components/account/RoleSwitcher";
-import { LayoutDashboard, Search, FileText, Package, MessageSquare, Settings, ArrowUpRight } from "lucide-react";
+import { LayoutDashboard, Search, FileText, Package, MessageSquare, Settings, ArrowUpRight, Receipt } from "lucide-react";
 
 const groups = [
   { label: "Workspace", items: [
@@ -12,6 +12,7 @@ const groups = [
     { name: "Listings", href: "/marketplace", icon: Search },
     { name: "RFQs", href: "/buyer/rfqs", icon: FileText },
     { name: "Orders", href: "/buyer/orders", icon: Package },
+    { name: "Invoices", href: "/buyer/invoices", icon: Receipt },
     { name: "Messages", href: "/buyer/messages", icon: MessageSquare },
   ]},
   { label: "Account", items: [{ name: "Account settings", href: "/buyer/settings", icon: Settings }] },

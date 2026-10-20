@@ -14,6 +14,7 @@ import {
   QuoteStatus,
   RFQStatus,
 } from "@/lib/rfqs";
+import NextStepDialog, { type NextStep } from "@/components/orders/NextStepDialog";
 
 export default function BuyerQuoteDetailsPage() {
   const params = useParams();
@@ -24,6 +25,7 @@ export default function BuyerQuoteDetailsPage() {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [nextStep, setNextStep] = useState<NextStep | null>(null);
 
   useEffect(() => {
     if (!quoteId) return;
@@ -83,9 +85,11 @@ export default function BuyerQuoteDetailsPage() {
         return;
       }
 
-      alert(
-        "Quotation accepted successfully."
-      );
+      setNextStep({
+        title: "Thank you for accepting the quote",
+        message: "Please create the purchase order to proceed with the order.",
+        action: { label: "Create purchase order", href: `/buyer/orders/${result.data?.orderId}?step=po` },
+      });
 
       await loadQuote();
       router.refresh();
@@ -196,6 +200,7 @@ export default function BuyerQuoteDetailsPage() {
 
   return (
     <div className="space-y-8">
+      <NextStepDialog step={nextStep} onClose={() => setNextStep(null)} />
 
       {/* =====================================================
           HEADER

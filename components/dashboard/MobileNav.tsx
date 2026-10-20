@@ -7,7 +7,7 @@ import RoleSwitcher from "@/components/account/RoleSwitcher";
 export default function MobileNav({ role }: { role: "buyer" | "supplier" }) {
   const pathname=usePathname();
   const items=role==="buyer" ? [
-    ["Overview","/buyer/dashboard",LayoutDashboard],["Listings","/marketplace",Search],["RFQs","/buyer/rfqs",FileText],["Orders","/buyer/orders",Package],["Messages","/buyer/messages",MessageSquare],["Account","/buyer/settings",Settings]
+    ["Overview","/buyer/dashboard",LayoutDashboard],["Listings","/marketplace",Search],["RFQs","/buyer/rfqs",FileText],["Orders","/buyer/orders",Package],["Invoices","/buyer/invoices",Receipt],["Messages","/buyer/messages",MessageSquare],["Account","/buyer/settings",Settings]
   ] : [
     ["Overview","/supplier/dashboard",LayoutDashboard],["Listings","/supplier/inventory",Package],["RFQs","/supplier/rfqs",FileText],["Quotes","/supplier/quotes",FileText],["Orders","/supplier/purchase-orders",Package],["Shipments","/supplier/shipments",Truck],["Invoices","/supplier/invoices",Receipt],["Messages","/supplier/messages",MessageSquare],["Account","/supplier/profile",Settings]
   ];

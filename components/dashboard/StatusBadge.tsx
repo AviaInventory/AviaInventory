@@ -14,6 +14,15 @@ const styles: Record<string, { className: string; Icon: typeof Clock3 }> = {
   sold: { className: "border-aviation-primary/20 bg-aviation-primary/10 text-aviation-primary", Icon: PackageCheck },
   inactive: { className: "border-aviation-border bg-aviation-light text-aviation-muted", Icon: EyeOff },
   archived: { className: "border-aviation-border bg-aviation-light text-aviation-muted", Icon: Archive },
+  // Order workflow steps
+  "awaiting po": { className: "border-aviation-warning/20 bg-aviation-warning-soft text-aviation-warning", Icon: Clock3 },
+  "po issued": { className: "border-aviation-primary/20 bg-aviation-primary/10 text-aviation-primary", Icon: Send },
+  invoiced: { className: "border-aviation-primary/20 bg-aviation-primary/10 text-aviation-primary", Icon: Send },
+  "payment sent": { className: "border-aviation-warning/20 bg-aviation-warning-soft text-aviation-warning", Icon: Clock3 },
+  paid: { className: "border-aviation-success/20 bg-aviation-success-soft text-aviation-success", Icon: CheckCircle2 },
+  dispatched: { className: "border-aviation-primary/20 bg-aviation-primary/10 text-aviation-primary", Icon: PackageCheck },
+  closed: { className: "border-aviation-success/20 bg-aviation-success-soft text-aviation-success", Icon: CheckCircle2 },
+  cancelled: { className: "border-aviation-border bg-aviation-light text-aviation-muted", Icon: Archive },
 };
 
 export default function StatusBadge({ status }: { status: DashboardStatus }) {

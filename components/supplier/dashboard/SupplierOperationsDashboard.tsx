@@ -128,7 +128,7 @@ export default function SupplierOperationsDashboard() {
   const incomingRFQs = state.rfqs.filter(r => r.status === RFQStatus.Pending);
   const awaitingQuotes = state.quotes.filter(q => q.status === QuoteStatus.Sent);
   const acceptedQuotes = state.quotes.filter(q => q.status === QuoteStatus.Accepted);
-  const activeOrders = state.orders.filter(o => !["Delivered", "Cancelled", "Completed"].includes(o.status));
+  const activeOrders = state.orders.filter(o => !["Closed", "Cancelled"].includes(o.status));
 
   if (state.loading) return <DashboardSkeleton />;
 

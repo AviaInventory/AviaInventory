@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { acceptQuote, getQuotesForRFQ, updateQuoteStatus, QuoteStatus, type Quote } from "@/lib/rfqs";
+import NextStepDialog, { type NextStep } from "@/components/orders/NextStepDialog";
 
 function useCountdown(validUntil: string) {
   const [now, setNow] = useState(() => Date.now());
@@ -46,6 +47,7 @@ export default function RFQComparisonView({ rfqId, initialQuotes }: Props) {
   const router = useRouter();
   const [quotes, setQuotes] = useState(initialQuotes);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [nextStep, setNextStep] = useState<NextStep | null>(null);
 
   const sortedQuotes = useMemo(() => [...quotes].sort((a, b) => a.unit_price - b.unit_price), [quotes]);
 
@@ -86,18 +88,16 @@ export default function RFQComparisonView({ rfqId, initialQuotes }: Props) {
           is_read: false,
         });
         if (messageError) console.warn("Supplier acceptance message could not be created:", messageError);
-        const { error: notificationError } = await supabase.from("notifications").insert({
-          user_id: supplierId,
-          title: "RFQ response accepted",
-          message,
-          is_read: false,
-        });
-        if (notificationError) console.warn("Supplier notification could not be created:", notificationError);
+        // The supplier's notification is created by the database when the order is created.
       }
 
       await refresh();
       router.refresh();
-      window.alert("Response accepted. Other supplier responses were marked Not selected and the selected supplier was notified.");
+      setNextStep({
+        title: "Thank you for accepting the quote",
+        message: "Please create the purchase order to proceed with the order. Other supplier responses were marked Not selected.",
+        action: { label: "Create purchase order", href: `/buyer/orders/${result.data?.orderId}?step=po` },
+      });
     } catch (error) {
       window.alert(error instanceof Error ? error.message : "Unable to accept this response.");
     } finally {
@@ -109,6 +109,7 @@ export default function RFQComparisonView({ rfqId, initialQuotes }: Props) {
 
   return (
     <section className="space-y-5">
+      <NextStepDialog step={nextStep} onClose={() => setNextStep(null)} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-aviation-accent">RFQ Comparison</p>

@@ -20,6 +20,7 @@ import {
 } from "@/lib/orders";
 
 import StatusBadge from "@/components/dashboard/StatusBadge";
+import { nextAction } from "@/components/orders/workflow";
 
 /* ==========================================================
    BUYER ORDERS PAGE
@@ -64,6 +65,17 @@ export default function BuyerOrdersPage() {
 
   useEffect(() => {
     loadOrders();
+  }, []);
+
+  // Keep statuses current while the list is open (the other party may complete a step).
+  useEffect(() => {
+    const quietRefresh = () => {
+      if (document.visibilityState !== "visible") return;
+      getBuyerOrders().then(setOrders).catch(() => { /* keep the current list */ });
+    };
+    const timer = window.setInterval(quietRefresh, 30_000);
+    document.addEventListener("visibilitychange", quietRefresh);
+    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", quietRefresh); };
   }, []);
 
   /* ========================================================
@@ -219,13 +231,13 @@ export default function BuyerOrdersPage() {
           {orders.map((order) => (
             <li key={order.id}>
               <Link
-                href={`/buyer/orders/${order.id}`}
+                href={`/buyer/orders/${order.id}${nextAction(order.status, "buyer").yourTurn ? "?step=next" : ""}`}
                 className="group block rounded-2xl border border-aviation-border bg-white p-4 shadow-sm transition hover:border-aviation-primary/40 hover:shadow-md sm:p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-aviation-primary">
-                      Order #{order.id.slice(0, 8).toUpperCase()}
+                      {order.po_number ?? `Order #${order.id.slice(0, 8).toUpperCase()}`}
                       <span className="ml-2 font-normal text-aviation-muted">· {formatOrderDate(order.created_at)}</span>
                     </p>
                     <h2 className="mt-1 flex items-center gap-2 text-lg font-bold text-aviation-dark">
@@ -253,9 +265,17 @@ export default function BuyerOrdersPage() {
                   </OrderFact>
                 </dl>
 
-                <p className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-aviation-primary group-hover:underline">
-                  <Eye size={16} aria-hidden="true" /> View order <ChevronRight size={16} aria-hidden="true" />
-                </p>
+                {/* The buyer's next step, so it is clear what to do from the list. */}
+                {nextAction(order.status, "buyer").yourTurn ? (
+                  <p className="mt-4 inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-aviation-primary px-4 py-2 text-sm font-bold text-white">
+                    {nextAction(order.status, "buyer").label} <ChevronRight size={16} aria-hidden="true" />
+                  </p>
+                ) : (
+                  <p className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span className="text-aviation-muted">{nextAction(order.status, "buyer").hint}</span>
+                    <span className="inline-flex items-center gap-1.5 font-semibold text-aviation-primary group-hover:underline"><Eye size={16} aria-hidden="true" /> View order <ChevronRight size={16} aria-hidden="true" /></span>
+                  </p>
+                )}
               </Link>
             </li>
           ))}

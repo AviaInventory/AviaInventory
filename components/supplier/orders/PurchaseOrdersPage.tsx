@@ -2,32 +2,24 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Eye, RefreshCw, Search, ShoppingCart } from "lucide-react";
+import { ArrowRight, Eye, RefreshCw, Search, ShoppingCart } from "lucide-react";
 import StatusBadge from "@/components/dashboard/StatusBadge";
 import EmptyState from "@/components/dashboard/EmptyState";
 
 import {
   getSupplierOrders,
-  updateSupplierOrderStatus,
   type Order,
 } from "@/lib/orders";
-
-// Matches guard_order_updates(): suppliers move an order one step at a time.
-const NEXT_STATUSES: Record<string, string[]> = {
-  Pending: ["Processing", "Cancelled"],
-  Processing: ["Packed", "Cancelled"],
-  Packed: ["Shipped", "Cancelled"],
-  Shipped: ["Delivered"],
-  Delivered: ["Completed"],
-};
+import { nextAction } from "@/components/orders/workflow";
 
 const statuses = [
-  "Pending",
-  "Processing",
-  "Packed",
-  "Shipped",
-  "Delivered",
-  "Completed",
+  "Awaiting PO",
+  "PO Issued",
+  "Invoiced",
+  "Payment Sent",
+  "Paid",
+  "Dispatched",
+  "Closed",
   "Cancelled",
 ];
 
@@ -55,6 +47,17 @@ export default function PurchaseOrdersPage() {
     loadOrders();
   }, []);
 
+  // Keep statuses current while the list is open (the other party may complete a step).
+  useEffect(() => {
+    const quietRefresh = () => {
+      if (document.visibilityState !== "visible") return;
+      getSupplierOrders().then(setOrders).catch(() => { /* keep the current list */ });
+    };
+    const timer = window.setInterval(quietRefresh, 30_000);
+    document.addEventListener("visibilitychange", quietRefresh);
+    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", quietRefresh); };
+  }, []);
+
   async function refresh() {
     try {
       setRefreshing(true);
@@ -63,21 +66,6 @@ export default function PurchaseOrdersPage() {
     } finally {
       setRefreshing(false);
     }
-  }
-
-  async function handleStatusChange(orderId: string, status: string) {
-    const result = await updateSupplierOrderStatus(orderId, status);
-
-    if (!result.success) {
-      alert(result.error ?? "Unable to update the order.");
-      return;
-    }
-
-    setOrders((current) =>
-      current.map((order) =>
-        order.id === orderId ? { ...order, status } : order
-      )
-    );
   }
 
   const filteredOrders = useMemo(() => {
@@ -121,8 +109,8 @@ export default function PurchaseOrdersPage() {
             Customer Orders
           </h1>
           <p className="mt-2 text-aviation-muted">
-            Orders created when buyers accept your quotations. Update the
-            status as each order moves toward delivery.
+            Orders created when buyers accept your quotations. Each order shows
+            your next step: invoice, confirm payment, then dispatch.
           </p>
         </div>
 
@@ -140,12 +128,12 @@ export default function PurchaseOrdersPage() {
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         <SummaryCard title="Total Orders" value={orders.length} />
         <SummaryCard
-          title="Pending"
-          value={orders.filter((order) => order.status === "Pending").length}
+          title="Needs your action"
+          value={orders.filter((order) => nextAction(order.status, "supplier").yourTurn).length}
         />
         <SummaryCard
           title="In Progress"
-          value={orders.filter((order) => ["Processing", "Packed", "Shipped"].includes(order.status)).length}
+          value={orders.filter((order) => !["Closed", "Cancelled"].includes(order.status)).length}
         />
         <SummaryCard
           title="Order Value"
@@ -189,13 +177,13 @@ export default function PurchaseOrdersPage() {
         // Cards reflow with the available width, so nothing squeezes or scrolls sideways when zoomed.
         <ul className="space-y-3">
           {filteredOrders.map((order) => {
-            const nextSteps = NEXT_STATUSES[order.status] ?? [];
+            const next = nextAction(order.status, "supplier");
             return (
               <li key={order.id} className="rounded-2xl border border-aviation-border bg-white p-4 shadow-sm sm:p-5">
                 <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-aviation-primary">
-                      Order #{order.id.slice(0, 8).toUpperCase()}
+                      {order.po_number ?? `Order #${order.id.slice(0, 8).toUpperCase()}`}
                       <span className="ml-2 font-normal text-aviation-muted">
                         · {new Date(order.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                       </span>
@@ -219,23 +207,15 @@ export default function PurchaseOrdersPage() {
                 </dl>
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                  {nextSteps.length > 0 ? (
-                    <label className="flex flex-wrap items-center gap-2 text-sm text-aviation-muted">
-                      Move to
-                      <select
-                        value=""
-                        onChange={(event) => event.target.value && handleStatusChange(order.id, event.target.value)}
-                        aria-label={`Update status for order ${order.id.slice(0, 8)}`}
-                        className="min-h-10 rounded-lg border border-aviation-border bg-white px-3 py-2 text-sm font-semibold text-aviation-dark"
-                      >
-                        <option value="">Choose next step…</option>
-                        {nextSteps.map((status) => (
-                          <option key={status} value={status}>{status}</option>
-                        ))}
-                      </select>
-                    </label>
+                  {next.yourTurn ? (
+                    <Link
+                      href={`/supplier/purchase-orders/${order.id}?step=next`}
+                      className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-aviation-primary px-4 py-2 text-sm font-bold text-white"
+                    >
+                      {next.label} <ArrowRight size={15} aria-hidden="true" />
+                    </Link>
                   ) : (
-                    <span className="text-sm text-aviation-muted">No further status changes.</span>
+                    <span className="text-sm text-aviation-muted">{next.hint}</span>
                   )}
                   <Link
                     href={`/supplier/purchase-orders/${order.id}`}
