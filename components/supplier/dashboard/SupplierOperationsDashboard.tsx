@@ -23,6 +23,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { getSupplierRFQs, getSupplierQuotes, QuoteStatus, RFQStatus, type Quote, type RFQ } from "@/lib/rfqs";
 import { getSupplierOrders, type Order } from "@/lib/orders";
+import { shipmentStatus } from "@/lib/shipments";
 import { documentExpiryState } from "@/lib/supplier-verification";
 import StatusBadge from "@/components/dashboard/StatusBadge";
 import VerificationStatusBadge from "@/components/supplier/verification/VerificationStatusBadge";
@@ -72,7 +73,7 @@ export default function SupplierOperationsDashboard() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const [partsRes, rfqs, quotes, orders, unreadRes, supplierRes, privateRes, summaryRes, docsRes, shipmentsRes, invoicesRes, promotionsRes] = await Promise.all([
+        const [partsRes, rfqs, quotes, orders, unreadRes, supplierRes, privateRes, summaryRes, docsRes, invoicesRes, promotionsRes] = await Promise.all([
           supabase.from("parts").select("id,part_number,description,status,quantity,unit_price,price_type,trace_certificate,category,created_at").eq("supplier_id", user.id).order("created_at", { ascending: false }),
           getSupplierRFQs(),
           getSupplierQuotes(),
@@ -82,7 +83,6 @@ export default function SupplierOperationsDashboard() {
           supabase.rpc("get_my_supplier_private"),
           supabase.rpc("get_supplier_verification_summary", { p_supplier_id: user.id }),
           supabase.from("supplier_verification_documents").select("id,document_name,expiry_date,verification_status").eq("supplier_id", user.id).neq("verification_status", "Replaced").not("expiry_date", "is", null).order("expiry_date", { ascending: true }),
-          supabase.from("supplier_shipments").select("id", { count: "exact", head: true }).eq("supplier_id", user.id),
           supabase.from("supplier_invoices").select("id", { count: "exact", head: true }).eq("supplier_id", user.id),
           supabase.from("promotions").select("id,title,discount,status,ends_at").eq("supplier_id", user.id).in("status", ["Approved", "Active"]).order("created_at", { ascending: false }).limit(4),
         ]);
@@ -105,7 +105,8 @@ export default function SupplierOperationsDashboard() {
             missing: (privateRes.data?.[0]?.verification_missing_information as string[] | undefined) ?? [],
           } : null,
           expiringDocs,
-          shipments: shipmentsRes.count ?? 0,
+          // Shipments are orders from payment onwards (see lib/shipments.ts).
+          shipments: orders.filter((order) => shipmentStatus(order.status) !== null).length,
           invoices: invoicesRes.count ?? 0,
           promotions: (promotionsRes.data ?? []) as DashboardState["promotions"],
           loading: false,

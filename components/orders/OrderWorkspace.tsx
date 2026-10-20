@@ -5,9 +5,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import ScrollToHash from "@/components/common/ScrollToHash";
-import { ArrowLeft, Building2, CheckCircle2, Loader2, Package, Printer, Truck, XCircle } from "lucide-react";
+import { ArrowLeft, Building2, CheckCircle2, ExternalLink, Loader2, Package, Printer, Truck, XCircle } from "lucide-react";
 import StatusBadge from "@/components/dashboard/StatusBadge";
 import RequiredMark from "@/components/ui/RequiredMark";
+import { trackingUrl } from "@/lib/shipments";
 import {
   cancelOrder, confirmOrderReceived, confirmPaymentReceived, formatOrderAmount, formatOrderDate,
   getOrderWithInvoice, markInvoicePaid, markOrderDispatched, type Invoice, type Order,
@@ -69,7 +70,7 @@ export default function OrderWorkspace({ orderId, role: routeRole }: { orderId: 
   /** The pop-up for a step where this party has to act (null when they are waiting). */
   const promptFor = (loaded: Order, as: OrderRole): NextStep | null => {
     if (as === "supplier" && loaded.status === "PO Issued") return { tone: "info", title: "Purchase order received", message: `${loaded.buyer_company_name ?? "The buyer"} sent purchase order ${loaded.po_number}. Review it and create your invoice to proceed.`, action: { label: "Create invoice", onClick: goToStep } };
-    if (as === "buyer" && loaded.status === "Awaiting PO") return { tone: "info", title: "Create your purchase order", message: "Confirm the quantity, delivery address and shipping method so the supplier can invoice you.", action: { label: "Create purchase order", onClick: goToStep } };
+    if (as === "buyer" && loaded.status === "Awaiting PO") return { tone: "info", title: "Create your purchase order", message: "Confirm the delivery address and shipping method so the supplier can invoice you.", action: { label: "Create purchase order", onClick: goToStep } };
     if (as === "buyer" && loaded.status === "Invoiced") return { tone: "info", title: "Invoice received", message: "Pay the supplier using the details on the invoice, then mark it as paid here.", action: { label: "View invoice", onClick: goToInvoice } };
     if (as === "supplier" && loaded.status === "Payment Sent") return { tone: "info", title: "Buyer marked the invoice as paid", message: "Check that the payment has reached your account, then confirm it to proceed to dispatch.", action: { label: "Confirm payment", onClick: goToStep } };
     if (as === "buyer" && loaded.status === "Paid") return { tone: "info", title: "Payment confirmed", message: "The supplier confirmed your payment. You'll be notified when the order is dispatched." };
@@ -245,6 +246,7 @@ export default function OrderWorkspace({ orderId, role: routeRole }: { orderId: 
       </div>
     );
   } else if (buyer && order.status === "Dispatched") {
+    const track = trackingUrl(order.dispatch_carrier ?? order.shipping_method, order.tracking_number);
     stepBody = (
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-aviation-muted">
@@ -253,6 +255,11 @@ export default function OrderWorkspace({ orderId, role: routeRole }: { orderId: 
         <button type="button" disabled={busy} className={button} onClick={() => run(() => confirmOrderReceived(order.id), { title: "Order complete", message: "Thank you for using AviaInventory. The order is now closed." })}>
           {busy ? <Loader2 size={16} className="animate-spin" /> : <Package size={16} />} Confirm order received
         </button>
+        {track && (
+          <a href={track} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-aviation-border px-5 text-sm font-semibold text-aviation-primary">
+            Track shipment <ExternalLink size={15} />
+          </a>
+        )}
       </div>
     );
   } else if (order.status === "Cancelled") {

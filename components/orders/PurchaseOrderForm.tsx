@@ -10,10 +10,12 @@ import { ACCOUNT_REQUIRED_METHODS, SHIPPING_METHODS } from "./workflow";
 const field = "min-h-11 w-full rounded-xl border border-aviation-border bg-white px-4 py-2.5 text-sm focus:border-aviation-primary focus:outline-none disabled:bg-aviation-light";
 const label = "mb-1.5 block text-sm font-semibold text-aviation-dark";
 
-/** The buyer's purchase order: quantity, delivery details and shipping method. */
+/**
+ * The buyer's purchase order: delivery details and shipping method. The accepted
+ * quotation is final, so quantity, price, total and currency are shown, not edited.
+ */
 export default function PurchaseOrderForm({ order, onIssued }: { order: Order; onIssued: (poNumber: string) => void }) {
   const [form, setForm] = useState({
-    quantity: String(order.quantity),
     shipToName: order.ship_to_name ?? "",
     shipToCompany: order.ship_to_company ?? order.buyer_company_name ?? "",
     shipToAddress: order.ship_to_address ?? "",
@@ -56,19 +58,17 @@ export default function PurchaseOrderForm({ order, onIssued }: { order: Order; o
   const set = (key: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm((current) => ({ ...current, [key]: event.target.value }));
 
-  const quantity = Math.max(0, Math.floor(Number(form.quantity) || 0));
   const needsAccount = ACCOUNT_REQUIRED_METHODS.has(form.shippingMethod);
   const today = new Date().toISOString().slice(0, 10);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setError("");
-    if (quantity < 1) return setError("Enter a quantity of at least 1.");
     if (!form.shipToName.trim() || !form.shipToAddress.trim() || !form.shipToCity.trim() || !form.shipToCountry.trim()) return setError("Enter the delivery contact name, address, city and country.");
     if (!form.shippingMethod) return setError("Choose a shipping method.");
     if (needsAccount && !form.shippingAccountNumber.trim()) return setError(`Enter your ${form.shippingMethod} shipping account number.`);
     setSaving(true);
-    const result = await issuePurchaseOrder(order.id, { ...form, quantity });
+    const result = await issuePurchaseOrder(order.id, { ...form, quantity: order.quantity });
     setSaving(false);
     if (!result.success || !result.data) return setError(result.error ?? "The purchase order could not be sent.");
     onIssued(result.data);
@@ -78,8 +78,8 @@ export default function PurchaseOrderForm({ order, onIssued }: { order: Order; o
     <form onSubmit={submit} noValidate className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
-          <label htmlFor="po-qty" className={label}>Quantity <RequiredMark /></label>
-          <input id="po-qty" type="number" min={1} step={1} inputMode="numeric" value={form.quantity} onChange={set("quantity")} className={field} />
+          <p className={label}>Quantity (quoted)</p>
+          <p className="flex min-h-11 items-center rounded-xl bg-aviation-light px-4 text-sm font-semibold">{order.quantity.toLocaleString()}</p>
         </div>
         <div>
           <p className={label}>Unit price (quoted)</p>
@@ -87,9 +87,10 @@ export default function PurchaseOrderForm({ order, onIssued }: { order: Order; o
         </div>
         <div>
           <p className={label}>Order total</p>
-          <p className="flex min-h-11 items-center rounded-xl bg-aviation-light px-4 text-sm font-bold text-aviation-primary">{formatOrderAmount(quantity * Number(order.unit_price), order.currency)}</p>
+          <p className="flex min-h-11 items-center rounded-xl bg-aviation-light px-4 text-sm font-bold text-aviation-primary">{formatOrderAmount(Number(order.total_amount), order.currency)}</p>
         </div>
       </div>
+      <p className="-mt-2 text-xs text-aviation-muted">These come from the quotation you accepted and are final. To change them, ask the supplier for a new quotation.</p>
 
       <fieldset className="space-y-4">
         <legend className="text-sm font-bold uppercase tracking-wider text-aviation-muted">Ship to</legend>

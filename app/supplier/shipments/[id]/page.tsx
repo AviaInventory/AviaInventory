@@ -1,21 +1,7 @@
-import SupplierShipmentDetailsPage from "@/components/supplier/shipments/SupplierShipmentDetailsPage";
+import { redirect } from "next/navigation";
 
-interface Props {
-  params: Promise<{
-    id: string;
-  }>;
-}
-
-export default async function Page({
-  params,
-}: Props) {
-
+// A shipment is an order from payment onwards, so its details live on the order page.
+export default async function ShipmentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-
-  return (
-    <SupplierShipmentDetailsPage
-      shipmentId={id}
-    />
-  );
-
+  redirect(`/supplier/purchase-orders/${id}`);
 }

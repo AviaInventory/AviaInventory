@@ -46,7 +46,7 @@ export function nextAction(status: string, role: OrderRole): NextAction {
   switch (status) {
     case "Awaiting PO":
       return buyer
-        ? { label: "Create purchase order", hint: "Confirm the quantity, delivery address and shipping method so the supplier can invoice you.", yourTurn: true }
+        ? { label: "Create purchase order", hint: "Confirm the delivery address and shipping method so the supplier can invoice you.", yourTurn: true }
         : { label: "Waiting for purchase order", hint: "The buyer accepted your quotation. You'll be notified when their purchase order arrives.", yourTurn: false };
     case "PO Issued":
       return buyer
