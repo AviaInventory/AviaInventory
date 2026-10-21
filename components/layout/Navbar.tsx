@@ -105,7 +105,7 @@ export default function Navbar() {
       </div>
 
       <div className="aviation-mobile-nav border-t border-[#dbe5ef] bg-white lg:hidden">
-        <div className="flex items-center gap-1 overflow-x-auto px-3 py-2">
+        <div className="flex items-center justify-between gap-1 overflow-x-auto px-3 py-2 sm:justify-start">
           {navItems.map((item) => {
             const active = isActive(pathname, item.href);
             return (
@@ -113,7 +113,7 @@ export default function Navbar() {
                 key={item.label}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
-                className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold ${active ? "bg-[#eaf2ff] text-[#0d5bd7]" : "text-[#58708a] hover:bg-[#f2f7fc]"}`}
+                className={`shrink-0 rounded-full px-2 py-2 text-xs font-semibold min-[400px]:px-3 sm:px-4 ${active ? "bg-[#eaf2ff] text-[#0d5bd7]" : "text-[#58708a] hover:bg-[#f2f7fc]"}`}
               >
                 {item.label}
               </Link>

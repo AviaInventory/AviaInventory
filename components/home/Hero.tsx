@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowRight, Globe2, ShieldCheck, Wrench, Headphones } from "lucide-react";
 import PartSearchAutocomplete from "@/components/search/PartSearchAutocomplete";
@@ -14,7 +14,15 @@ const searchExamples = [
 ];
 
 export default function Hero() {
+  const router = useRouter();
   const [exampleIndex, setExampleIndex] = useState(0);
+  const [query, setQuery] = useState("");
+
+  // Search button and the "Try" examples open the marketplace filtered by the text.
+  function search(text: string) {
+    const term = text.trim();
+    router.push(term ? `/marketplace?q=${encodeURIComponent(term)}` : "/marketplace");
+  }
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -43,21 +51,23 @@ export default function Hero() {
             <div className="flex flex-col gap-2 sm:flex-row">
               <div className="min-w-0 flex-1 rounded-xl border border-[#d8e3ee] bg-[#f7fafc]">
                 <PartSearchAutocomplete
+                  value={query}
+                  onValueChange={setQuery}
                   placeholder={`Search by part number, manufacturer or NSN...`}
                   className="w-full"
                   inputClassName="border-0 bg-transparent py-4 text-sm shadow-none focus:ring-0 sm:text-base"
                 />
               </div>
-              <Link href="/marketplace" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#0d6efd] px-7 py-3 font-semibold text-white shadow-sm hover:bg-[#0758c8]">
+              <button type="button" onClick={() => search(query)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#0d6efd] px-7 py-3 font-semibold text-white shadow-sm hover:bg-[#0758c8]">
                 Search
                 <ArrowRight size={18} />
-              </Link>
+              </button>
             </div>
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/70">
             <span>Try:</span>
-            {searchExamples.slice(0, 3).map((item) => <span key={item} className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 font-mono">{item}</span>)}
+            {searchExamples.slice(0, 3).map((item) => <button key={item} type="button" onClick={() => search(item)} className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 font-mono hover:bg-white/20">{item}</button>)}
           </div>
 
           <div className="mt-10 grid gap-5 border-t border-white/15 pt-6 sm:grid-cols-2 lg:grid-cols-4">

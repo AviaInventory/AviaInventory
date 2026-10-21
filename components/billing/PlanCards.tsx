@@ -97,6 +97,18 @@ export default function PlanCards({ accountType, currentPlanCode, allowRenewCurr
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error ?? "Unable to start checkout.");
+      if (body.accessCode) {
+        // Paystack's pop-up opens over this page: the customer never leaves AviaInventory.
+        const { default: PaystackPop } = await import("@paystack/inline-js");
+        new PaystackPop().resumeTransaction(body.accessCode, {
+          onLoad: () => setLoading(null),
+          // The subscription page confirms the payment with Paystack on the server.
+          onSuccess: (transaction) => window.location.assign(`/account/subscription?checkout=paystack&reference=${encodeURIComponent(transaction.reference)}`),
+          onCancel: () => { setLoading(null); setError("Payment cancelled. You can try again whenever you're ready."); },
+          onError: (popupError) => { setLoading(null); setError(popupError?.message || "The payment window could not open. Please try again."); },
+        });
+        return;
+      }
       if (!body.url) throw new Error("The secure checkout URL was not returned.");
       window.location.assign(body.url);
     } catch (err) {

@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       charge: chargeAmount(planCode, interval),
       callbackUrl: `${origin}/account/subscription?checkout=paystack`,
     });
-    return NextResponse.json({ url: checkout.authorization_url, reference: checkout.reference });
+    return NextResponse.json({ accessCode: checkout.access_code, url: checkout.authorization_url, reference: checkout.reference });
   } catch (error) {
     console.error("BILLING CHECKOUT ERROR:", error);
     // Provider/configuration errors are not meaningful to customers.

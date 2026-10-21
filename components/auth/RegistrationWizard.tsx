@@ -152,7 +152,12 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
     if (!savedDraft) return;
     const savedAccountType = savedDraft.accountType as string | undefined;
     const normalizedAccountType = savedAccountType === "supplier" ? "hybrid" : savedDraft.accountType;
-    form.reset({ ...defaults, ...savedDraft, accountType: normalizedAccountType ?? defaults.accountType, password: "", confirmPassword: "" } as FormValues);
+    const restored = Object.fromEntries(Object.entries(defaults).map(([key, fallback]) => {
+      const value = (savedDraft as Record<string, unknown>)[key];
+      const sameShape = Array.isArray(fallback) ? Array.isArray(value) : typeof value === typeof fallback;
+      return [key, sameShape ? value : fallback];
+    }));
+    form.reset({ ...restored, accountType: normalizedAccountType ?? defaults.accountType, password: "", confirmPassword: "" } as FormValues);
     previousCountryRef.current = savedDraft.country ?? "";
     setStep(Math.max(1, savedDraft.step || 1));
     setSavedDraft(null);
@@ -190,21 +195,32 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
 
   const completion = Math.round((step / totalSteps) * 100);
 
+  const fieldsByStep: Record<string, (keyof FormValues)[]> = {
+    identity: ["fullName", "email", "phone", "country"],
+    company: ["companyName", "businessType"],
+    buying: [], selling: [], compliance: [], logistics: [], security: ["password", "confirmPassword", "agreeTerms"],
+  };
+
   const changeStep = (next: number) => {
     setStep(next);
     formTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const goNext = async () => {
-    const fieldsByStep: Record<string, (keyof FormValues)[]> = {
-      identity: ["fullName", "email", "phone", "country"],
-      company: ["companyName", "businessType"],
-      buying: [], selling: [], compliance: [], logistics: [], security: ["password", "confirmPassword", "agreeTerms"],
-    };
     const fields = fieldsByStep[steps[Math.min(step, totalSteps) - 1].key] || [];
     const valid = fields.length ? await form.trigger(fields) : true;
     if (!valid) return;
     if (step < totalSteps) changeStep(step + 1);
+  };
+
+  const showInvalidStep = (errors: Partial<Record<keyof FormValues, { message?: string }>>) => {
+    const failing = Object.keys(errors) as (keyof FormValues)[];
+    const stepIndex = steps.findIndex((item) => failing.some((field) => (fieldsByStep[item.key] ?? []).includes(field)));
+    const field = stepIndex >= 0 ? failing.find((name) => (fieldsByStep[steps[stepIndex].key] ?? []).includes(name)) : failing[0];
+    const message = (field && errors[field]?.message) || "Some details need attention before we can create your account.";
+    if (stepIndex >= 0 && stepIndex + 1 !== step) changeStep(stepIndex + 1);
+    toast.error(message);
+    if (stepIndex < 0) console.error("REGISTRATION VALIDATION:", errors);
   };
 
   const submit = form.handleSubmit(async (values) => {
@@ -225,7 +241,7 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
     toast.success("Account created. You can complete optional profile details from Account Settings.");
     router.replace(dashboardPathForRoles(result.roles));
     router.refresh();
-  });
+  }, showInvalidStep);
 
   if (confirmationSentTo) return <CheckEmailNotice email={confirmationSentTo} />;
 

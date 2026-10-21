@@ -160,7 +160,7 @@ function CertificationDocumentRow({ document, index, onChange, onRemove }: {
   document: CertificationDocumentDraft; index: number; onChange: (next: CertificationDocumentDraft) => void; onRemove: () => void;
 }) {
   return <div className="rounded-xl border border-aviation-border bg-white p-4">
-    <div className="grid gap-4 md:grid-cols-[1fr_1.2fr_1fr_auto] md:items-end">
+    <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_auto] md:items-end">
       <Field label={`Document ${index + 1} type`} required hint="This is the supplier's declaration of what the uploaded record is. AviaInventory review is separate.">
         <select value={document.documentType} onChange={(e) => onChange({ ...document, documentType: e.target.value })} className={inputClass}>
           {LISTING_CERTIFICATION_TYPES.filter((type) => type !== "No certification document").map((type) => <option key={type}>{type}</option>)}
@@ -629,7 +629,7 @@ export default function AddPartForm({ initialData, mode = "create", partId }: Ad
 
             <BuyerListingPreview formData={formData} existingImages={existingImages} existingCertificationDocuments={existingCertificationDocuments} supplier={supplierPreview} />
 
-            <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
               <div className="rounded-xl border border-aviation-border bg-white p-5 shadow-sm sm:p-6">
                 <h3 className="font-bold text-aviation-dark">Publication state</h3>
                 <div className="mt-4 grid gap-3 sm:grid-cols-3">

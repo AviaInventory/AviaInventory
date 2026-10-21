@@ -7,7 +7,7 @@ import type { RegistrationData } from "@/types/auth";
 
 export type AuthResult<T = object> =
   | ({ success: true } & T)
-  | { success: false; error: string };
+  | { success: false; error: string; needsVerification?: boolean };
 
 function failure(error: unknown, fallback: string): { success: false; error: string } {
   const message =
@@ -85,7 +85,15 @@ export async function registerUser(
     },
   });
 
-  if (error) return failure(error, "Unable to create your account.");
+  if (error) {
+    // Supabase sends the verification email during sign-up; if the mail server can't be
+    // reached it times out (504) or reports a sending error, and no account is created.
+    const status = (error as { status?: number }).status;
+    if (status === 504 || status === 500 || /email|smtp|timeout|fetch/i.test(error.message ?? "")) {
+      return { success: false, error: "We couldn't send your verification email right now, so your account wasn't created. Please try again in a few minutes, or contact support@aviainventory.com." };
+    }
+    return failure(error, "Unable to create your account.");
+  }
 
   // With email confirmation on, Supabase returns a user with an empty `identities`
   // array (and no error) when the address is already registered.
@@ -105,6 +113,23 @@ export async function resendConfirmationEmail(email: string): Promise<AuthResult
   return error ? failure(error, "Unable to resend the confirmation email.") : { success: true };
 }
 
+/**
+ * Confirms the email with the 6-digit code from the sign-up email ({{ .Token }} in the
+ * Supabase "Confirm sign up" template). Success signs the user in.
+ */
+export async function verifyEmailCode(email: string, code: string): Promise<AuthResult<{ roles: AccountRole[] }>> {
+  const token = code.replace(/\D/g, "");
+  if (token.length !== 6) return { success: false, error: "Enter the 6-digit code from the email." };
+  // "email" covers sign-up confirmation on current Supabase; "signup" is the older type.
+  let { data, error } = await supabase.auth.verifyOtp({ email: email.trim(), token, type: "email" });
+  if (error) ({ data, error } = await supabase.auth.verifyOtp({ email: email.trim(), token, type: "signup" }));
+  if (error || !data.user) {
+    return { success: false, error: "That code is incorrect or has expired. Check the latest email or request a new code." };
+  }
+  const { data: profile } = await supabase.from("profiles").select("account_type, account_roles").eq("id", data.user.id).maybeSingle();
+  return { success: true, roles: resolveRoles(profile) };
+}
+
 /* ---------------------------------------------------------------------------
    Sign in / out
 --------------------------------------------------------------------------- */
@@ -117,7 +142,7 @@ export async function loginUser(
 
   if (error) {
     if (error.code === "email_not_confirmed") {
-      return { success: false, error: "Please confirm your email address first. Check your inbox for the confirmation link." };
+      return { success: false, needsVerification: true, error: "Please confirm your email address first. Enter the code from the email we sent you." };
     }
     return failure(error, "Unable to sign in. Please check your email and password.");
   }

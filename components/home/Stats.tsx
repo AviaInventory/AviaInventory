@@ -36,7 +36,7 @@ export default function Stats() {
             return (
               <div
                 key={item.label}
-                className="rounded-2xl border border-aviation-border bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                className="rounded-2xl border border-aviation-border bg-white p-8 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
               >
                 <div className="mb-5 inline-flex rounded-xl bg-aviation-primary/10 p-4">
                   <Icon size={28} className="text-aviation-primary" />

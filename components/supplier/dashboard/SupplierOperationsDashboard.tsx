@@ -157,7 +157,7 @@ export default function SupplierOperationsDashboard() {
 
       {state.promotions.length > 0 && <section className="rounded-2xl border border-aviation-border bg-white p-5 sm:p-6"><div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-aviation-accent">PREMIUM VISIBILITY</p><h2 className="mt-1 text-lg font-bold text-aviation-dark">Active promotions</h2><p className="mt-1 text-sm text-aviation-muted">Approved supplier promotions currently available for eligible marketplace placement.</p></div><Link href="/supplier/marketing/promotions" className="text-sm font-semibold text-aviation-primary">Manage promotions</Link></div><div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">{state.promotions.map(p => <div key={p.id} className="rounded-xl border border-aviation-border bg-aviation-light p-4"><p className="font-semibold text-aviation-dark">{p.title}</p>{p.discount && <p className="mt-1 text-sm font-bold text-aviation-primary">{p.discount}</p>}<p className="mt-2 text-xs text-aviation-muted">{p.status}{p.ends_at ? ` · Ends ${new Date(p.ends_at).toLocaleDateString("en-GB")}` : ""}</p></div>)}</div></section>}
 
-      <div className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,.85fr)]">
         <section className="rounded-2xl border border-aviation-border bg-white p-5 sm:p-6">
           <SectionTitle eyebrow="NEXT STEPS" title="Keep the sales pipeline moving" description="Actionable work is prioritized here instead of generic performance statistics." />
           <div className="mt-5 space-y-3">

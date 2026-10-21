@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import { loginUser } from "@/lib/auth";
+import CheckEmailNotice from "./CheckEmailNotice";
 import { dashboardPathForRoles, safeNextPath } from "@/lib/auth-redirect";
 
 const NOTICES: Record<string, { tone: "info" | "error"; text: string }> = {
@@ -21,6 +22,8 @@ export default function LoginForm({ next, notice }: { next?: string; notice?: st
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // Signed up but never confirmed: finish with the emailed code instead of a dead end.
+  const [verifyEmail, setVerifyEmail] = useState<string | null>(null);
 
   const banner = notice ? NOTICES[notice] : undefined;
 
@@ -33,6 +36,7 @@ export default function LoginForm({ next, notice }: { next?: string; notice?: st
 
     const result = await loginUser(email, password);
     if (!result.success) {
+      if (result.needsVerification) setVerifyEmail(email.trim());
       setError(result.error);
       setLoading(false);
       return;
@@ -42,6 +46,8 @@ export default function LoginForm({ next, notice }: { next?: string; notice?: st
     router.replace(safeNextPath(next) ?? dashboardPathForRoles(result.roles));
     router.refresh();
   }
+
+  if (verifyEmail) return <CheckEmailNotice email={verifyEmail} justSent={false} />;
 
   return (
     <div>

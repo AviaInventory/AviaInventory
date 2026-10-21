@@ -98,7 +98,8 @@ export async function initializeCheckout(input: {
   };
   // Cards renew automatically through a Paystack subscription.
   if (input.method === "card") body.plan = await ensurePaystackPlan(input.planCode, input.interval, input.charge);
-  return paystack<{ authorization_url: string; reference: string }>("/transaction/initialize", { body });
+  // access_code opens Paystack's pop-up on our page; authorization_url is the redirect fallback.
+  return paystack<{ authorization_url: string; access_code: string; reference: string }>("/transaction/initialize", { body });
 }
 
 export type PaystackTransaction = {

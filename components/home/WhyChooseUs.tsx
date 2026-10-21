@@ -11,7 +11,7 @@ export default function WhyChooseUs() {
   return (
     <section id="about" className="bg-aviation-light py-24">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="grid gap-12 lg:grid-cols-[0.8fr_1.7fr] lg:items-start">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.7fr)] lg:items-start">
           <div className="lg:sticky lg:top-24">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-aviation-border bg-white px-3 py-1.5 font-code text-xs font-semibold tracking-[0.16em] text-aviation-primary"><Plane size={14} /> PROCUREMENT CONTROL</div>
             <h2 className="max-w-xl text-4xl font-bold text-aviation-dark md:text-5xl">Built around how aircraft parts are actually sourced.</h2>

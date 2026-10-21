@@ -46,9 +46,9 @@ const SOCIAL_LINKS = [
 export default function Footer() {
   return (
     <footer className="bg-aviation-primary text-white">
-      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-16 md:grid-cols-2 lg:grid-cols-5">
-        <div>
-          <h3 className="mb-5 text-2xl font-bold">{SITE.name}</h3>
+      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-10 px-6 py-16 lg:grid-cols-5 lg:gap-10">
+        <div className="col-span-2 lg:col-span-1">
+          <h3 className="mb-5 text-2xl font-bold text-white">{SITE.name}</h3>
           <p className="text-sm leading-7 text-aviation-muted">
             The Global Aviation Marketplace connecting airlines, operators, MROs, aircraft owners and aviation
             suppliers worldwide.
@@ -56,8 +56,8 @@ export default function Footer() {
         </div>
 
         {LINK_COLUMNS.map((column) => (
-          <div key={column.title}>
-            <h4 className="mb-5 text-lg font-semibold">{column.title}</h4>
+          <div key={column.title} className="min-w-0">
+            <h4 className="mb-5 text-lg font-semibold text-white">{column.title}</h4>
             <ul className="space-y-3 text-aviation-muted">
               {column.links.map((link) => (
                 <li key={link.label}>
@@ -70,8 +70,8 @@ export default function Footer() {
           </div>
         ))}
 
-        <div>
-          <h4 className="mb-5 text-lg font-semibold">Contact</h4>
+        <div className="col-span-2 lg:col-span-1">
+          <h4 className="mb-5 text-lg font-semibold text-white">Contact</h4>
           <div className="space-y-4 text-aviation-muted">
             <a href={`mailto:${SITE.email}`} className="flex items-center gap-3 hover:text-white">
               <Mail size={18} aria-hidden="true" />

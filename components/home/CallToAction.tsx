@@ -16,7 +16,7 @@ export default function CallToAction() {
               </div>
             </div>
 
-            <h2 className="text-4xl font-bold lg:text-5xl">
+            <h2 className="text-4xl font-bold text-white lg:text-5xl">
               Ready to Buy or Sell Aircraft Parts?
             </h2>
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  Plane, Cog, Radio, Boxes, CircleGauge, Droplets, Zap, ShieldCheck, ArrowUpRight,
+  Plane, Cog, Radio, Boxes, CircleGauge, Droplets, Zap, ShieldCheck,
 } from "lucide-react";
 import type { CategoryListingCount } from "@/lib/homepage-data";
 
@@ -58,7 +58,6 @@ export default function BrowseCategories({ counts }: { counts: CategoryListingCo
                   <p className="mt-2 max-w-[220px] text-sm leading-5 text-aviation-muted">{category.description}</p>
                   <p className="mt-3 text-xs font-semibold text-aviation-primary">{count.toLocaleString()} {count === 1 ? "part" : "parts"}</p>
                 </div>
-                <span className="absolute bottom-5 right-5 inline-flex h-11 w-11 items-center justify-center rounded-full border border-aviation-border bg-white text-aviation-primary transition group-hover:border-aviation-accent group-hover:bg-aviation-accent group-hover:text-white"><ArrowUpRight size={15} /></span>
               </Link>
             );
           })}
