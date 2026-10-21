@@ -46,8 +46,10 @@ function buildEmail(payload: HookPayload) {
   const { email_data: data, user } = payload;
   const type = data.email_action_type ?? "";
   const code = data.token ?? "";
-  // Same link Supabase would send: it verifies the token, then returns to our /auth/callback.
-  const link = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token=${encodeURIComponent(data.token_hash ?? "")}&type=${encodeURIComponent(type)}&redirect_to=${encodeURIComponent(data.redirect_to || SITE_ORIGIN)}`;
+  // Links must stay on aviainventory.com: the mail server rejects "verify" emails linking to
+  // another domain (550 5.7.1 policy). /auth/confirm forwards to Supabase's verify endpoint.
+  const returnTo = data.redirect_to?.startsWith(SITE_ORIGIN) ? data.redirect_to : `${SITE_ORIGIN}/auth/callback${type === "signup" ? "?flow=signup" : type === "recovery" ? "?next=/reset-password" : ""}`;
+  const link = `${SITE_ORIGIN}/auth/confirm?token=${encodeURIComponent(data.token_hash ?? "")}&type=${encodeURIComponent(type)}&next=${encodeURIComponent(returnTo)}`;
   const firstName = user.user_metadata?.full_name?.split(" ")[0];
   const hello = `<p style="margin:0 0 12px;font-size:15px">${escapeHtml(firstName ? `Hello ${firstName},` : "Hello,")}</p>`;
   const ignore = "If you didn't request this, you can ignore this email.";
