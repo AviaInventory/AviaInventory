@@ -24,6 +24,8 @@ export interface RegistrationData {
 
   // Supplier onboarding
   supplierType: string;
+  /** "We offer MRO services": listed on MRO Services and sent MRO service RFQs. */
+  mroCapable: boolean;
   supplierCategories: string[];
   aircraftSpecialties: string[];
   geographicCoverage: string[];

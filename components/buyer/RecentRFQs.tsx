@@ -5,7 +5,7 @@ import { FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { supabase } from "@/lib/supabase";
-import { formatDate } from "@/lib/rfqs";
+import { effectiveRFQStatus, formatDate, parseRFQMessage, type RFQStatus } from "@/lib/rfqs";
 
 interface RecentRFQ {
   id: string;
@@ -65,14 +65,8 @@ export default function RecentRFQs() {
           error: rfqError,
         } = await supabase
           .from("rfqs")
-          .select(`
-            id,
-            part_id,
-            quantity,
-            message,
-            status,
-            created_at
-          `)
+          // "*": required_date only exists once the 20261024000100 migration is applied.
+          .select("*")
           .eq("buyer_id", user.id)
           .order("created_at", {
             ascending: false,
@@ -177,8 +171,10 @@ export default function RecentRFQs() {
 
               message: rfq.message,
 
-              status:
-                rfq.status || "Pending",
+              status: effectiveRFQStatus({
+                status: (rfq.status || "Pending") as RFQStatus,
+                required_date: rfq.required_date ?? parseRFQMessage(rfq.message).required_date ?? null,
+              }),
 
               created_at:
                 rfq.created_at,
@@ -237,8 +233,8 @@ export default function RecentRFQs() {
       case "Accepted":
         return "bg-aviation-success-soft text-aviation-success";
 
-      case "Rejected":
-        return "bg-aviation-error-soft text-aviation-error";
+      case "Expired":
+        return "bg-aviation-warning-soft text-aviation-warning";
 
       case "Cancelled":
         return "bg-aviation-light text-aviation-dark";

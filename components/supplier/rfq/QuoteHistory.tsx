@@ -12,6 +12,8 @@ import type {
   Quote,
 } from "@/lib/rfqs";
 
+import QuoteStatusBadge from "../quotes/QuoteStatusBadge";
+
 interface Props {
   rfqId: string;
 }
@@ -164,22 +166,7 @@ export default function QuoteHistory({
 
                   <td className="px-4 py-4">
 
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold
-                        ${
-                          quote.status === "Accepted"
-                            ? "bg-aviation-success-soft text-aviation-success"
-                            : quote.status === "Rejected"
-                            ? "bg-aviation-error-soft text-aviation-error"
-                            : quote.status === "Sent"
-                            ? "bg-aviation-success-soft text-aviation-success"
-                            : quote.status === "Expired"
-                            ? "bg-aviation-warning-soft text-aviation-warning"
-                            : "bg-aviation-light text-aviation-dark"
-                        }`}
-                    >
-                      {quote.status}
-                    </span>
+                    <QuoteStatusBadge status={quote.status} />
 
                   </td>
 

@@ -70,29 +70,11 @@ export default function RFQFilters({
             All Statuses
           </option>
 
-          <option value="Draft">
-            Draft
-          </option>
-
-          <option value="Open">
-            Open
-          </option>
-
-          <option value="Pending">
-            Pending
-          </option>
-
-          <option value="Closed">
-            Closed
-          </option>
-
-          <option value="Awarded">
-            Awarded
-          </option>
-
-          <option value="Cancelled">
-            Cancelled
-          </option>
+          {["Pending", "Quoted", "Accepted", "Closed", "Expired", "Cancelled"].map((value) => (
+            <option key={value} value={value}>
+              {value}
+            </option>
+          ))}
         </select>
 
       </div>

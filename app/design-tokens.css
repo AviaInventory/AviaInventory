@@ -73,10 +73,14 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display-family);
-  color: var(--aviation-dark);
-  letter-spacing: -0.025em;
+/* Layered so Tailwind utilities (e.g. text-white on dark sections) can override it;
+   unlayered, it beat them and hid the white homepage headline. */
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display-family);
+    color: var(--aviation-dark);
+    letter-spacing: -0.025em;
+  }
 }
 
 code, pre, kbd, samp,

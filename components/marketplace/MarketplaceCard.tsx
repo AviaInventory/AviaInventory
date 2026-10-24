@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { PartPrice, SupplierName } from "@/components/auth/Revealed";
 import { certificationKind, TrustBadge } from "@/components/trust/TrustBadge";
 import type { MarketplacePart } from "@/lib/marketplace-server";
 import VerificationStatusBadge from "@/components/supplier/verification/VerificationStatusBadge";
@@ -31,7 +32,7 @@ export default function MarketplaceCard({ part }: MarketplaceCardProps) {
 
         <div className="mb-4 flex items-center justify-between gap-3"><span className="text-xs font-semibold uppercase tracking-wide text-aviation-muted">Supplier trust</span><VerificationStatusBadge status={part.supplier_verification_status} compact /></div>
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between gap-4"><span className="text-aviation-muted">Supplier</span><span className="text-right font-semibold">{part.supplier_name}</span></div>
+          <div className="flex justify-between gap-4"><span className="text-aviation-muted">Supplier</span><span className="text-right font-semibold"><SupplierName supplierId={part.supplier_id} label="Sign in to view" className="text-xs"/></span></div>
           <div className="flex justify-between gap-4"><span className="text-aviation-muted">Country</span><span className="text-right font-medium">{part.supplier_country || "-"}</span></div>
           <div className="flex justify-between gap-4"><span className="text-aviation-muted">Manufacturer</span><span className="text-right font-medium">{part.manufacturer || "-"}</span></div>
           <div className="flex items-center justify-between gap-4"><span className="text-aviation-muted">Condition</span><span className="rounded-full bg-aviation-success-soft px-3 py-1 text-xs font-semibold text-aviation-success">{part.condition || "-"}</span></div>
@@ -41,8 +42,8 @@ export default function MarketplaceCard({ part }: MarketplaceCardProps) {
 
         <div className="border-t pt-4">
           <p className="text-sm text-aviation-muted">{part.price_type === "request_quote" ? "Pricing" : part.price_type === "negotiable" ? "Negotiable" : "Price"}</p>
-          <p className="text-2xl font-bold text-aviation-primary">{part.price_type === "request_quote" ? "Request a Quote" : `${part.currency} ${Number(part.unit_price || 0).toLocaleString()} ${part.price_basis === "lot" ? `per lot (${part.lot_size || "?"} units)` : "per unit"}`}</p>
-          {part.price_valid_until && <p className="mt-2 text-xs text-aviation-muted">Price valid until {part.price_valid_until}</p>}<Link href={`/marketplace/${part.id}`} className="mt-5 block rounded-xl bg-aviation-primary py-3 text-center font-semibold text-white transition hover:bg-aviation-primary">View Details</Link>
+          {part.price_type === "request_quote" ? <p className="text-2xl font-bold text-aviation-primary">Request a Quote</p> : <p className="text-2xl font-bold text-aviation-primary"><PartPrice partId={part.id} className="mt-1 text-sm" format={(price) => price.unit_price == null ? "Request a Quote" : `${price.currency || "USD"} ${Number(price.unit_price).toLocaleString()} ${price.price_basis === "lot" ? `per lot (${part.lot_size || "?"} units)` : "per unit"}`}/></p>}
+          {part.price_valid_until && part.price_type !== "request_quote" && <p className="mt-2 text-xs text-aviation-muted">Price valid until {part.price_valid_until}</p>}<Link href={`/marketplace/${part.id}`} className="mt-5 block rounded-xl bg-aviation-primary py-3 text-center font-semibold text-white transition hover:bg-aviation-primary">View Details</Link>
         </div>
       </div>
     </article>

@@ -57,28 +57,20 @@ export default function QuoteFilters({
             }
             className="w-full rounded-xl border border-aviation-border bg-white px-4 py-3 text-sm outline-none transition focus:border-aviation-border focus:ring-2 focus:ring-aviation-primary"
           >
-            <option value="all">
+            <option value="All">
               All Statuses
             </option>
 
-            <option value="Draft">
-              Draft
-            </option>
-
-            <option value="Submitted">
-              Submitted
-            </option>
-
-            <option value="Pending">
-              Pending
+            <option value="Sent">
+              Sent
             </option>
 
             <option value="Accepted">
               Accepted
             </option>
 
-            <option value="Rejected">
-              Rejected
+            <option value="Closed">
+              Closed
             </option>
 
             <option value="Expired">

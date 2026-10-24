@@ -67,6 +67,8 @@ export async function registerUser(
           certificationRequirements: form.certificationRequirements,
           preferredSupplierCriteria: form.preferredSupplierCriteria,
           supplierType: form.supplierType,
+          // Read by the set_supplier_mro_capable trigger when the supplier row is created.
+          mroCapable: form.accountType === "hybrid" && Boolean(form.mroCapable),
           supplierCategories: form.supplierCategories,
           aircraftSpecialties: form.aircraftSpecialties,
           geographicCoverage: form.geographicCoverage,

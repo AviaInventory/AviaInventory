@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { supabase } from "@/lib/supabase";
+import { minRequiredDate, validateRequiredDate, RFQ_MIN_LEAD_DAYS } from "@/lib/rfqs";
 
 interface RFQFormProps {
   partId: string;
@@ -25,6 +26,9 @@ export default function RFQForm({
     useState(1);
 
   const [message, setMessage] =
+    useState("");
+
+  const [requiredDate, setRequiredDate] =
     useState("");
 
   // True when the signed-in company owns this listing (Buyer & Supplier accounts).
@@ -61,6 +65,13 @@ export default function RFQForm({
       alert(
         "Unable to identify the selected part."
       );
+      return;
+    }
+
+    const dateError = validateRequiredDate(requiredDate);
+
+    if (dateError) {
+      alert(dateError);
       return;
     }
 
@@ -427,6 +438,8 @@ export default function RFQForm({
           message:
             message.trim() || null,
           status: "Pending",
+          rfq_type: "parts",
+          required_date: requiredDate,
         })
         .select()
         .single();
@@ -559,6 +572,33 @@ export default function RFQForm({
             disabled={loading}
             className="w-full rounded-xl border border-aviation-border p-3 outline-none transition focus:border-aviation-border focus:ring-2 focus:ring-aviation-primary/10 disabled:bg-aviation-light"
           />
+
+        </div>
+
+        {/* ===================================================
+            REQUIRED BY
+        =================================================== */}
+
+        <div>
+
+          <label htmlFor="rfq-required-date" className="mb-2 block font-medium text-aviation-dark">
+            Required By <span className="text-aviation-error">*</span>
+          </label>
+
+          <input
+            id="rfq-required-date"
+            type="date"
+            required
+            min={minRequiredDate()}
+            value={requiredDate}
+            onChange={(e) => setRequiredDate(e.target.value)}
+            disabled={loading}
+            className="w-full rounded-xl border border-aviation-border p-3 text-aviation-dark outline-none transition focus:border-aviation-border focus:ring-2 focus:ring-aviation-primary/10 disabled:bg-aviation-light"
+          />
+
+          <p className="mt-1.5 text-xs text-aviation-muted">
+            At least {RFQ_MIN_LEAD_DAYS} days from today. The supplier can quote until this date.
+          </p>
 
         </div>
 

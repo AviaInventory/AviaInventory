@@ -91,7 +91,13 @@ export default function QuoteForm({
       });
 
       if (!result.success) {
-        toast.error("Unable to submit quotation. Please review the RFQ and try again.");
+        // Expired / already quoted / closed RFQs come back with a message the supplier should see.
+        toast.error(
+          typeof result.error === "string"
+            ? result.error
+            : "Unable to submit quotation. Please review the RFQ and try again."
+        );
+        setLoading(false);
         return;
       }
 

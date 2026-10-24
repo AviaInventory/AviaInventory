@@ -2,7 +2,14 @@ import Link from "next/link";
 
 import NewRFQForm from "@/components/buyer/rfq/NewRFQForm";
 
-export default function NewRFQPage() {
+type Props = { searchParams: Promise<{ type?: string | string[] }> };
+
+export default async function NewRFQPage({ searchParams }: Props) {
+  // ?type=parts or ?type=mro (e.g. from the MRO Services page) preselects the RFQ type.
+  const { type } = await searchParams;
+  const requested = Array.isArray(type) ? type[0] : type;
+  const initialType = requested === "mro" || requested === "parts" ? requested : null;
+
   return (
     <div className="space-y-8">
 
@@ -24,9 +31,8 @@ export default function NewRFQPage() {
           </h1>
 
           <p className="mt-2 max-w-2xl text-aviation-muted">
-            Submit a Request for Quotation to qualified aviation
-            suppliers. Provide the required technical, quantity,
-            delivery, and certification information below.
+            Request quotations for aircraft parts from qualified suppliers, or for
+            repair / overhaul of components from MRO-capable suppliers.
           </p>
         </div>
       </section>
@@ -36,7 +42,7 @@ export default function NewRFQPage() {
       ====================================================== */}
 
       <section>
-        <NewRFQForm />
+        <NewRFQForm initialType={initialType} />
       </section>
 
     </div>

@@ -32,10 +32,14 @@ export default function Hero() {
   }, []);
 
   return (
-    <section className="relative isolate overflow-hidden bg-[#062a4a] text-white">
-      <Image src="/hero-aircraft.jpg" alt="Commercial aircraft on the runway" fill priority className="object-cover object-center lg:object-right" sizes="100vw" />
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,32,57,.98)_0%,rgba(3,38,68,.94)_42%,rgba(3,38,68,.52)_72%,rgba(3,38,68,.2)_100%)]" />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,32,57,.1),rgba(3,32,57,.35))]" />
+    // No overflow-hidden on the section (and z-10 above later sections): the search
+    // suggestions drop below the hero and were being clipped. The backdrop clips itself.
+    <section className="relative isolate z-10 bg-[#062a4a] text-white">
+      <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+        <Image src="/hero-aircraft.jpg" alt="Commercial aircraft on the runway" fill priority className="object-cover object-center lg:object-right" sizes="100vw" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,32,57,.98)_0%,rgba(3,38,68,.94)_42%,rgba(3,38,68,.52)_72%,rgba(3,38,68,.2)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,32,57,.1),rgba(3,32,57,.35))]" />
+      </div>
 
       <div className="relative mx-auto max-w-[1440px] px-4 py-14 sm:px-6 sm:py-18 lg:px-8 lg:py-20 xl:py-24">
         <div className="max-w-[760px]">
@@ -44,7 +48,7 @@ export default function Hero() {
             Find the Right Aircraft Parts, <span className="text-[#62a6ff]">Faster.</span>
           </h1>
           <p className="mt-5 text-base leading-7 text-white/85 sm:text-lg">
-            Trusted suppliers <span className="mx-2 text-[#f4a72c]">•</span> Genuine parts <span className="mx-2 text-[#f4a72c]">•</span> Global reach
+            Trusted suppliers <span className="mx-2 text-[#f4a72c]">•</span> Genuine parts <span className="mx-2 text-[#f4a72c]">•</span> Global reach <span className="mx-2 text-[#f4a72c]">•</span> MRO services
           </p>
 
           <div className="mt-8 max-w-[690px] rounded-2xl bg-white p-2 shadow-[0_20px_60px_rgba(0,0,0,.25)]">

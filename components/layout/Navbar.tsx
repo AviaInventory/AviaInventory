@@ -2,20 +2,20 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Menu, Search, X } from "lucide-react";
+import { Menu, PlayCircle, Search, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import NotificationBell from "./NotificationBell";
 import UserMenu from "./UserMenu";
 import { useSessionProfile } from "./useSessionProfile";
 
-const navItems = [
+// RFQs live in the buying/selling dashboards; Account appears only once signed in.
+const publicNavItems = [
   { label: "Home", href: "/" },
   { label: "Marketplace", href: "/marketplace" },
-  { label: "Suppliers", href: "/suppliers" },
-  { label: "RFQs", href: "/buyer/rfqs" },
-  { label: "Account", href: "/account/profile" },
+  { label: "MRO Services", href: "/suppliers" },
 ];
+const accountNavItem = { label: "Account", href: "/account/profile" };
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -28,6 +28,7 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   // undefined while the session loads: render nothing there rather than flash "Login".
   const profile = useSessionProfile();
+  const navItems = profile ? [...publicNavItems, accountNavItem] : publicNavItems;
 
   return (
     <header className="sticky top-0 z-[100] border-b border-[#dbe5ef] bg-white/95 shadow-[0_4px_20px_rgba(6,35,63,0.08)] backdrop-blur-xl">
@@ -62,6 +63,13 @@ export default function Navbar() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2 lg:ml-6">
+          <Link prefetch={false}
+            href="/book-demo"
+            className="hidden min-h-11 items-center gap-2 rounded-lg bg-[#f4a72c] px-4 py-2 text-sm font-bold text-[#062a4a] shadow-sm hover:bg-[#e0951a] md:inline-flex"
+          >
+            <PlayCircle size={17} aria-hidden="true" />
+            Book a Demo
+          </Link>
           <Link prefetch={false}
             href="/marketplace"
             aria-label="Search marketplace"
@@ -120,12 +128,20 @@ export default function Navbar() {
               </Link>
             );
           })}
+          <Link prefetch={false}
+            href="/book-demo"
+            onClick={() => setMobileOpen(false)}
+            className="shrink-0 rounded-full bg-[#f4a72c] px-3 py-2 text-xs font-bold text-[#062a4a] md:hidden"
+          >
+            Book a Demo
+          </Link>
         </div>
       </div>
 
       {mobileOpen && profile === null && (
         <div id="mobile-site-navigation" className="border-t border-[#dbe5ef] bg-white px-4 pb-4 pt-2 shadow-lg lg:hidden">
           <div className="grid gap-2 sm:grid-cols-2">
+            <Link prefetch={false} href="/book-demo" onClick={() => setMobileOpen(false)} className="rounded-xl bg-[#f4a72c] px-4 py-3 text-center text-sm font-bold text-[#062a4a] sm:col-span-2">Book a Demo</Link>
             <Link prefetch={false} href="/login" onClick={() => setMobileOpen(false)} className="rounded-xl border border-[#d5e0eb] px-4 py-3 text-center text-sm font-semibold text-[#12304d]">Login</Link>
             <Link prefetch={false} href="/register" onClick={() => setMobileOpen(false)} className="rounded-xl bg-[#0d5bd7] px-4 py-3 text-center text-sm font-semibold text-white">Get Started</Link>
           </div>

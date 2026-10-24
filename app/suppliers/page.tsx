@@ -1,46 +1,52 @@
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, Building2, MapPin, Package, Star } from "lucide-react";
-import { getHomepageSupplierSummaries } from "@/lib/homepage-data";
+import { ArrowRight, Store, Wrench } from "lucide-react";
+import SupplierDirectoryCard from "@/components/home/SupplierDirectoryCard";
+import { getSupplierDirectory } from "@/lib/homepage-data";
 
 export const revalidate = 60;
 
 export const metadata = {
-  title: "Verified Suppliers | AviaInventory",
-  description: "Browse verified aviation parts suppliers on AviaInventory.",
+  title: "MRO Services | AviaInventory",
+  description: "Find MRO and repair stations for repair and overhaul of aircraft components, and request repair quotes on AviaInventory.",
 };
 
-export default async function SuppliersPage() {
-  const suppliers = await getHomepageSupplierSummaries(24);
+/** MRO Services: suppliers who ticked MRO (repair / overhaul) capability. */
+export default async function MROServicesPage() {
+  const suppliers = await getSupplierDirectory(48, true);
 
   return (
-    <main className="min-h-screen bg-[#f4f8fc] py-10 sm:py-14">
+    <main className="min-h-screen bg-aviation-light py-10 sm:py-14">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl">
-          <p className="font-mono text-xs font-semibold uppercase tracking-[0.22em] text-[#f4a72c]">Trusted supply network</p>
-          <h1 className="mt-2 text-3xl font-bold text-[#062a4a] sm:text-5xl">Verified Aviation Suppliers</h1>
-          <p className="mt-4 text-base leading-7 text-[#61758b] sm:text-lg">Discover aviation specialists with active inventory, visible credentials and buyer feedback.</p>
-        </div>
+        <section className="overflow-hidden rounded-3xl bg-[#062a4a] p-7 text-white shadow-xl sm:p-10">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-center">
+            <div>
+              <p className="font-mono text-xs font-semibold uppercase tracking-[0.22em] text-aviation-accent">Repair &amp; overhaul network</p>
+              <h1 className="mt-2 text-3xl font-bold text-white sm:text-5xl">MRO Services</h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-white/80 sm:text-lg">
+                Repair stations and MROs that repair and overhaul aircraft components. Send one MRO services RFQ and receive quotes from capable shops.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Link href="/buyer/rfqs/new?type=mro" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-aviation-accent px-6 py-3 font-semibold text-[#062a4a] hover:brightness-95">
+                <Wrench size={18} /> Request a repair / overhaul quote <ArrowRight size={17} />
+              </Link>
+              <Link href="/register?type=supplier" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-6 py-3 font-semibold text-white hover:bg-white/15">
+                <Store size={18} /> List your MRO capability
+              </Link>
+              <p className="text-center text-xs text-white/60">Already selling on AviaInventory? Turn on MRO services in Account settings → Company.</p>
+            </div>
+          </div>
+        </section>
 
         {suppliers.length === 0 ? (
-          <div className="mt-10 rounded-2xl border border-dashed border-[#dbe5ef] bg-white p-10 text-center text-sm text-[#61758b]">Supplier profiles will appear here as published inventory becomes available.</div>
+          <div className="mt-10 rounded-2xl border border-dashed border-aviation-border bg-white p-10 text-center">
+            <Wrench className="mx-auto text-aviation-primary" size={32} />
+            <h2 className="mt-4 text-lg font-bold text-aviation-dark">No MRO providers listed yet</h2>
+            <p className="mx-auto mt-2 max-w-lg text-sm text-aviation-muted">Suppliers with repair and overhaul capability will appear here. You can still send an MRO services RFQ and it will reach them as they join.</p>
+          </div>
         ) : (
           <div className="mt-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            {suppliers.map((supplier) => (
-              <article key={supplier.id} className="group rounded-2xl border border-[#dbe5ef] bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-[#0d5bd7]/30 hover:shadow-lg">
-                <Link href={`/suppliers/${supplier.id}`} className="flex items-center gap-3">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#dbe5ef] bg-white p-2">
-                    {supplier.logo_url ? <img src={supplier.logo_url} alt={`${supplier.company_name} logo`} className="h-full w-full object-contain" /> : <Building2 className="text-[#0d5bd7]" size={28} />}
-                  </div>
-                  <div className="min-w-0"><h2 className="truncate font-bold text-[#12304d]">{supplier.company_name}</h2><p className="mt-1 flex items-center gap-1 text-xs text-[#16805d]"><BadgeCheck size={13} /> Verified supplier</p></div>
-                </Link>
-                <div className="mt-5 flex items-center gap-1 text-sm"><Star size={16} className="fill-[#f4a72c] text-[#f4a72c]" /><strong>{supplier.rating == null ? "New" : supplier.rating.toFixed(1)}</strong><span className="text-[#61758b]">({supplier.review_count} {supplier.review_count === 1 ? "review" : "reviews"})</span></div>
-                <div className="mt-4 space-y-2 text-xs text-[#61758b]">
-                  <p className="flex items-center gap-2"><MapPin size={14} />{supplier.city ? `${supplier.city}, ${supplier.country ?? ""}` : supplier.country ?? "Global"}</p>
-                  <p className="flex items-center gap-2"><Package size={14} />{supplier.listings.toLocaleString()} active listings</p>
-                </div>
-                <Link href={`/suppliers/${supplier.id}`} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#0d5bd7] px-4 py-2.5 text-sm font-semibold text-[#0d5bd7] hover:bg-[#0d5bd7] hover:text-white">View supplier <ArrowRight size={15} /></Link>
-              </article>
-            ))}
+            {suppliers.map((supplier) => <SupplierDirectoryCard key={supplier.id} supplier={supplier} />)}
           </div>
         )}
       </div>

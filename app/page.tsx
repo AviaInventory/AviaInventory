@@ -1,21 +1,21 @@
 import Hero from "@/components/home/Hero";
-import BrowseCategories from "@/components/home/BrowseCategories";
+import PromotedListings from "@/components/home/PromotedListings";
 import Stats from "@/components/home/Stats";
 import RecentlyAddedParts from "@/components/home/RecentlyAddedParts";
 import SupplierSpotlight from "@/components/home/SupplierSpotlight";
 import HowItWorks from "@/components/home/HowItWorks";
 import CallToAction from "@/components/home/CallToAction";
 import Footer from "@/components/layout/Footer";
-import { getHomepageCategoryCounts, getHomepageSupplierSummaries } from "@/lib/homepage-data";
+import { getPromotedListings, getSupplierDirectory } from "@/lib/homepage-data";
 
 // Rebuild at most every 60 s (like /marketplace and /suppliers). Without this the page was
 // generated once at deploy time and new suppliers/listings never appeared on it.
 export const revalidate = 60;
 
 export default async function Home() {
-  const [categoryCounts, supplierSummaries] = await Promise.all([
-    getHomepageCategoryCounts(),
-    getHomepageSupplierSummaries(4),
+  const [promotedListings, featuredSuppliers] = await Promise.all([
+    getPromotedListings(8),
+    getSupplierDirectory(4),
   ]);
 
   return (
@@ -23,22 +23,22 @@ export default async function Home() {
       {/* Hero Section */}
       <Hero />
 
-      {/* Browse Parts by Category */}
-      <BrowseCategories counts={categoryCounts} />
+      {/* Featured / promoted parts, services and products */}
+      <PromotedListings listings={promotedListings} />
 
-      {/* Live Marketplace Statistics */}
-      <Stats />
+      {/* Featured / promoted suppliers and MROs */}
+      <SupplierSpotlight suppliers={featuredSuppliers} />
 
       {/* Recently Added Aircraft Parts */}
       <RecentlyAddedParts />
 
-      {/* Featured Suppliers */}
-      <SupplierSpotlight suppliers={supplierSummaries} />
+      {/* Live Marketplace Statistics */}
+      <Stats />
 
-      {/* How AviaInventory Works */}
+      {/* The Procurement Path: buy, sell & service, and the account switch */}
       <HowItWorks />
 
-      {/* Call to Action */}
+      {/* Call to Action + Book a Demo */}
       <CallToAction />
 
       {/* Footer */}

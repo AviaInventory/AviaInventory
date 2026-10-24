@@ -7,9 +7,9 @@ import {
   ArrowRight,
   Bookmark,
   Eye,
-  Lock,
 } from "lucide-react";
 
+import { PartPrice, SupplierName } from "@/components/auth/Revealed";
 import { supabase } from "@/lib/supabase";
 
 interface Part {
@@ -20,10 +20,11 @@ interface Part {
   category: string;
   condition: string;
   quantity: number;
-  unit_price: number;
   currency: string;
   image_urls: string[] | null;
   status: string;
+  price_type: string | null;
+  supplier_id: string;
 }
 
 export default function RecentlyAddedParts() {
@@ -46,10 +47,11 @@ export default function RecentlyAddedParts() {
           category,
           condition,
           quantity,
-          unit_price,
           currency,
           image_urls,
-          status
+          status,
+          price_type,
+          supplier_id
         `)
         .eq("status", "Published")
         .order("created_at", {
@@ -67,8 +69,7 @@ export default function RecentlyAddedParts() {
         return;
       }
 
-
-      setParts(data || []);
+      setParts((data || []) as Part[]);
     } catch (error) {
       console.error(
         "LOAD RECENTLY ADDED PARTS ERROR:",
@@ -294,22 +295,25 @@ export default function RecentlyAddedParts() {
                     </div>
 
                     {/* ================================================== */}
-                    {/* LOCKED INFORMATION */}
+                    {/* SUPPLIER AND PRICE: signed-in users only */}
                     {/* ================================================== */}
 
-                    <div className="mt-6 rounded-xl bg-aviation-light p-4">
+                    <div className="mt-6 space-y-2 rounded-xl bg-aviation-light p-4 text-sm">
 
-                      <div className="flex items-start gap-2 text-aviation-primary">
-
-                        <Lock
-                          size={16}
-                          className="mt-0.5 shrink-0"
-                        />
-
-                        <span className="text-sm font-medium">
-                          Login to view supplier details, stock and pricing
+                      <div className="flex justify-between gap-4">
+                        <span className="text-aviation-muted">Supplier</span>
+                        <span className="min-w-0 truncate text-right font-semibold">
+                          <SupplierName supplierId={part.supplier_id} label="Sign in to view" className="text-xs" />
                         </span>
+                      </div>
 
+                      <div className="flex justify-between gap-4">
+                        <span className="text-aviation-muted">Price</span>
+                        <span className="text-right font-bold text-aviation-primary">
+                          {part.price_type === "request_quote"
+                            ? "Request a quote"
+                            : <PartPrice partId={part.id} label="Sign in to view" className="text-xs" />}
+                        </span>
                       </div>
 
                     </div>

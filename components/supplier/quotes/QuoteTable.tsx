@@ -60,6 +60,10 @@ export default function QuoteTable() {
         quote.rfq?.description
           ?.toLowerCase()
           .includes(text) ||
+        quote.rfq?.component
+          ?.toLowerCase()
+          .includes(text) ||
+        quote.rfq_id.toLowerCase().startsWith(text) ||
         false;
 
       const matchesStatus =
@@ -157,6 +161,11 @@ export default function QuoteTable() {
 
                 <td className="px-6 py-4">
                   {quote.rfq?.part_number ?? "-"}
+                  {quote.rfq?.rfq_type === "mro" && (
+                    <span className="block text-xs text-aviation-muted">
+                      MRO service{quote.rfq.component ? ` · ${quote.rfq.component}` : ""}
+                    </span>
+                  )}
                 </td>
 
                 <td className="px-6 py-4">
@@ -181,7 +190,7 @@ export default function QuoteTable() {
                 <td className="px-6 py-4">
 
                   <Link
-                    href={`/supplier/rfqs/${quote.rfq_id}`}
+                    href={`/supplier/quotes/${quote.id}`}
                     className="font-medium text-aviation-primary hover:underline"
                   >
                     View

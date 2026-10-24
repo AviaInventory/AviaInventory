@@ -23,6 +23,9 @@ const styles: Record<string, { className: string; Icon: typeof Clock3 }> = {
   dispatched: { className: "border-aviation-primary/20 bg-aviation-primary/10 text-aviation-primary", Icon: PackageCheck },
   closed: { className: "border-aviation-success/20 bg-aviation-success-soft text-aviation-success", Icon: CheckCircle2 },
   cancelled: { className: "border-aviation-border bg-aviation-light text-aviation-muted", Icon: Archive },
+  // RFQ / quotation
+  sent: { className: "border-aviation-primary/20 bg-aviation-primary/10 text-aviation-primary", Icon: Send },
+  expired: { className: "border-aviation-warning/20 bg-aviation-warning-soft text-aviation-warning", Icon: Clock3 },
 };
 
 export default function StatusBadge({ status }: { status: DashboardStatus }) {

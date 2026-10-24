@@ -6,13 +6,13 @@ import {
   RefreshCw,
   Search,
   Eye,
-  Pencil,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 
 import {
   getBuyerRFQs,
+  effectiveRFQStatus,
   formatDate,
   type RFQ,
 } from "@/lib/rfqs";
@@ -62,7 +62,7 @@ export default function RFQTable() {
 
       const data = await getBuyerRFQs();
 
-      setRFQs(data);
+      setRFQs(data.map((rfq) => ({ ...rfq, status: effectiveRFQStatus(rfq) })));
     } catch (error) {
       console.error(
         "GET BUYER RFQS ERROR:",
@@ -83,7 +83,7 @@ export default function RFQTable() {
 
       const data = await getBuyerRFQs();
 
-      setRFQs(data);
+      setRFQs(data.map((rfq) => ({ ...rfq, status: effectiveRFQStatus(rfq) })));
     } catch (error) {
       console.error(
         "REFRESH BUYER RFQS ERROR:",
@@ -337,12 +337,6 @@ export default function RFQTable() {
                 {paginatedRFQs.map(
                   (rfq) => {
 
-                    const isClosed =
-                      rfq.status ===
-                        "Closed" ||
-                      rfq.status ===
-                        "Cancelled";
-
                     return (
                       <tr
                         key={rfq.id}
@@ -375,6 +369,12 @@ export default function RFQTable() {
                               rfq.part_number ??
                               "-"}
                           </p>
+
+                          {rfq.rfq_type === "mro" && (
+                            <span className="mt-1 inline-flex rounded-full bg-aviation-accent/15 px-2 py-0.5 text-[11px] font-semibold text-aviation-dark">
+                              MRO Service
+                            </span>
+                          )}
 
                           {rfq.description && (
                             <p className="mt-1 max-w-xs truncate text-sm text-aviation-muted">
@@ -435,17 +435,6 @@ export default function RFQTable() {
                               View
                             </Link>
 
-                            {!isClosed && (
-                              <Link
-                                href={`/buyer/rfqs/${rfq.id}/edit`}
-                                className="inline-flex items-center gap-1.5 font-semibold text-aviation-warning hover:underline"
-                              >
-                                <Pencil
-                                  size={16}
-                                />
-                                Edit
-                              </Link>
-                            )}
 
                           </div>
 
@@ -470,12 +459,6 @@ export default function RFQTable() {
 
             {paginatedRFQs.map(
               (rfq) => {
-
-                const isClosed =
-                  rfq.status ===
-                    "Closed" ||
-                  rfq.status ===
-                    "Cancelled";
 
                 return (
                   <div
@@ -503,6 +486,12 @@ export default function RFQTable() {
                             rfq.part_number ??
                             "Custom RFQ"}
                         </h3>
+
+                        {rfq.rfq_type === "mro" && (
+                          <span className="mt-1 inline-flex rounded-full bg-aviation-accent/15 px-2 py-0.5 text-[11px] font-semibold text-aviation-dark">
+                            MRO Service
+                          </span>
+                        )}
 
                       </div>
 
@@ -563,17 +552,6 @@ export default function RFQTable() {
                         View RFQ
                       </Link>
 
-                      {!isClosed && (
-                        <Link
-                          href={`/buyer/rfqs/${rfq.id}/edit`}
-                          className="inline-flex items-center justify-center gap-2 rounded-xl border border-aviation-border px-4 py-3 font-semibold text-aviation-dark transition hover:bg-aviation-light"
-                        >
-                          <Pencil
-                            size={17}
-                          />
-                          Edit
-                        </Link>
-                      )}
 
                     </div>
 

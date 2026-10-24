@@ -5,14 +5,52 @@ import { useRouter } from "next/navigation";
 
 import {
   createRFQ,
+  minRequiredDate,
   uploadRFQAttachment,
+  validateRequiredDate,
+  RFQ_MIN_LEAD_DAYS,
+  RFQ_TYPE_LABELS,
   type CreateRFQData,
+  type RFQType,
 } from "@/lib/rfqs";
 
 import SupplierSelector from "./SupplierSelector";
+import MroRFQForm from "./MroRFQForm";
+import { Field, inputClass } from "./RFQFormFields";
 import { RFQ_CERTIFICATION_OPTIONS } from "@/lib/rfq-options";
 
-export default function NewRFQForm() {
+/** Buyers first choose the kind of RFQ; each kind has its own form. */
+export default function NewRFQForm({ initialType = null }: { initialType?: RFQType | null }) {
+  const [rfqType, setRFQType] = useState<RFQType | "">(initialType ?? "");
+
+  return (
+    <div className="space-y-8">
+      <section className="rounded-2xl bg-white p-8 shadow">
+        <label htmlFor="rfq-type" className="mb-2 block text-2xl font-bold text-aviation-primary">
+          What do you need a quotation for?
+        </label>
+        <p className="mb-6 text-sm text-aviation-muted">
+          Choose the type of RFQ to open the right form.
+        </p>
+        <select
+          id="rfq-type"
+          value={rfqType}
+          onChange={(event) => setRFQType(event.target.value as RFQType | "")}
+          className={`${inputClass} max-w-xl`}
+        >
+          <option value="">Select RFQ type</option>
+          <option value="parts">{RFQ_TYPE_LABELS.parts}</option>
+          <option value="mro">MRO Services RFQ (Repair / Overhaul of parts / components)</option>
+        </select>
+      </section>
+
+      {rfqType === "parts" && <PartsRFQForm />}
+      {rfqType === "mro" && <MroRFQForm />}
+    </div>
+  );
+}
+
+function PartsRFQForm() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
@@ -122,20 +160,10 @@ export default function NewRFQForm() {
       return "Please enter a valid quantity.";
     }
 
-    if (!formData.required_date) {
-      return "Please select the required date.";
-    }
+    const dateError = validateRequiredDate(formData.required_date);
 
-    const selectedDate = new Date(
-      `${formData.required_date}T00:00:00`
-    );
-
-    if (
-      Number.isNaN(
-        selectedDate.getTime()
-      )
-    ) {
-      return "Please enter a valid required date.";
+    if (dateError) {
+      return dateError;
     }
 
     if (!formData.preferred_condition) {
@@ -563,18 +591,15 @@ export default function NewRFQForm() {
           </Field>
 
           <Field
-            label="Required Date"
+            label="Required By"
             required
+            hint={`At least ${RFQ_MIN_LEAD_DAYS} days from today. Suppliers can quote until this date.`}
           >
             <input
               type="date"
               required
               disabled={disabled}
-              min={
-                new Date()
-                  .toISOString()
-                  .split("T")[0]
-              }
+              min={minRequiredDate()}
               value={
                 formData.required_date
               }
@@ -899,44 +924,3 @@ export default function NewRFQForm() {
     </form>
   );
 }
-
-/* ==========================================================
-   FORM FIELD
-========================================================== */
-
-function Field({
-  label,
-  required,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-
-      <label className="mb-2 block font-medium text-aviation-dark">
-
-        {label}
-
-        {required && (
-          <span className="ml-1 text-aviation-error">
-            *
-          </span>
-        )}
-
-      </label>
-
-      {children}
-
-    </div>
-  );
-}
-
-/* ==========================================================
-   INPUT STYLE
-========================================================== */
-
-const inputClass =
-  "w-full rounded-xl border border-aviation-border bg-white p-3 text-aviation-dark outline-none transition placeholder:text-aviation-muted focus:border-aviation-border focus:ring-2 focus:ring-aviation-primary disabled:cursor-not-allowed disabled:bg-aviation-light";

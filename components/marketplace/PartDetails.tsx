@@ -8,6 +8,8 @@ import { supabase } from "@/lib/supabase";
 import RFQForm from "@/components/rfq/RFQForm";
 import { certificationKind, TrustBadge } from "@/components/trust/TrustBadge";
 import VerificationStatusBadge from "@/components/supplier/verification/VerificationStatusBadge";
+import { PartPrice, SupplierName } from "@/components/auth/Revealed";
+import { PUBLIC_PART_COLUMNS } from "@/lib/marketplace-server";
 
 interface Part {
   id: string;
@@ -651,7 +653,7 @@ export default function PartDetails({ partId }: Props) {
             <div>
 
               <h3 className="text-2xl font-bold">
-                {part.supplier_name || "Verified Supplier"}
+                <SupplierName supplierId={part.supplier_id} />
               </h3>
 
               <p className="mt-2 text-aviation-muted">
@@ -916,7 +918,7 @@ function RelatedParts({
 
     const { data, error } = await supabase
       .from("parts")
-      .select("*")
+      .select(PUBLIC_PART_COLUMNS)
       .eq("manufacturer", manufacturer)
       .eq("status", "Published")
       .neq("id", currentPartId)
@@ -932,7 +934,7 @@ function RelatedParts({
       );
     }
 
-    setParts(data || []);
+    setParts((data || []) as unknown as typeof parts);
     setLoading(false);
   }
 
@@ -1001,8 +1003,7 @@ function RelatedParts({
             </p>
 
             <p className="mt-4 text-xl font-bold">
-              {part.currency}{" "}
-              {Number(part.unit_price).toLocaleString()}
+              <PartPrice partId={part.id} className="text-sm" />
             </p>
 
             <p className="mt-2 text-sm text-aviation-muted">

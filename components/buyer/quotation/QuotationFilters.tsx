@@ -40,25 +40,16 @@ export default function QuotationFilters({
             All
           </option>
 
-          <option value="Submitted">
-            Submitted
-          </option>
-
-          <option value="Accepted">
-            Accepted
-          </option>
-
-          <option value="Rejected">
-            Rejected
-          </option>
-
-          <option value="Expired">
-            Expired
-          </option>
-
-          <option value="Withdrawn">
-            Withdrawn
-          </option>
+          {[
+            ["Sent", "Awaiting decision"],
+            ["Accepted", "Accepted"],
+            ["Closed", "Closed"],
+            ["Expired", "Expired"],
+          ].map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
 
         </select>
 

@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const title = `${part.part_number}${part.description ? ` – ${part.description}` : ""} | AviaInventory`;
-  const description = `${part.part_number}${part.manufacturer ? ` by ${part.manufacturer}` : ""}. Available from ${part.supplier_name}. ${part.condition || "Published"} aircraft part listing on AviaInventory.`;
+  const description = `${part.part_number}${part.manufacturer ? ` by ${part.manufacturer}` : ""}. Available from verified suppliers. ${part.condition || "Published"} aircraft part listing on AviaInventory.`;
 
   return {
     title,

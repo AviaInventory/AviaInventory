@@ -5,14 +5,18 @@ import Link from "next/link";
 
 import {
   getSupplierRFQs,
+  getSupplierQuotes,
+  supplierRFQStatus,
+  RFQStatus,
   formatDate,
 } from "@/lib/rfqs";
 
-import type { RFQ } from "@/lib/rfqs";
+import type { Quote, RFQ } from "@/lib/rfqs";
 
 import RFQFilters from "./RFQFilters";
 import RFQStatusBadge from "./RFQStatusBadge";
 import RFQEmptyState from "./RFQEmptyState";
+import RFQTypeBadge from "./RFQTypeBadge";
 
 const PAGE_SIZE = 10;
 
@@ -40,6 +44,8 @@ function TableSkeleton({
 
 export default function RFQTable() {
   const [rfqs, setRFQs] = useState<RFQ[]>([]);
+  // This supplier's own quotation per RFQ: decides the status they see and whether they can quote.
+  const [myQuotes, setMyQuotes] = useState<Map<string, Quote>>(new Map());
   const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
@@ -60,9 +66,13 @@ export default function RFQTable() {
     try {
       setLoading(true);
 
-      const data = await getSupplierRFQs();
+      const [data, quotes] = await Promise.all([
+        getSupplierRFQs(),
+        getSupplierQuotes(),
+      ]);
 
       setRFQs(data);
+      setMyQuotes(new Map(quotes.map((quote) => [quote.rfq_id, quote])));
 
     } catch (error) {
       console.error("Failed to load RFQs:", error);
@@ -81,6 +91,14 @@ export default function RFQTable() {
           ?.toLowerCase()
           .includes(searchText) ||
 
+        rfq.part_number
+          ?.toLowerCase()
+          .includes(searchText) ||
+
+        rfq.component
+          ?.toLowerCase()
+          .includes(searchText) ||
+
         rfq.description
           ?.toLowerCase()
           .includes(searchText) ||
@@ -93,12 +111,12 @@ export default function RFQTable() {
 
       const matchesStatus =
         statusFilter === "All" ||
-        rfq.status === statusFilter;
+        supplierRFQStatus(rfq, myQuotes.get(rfq.id)) === statusFilter;
 
       return matchesSearch && matchesStatus;
     });
 
-  }, [rfqs, search, statusFilter]);
+  }, [rfqs, myQuotes, search, statusFilter]);
 
   const totalPages = Math.max(
     1,
@@ -141,6 +159,10 @@ export default function RFQTable() {
               </th>
 
               <th className="px-6 py-4 text-left text-sm font-semibold">
+                Type
+              </th>
+
+              <th className="px-6 py-4 text-left text-sm font-semibold">
                 Part Number
               </th>
 
@@ -153,7 +175,7 @@ export default function RFQTable() {
               </th>
 
               <th className="px-6 py-4 text-left text-sm font-semibold">
-                Required Date
+                Required By
               </th>
 
               <th className="px-6 py-4 text-left text-sm font-semibold">
@@ -170,8 +192,11 @@ export default function RFQTable() {
 
           <tbody>
 
-            {paginatedRFQs.map((rfq) => (
+            {paginatedRFQs.map((rfq) => {
+              const myQuote = myQuotes.get(rfq.id);
+              const status = supplierRFQStatus(rfq, myQuote);
 
+              return (
               <tr
                 key={rfq.id}
                 className="border-b transition hover:bg-aviation-light"
@@ -182,7 +207,14 @@ export default function RFQTable() {
                 </td>
 
                 <td className="px-6 py-4">
+                  <RFQTypeBadge type={rfq.rfq_type} />
+                </td>
+
+                <td className="px-6 py-4">
                   {rfq.part?.part_number ?? rfq.part_number ?? "-"}
+                  {rfq.rfq_type === "mro" && rfq.component && (
+                    <span className="block text-xs text-aviation-muted">{rfq.component}</span>
+                  )}
                 </td>
 
                 <td className="px-6 py-4">
@@ -199,7 +231,7 @@ export default function RFQTable() {
 
                 <td className="px-6 py-4">
                   <RFQStatusBadge
-                    status={rfq.status}
+                    status={status}
                   />
                 </td>
 
@@ -214,20 +246,29 @@ export default function RFQTable() {
                       View
                     </Link>
 
-                    <Link
-                      href={`/supplier/rfqs/${rfq.id}`}
-                      className="font-medium text-aviation-success hover:underline"
-                    >
-                      Submit Quote
-                    </Link>
+                    {status === RFQStatus.Pending ? (
+                      <Link
+                        href={`/supplier/rfqs/${rfq.id}#submit-quote`}
+                        className="font-medium text-aviation-success hover:underline"
+                      >
+                        Submit Quote
+                      </Link>
+                    ) : myQuote ? (
+                      <Link
+                        href={`/supplier/quotes/${myQuote.id}`}
+                        className="font-medium text-aviation-primary hover:underline"
+                      >
+                        My Quotation
+                      </Link>
+                    ) : null}
 
                   </div>
 
                 </td>
 
               </tr>
-
-            ))}
+              );
+            })}
 
           </tbody>
 

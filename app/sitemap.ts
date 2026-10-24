@@ -11,6 +11,7 @@ const STATIC_PAGES: { path: string; priority: number; changeFrequency: MetadataR
   { path: "/marketplace", priority: 0.9, changeFrequency: "daily" },
   { path: "/suppliers", priority: 0.8, changeFrequency: "daily" },
   { path: "/pricing", priority: 0.7, changeFrequency: "monthly" },
+  { path: "/book-demo", priority: 0.6, changeFrequency: "monthly" },
   { path: "/register", priority: 0.6, changeFrequency: "monthly" },
   { path: "/rfqs", priority: 0.5, changeFrequency: "monthly" },
   { path: "/contact", priority: 0.5, changeFrequency: "yearly" },

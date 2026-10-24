@@ -8,8 +8,9 @@ const LINK_COLUMNS = [
     title: "Marketplace",
     links: [
       { label: "Browse Parts", href: "/marketplace" },
-      { label: "Suppliers", href: "/suppliers" },
+      { label: "MRO Services", href: "/suppliers" },
       { label: "Pricing", href: "/pricing" },
+      { label: "Book a Demo", href: "/book-demo" },
     ],
   },
   {
@@ -18,6 +19,7 @@ const LINK_COLUMNS = [
       { label: "Register", href: "/register?type=buyer" },
       { label: "Dashboard", href: "/buyer/dashboard" },
       { label: "Request a Quote", href: "/buyer/rfqs/new" },
+      { label: "Request a Repair Quote", href: "/buyer/rfqs/new?type=mro" },
     ],
   },
   {
@@ -49,7 +51,7 @@ export default function Footer() {
       <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-10 px-6 py-16 lg:grid-cols-5 lg:gap-10">
         <div className="col-span-2 lg:col-span-1">
           <h3 className="mb-5 text-2xl font-bold text-white">{SITE.name}</h3>
-          <p className="text-sm leading-7 text-aviation-muted">
+          <p className="text-sm leading-7 text-white/75">
             The Global Aviation Marketplace connecting airlines, operators, MROs, aircraft owners and aviation
             suppliers worldwide.
           </p>
@@ -58,7 +60,7 @@ export default function Footer() {
         {LINK_COLUMNS.map((column) => (
           <div key={column.title} className="min-w-0">
             <h4 className="mb-5 text-lg font-semibold text-white">{column.title}</h4>
-            <ul className="space-y-3 text-aviation-muted">
+            <ul className="space-y-3 text-white/75">
               {column.links.map((link) => (
                 <li key={link.label}>
                   <Link href={link.href} className="hover:text-white">
@@ -72,7 +74,7 @@ export default function Footer() {
 
         <div className="col-span-2 lg:col-span-1">
           <h4 className="mb-5 text-lg font-semibold text-white">Contact</h4>
-          <div className="space-y-4 text-aviation-muted">
+          <div className="space-y-4 text-white/75">
             <a href={`mailto:${SITE.email}`} className="flex items-center gap-3 hover:text-white">
               <Mail size={18} aria-hidden="true" />
               {SITE.email}
@@ -113,7 +115,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-6 text-sm text-aviation-muted md:flex-row">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-6 text-sm text-white/75 md:flex-row">
           <p>
             © {new Date().getFullYear()} {SITE.name}. All rights reserved.
           </p>

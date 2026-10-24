@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Building2, Globe, MapPin, Package, Star, Tags } from "lucide-react";
+import { ArrowLeft, Building2, Globe, MapPin, Package, Star, Tags, Wrench } from "lucide-react";
+import { SupplierName, SupplierWebsite } from "@/components/auth/Revealed";
 import { getPublicSupplierProfile } from "@/lib/homepage-data";
 import VerificationStatusBadge from "@/components/supplier/verification/VerificationStatusBadge";
 
@@ -9,13 +10,14 @@ export const revalidate = 60;
 
 type Props = { params: Promise<{ id: string }> };
 
+// Supplier names are shown to signed-in users only, so the page title stays generic.
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const data = await getPublicSupplierProfile(id).catch(() => null);
-  const name = data?.supplier?.company_name || "Supplier";
+  const kind = data?.supplier?.mro_capable ? "MRO & Supplier" : "Supplier";
   return {
-    title: `${name} | AviaInventory Supplier` ,
-    description: `View ${name}'s aviation parts inventory, supplier credentials and buyer reviews.`,
+    title: `Verified Aviation ${kind} | AviaInventory`,
+    description: "View this aviation supplier's inventory, credentials, MRO capability and buyer reviews on AviaInventory.",
     alternates: { canonical: `/suppliers/${id}` },
   };
 }
@@ -31,18 +33,18 @@ export default async function PublicSupplierProfile({ params }: Props) {
   return (
     <main className="min-h-screen bg-aviation-light py-8 sm:py-12">
       <div className="mx-auto max-w-5xl px-4 sm:px-6">
-        <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-aviation-primary hover:underline"><ArrowLeft size={16} /> Back to AviaInventory</Link>
+        <Link href="/suppliers" className="inline-flex items-center gap-2 text-sm font-semibold text-aviation-primary hover:underline"><ArrowLeft size={16} /> Back to MRO Services</Link>
 
         <section className="mt-6 rounded-[var(--aviation-radius-xl)] bg-white p-6 shadow-sm sm:p-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div className="flex items-start gap-4">
               <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-aviation-primary text-white"><Building2 size={34} /></div>
               <div>
-                <div className="flex flex-wrap items-center gap-2"><h1 className="text-3xl font-bold text-aviation-dark sm:text-4xl">{supplier.company_name || "Supplier"}</h1><VerificationStatusBadge status={supplier.verification_status || "Draft"} compact /></div>
+                <div className="flex flex-wrap items-center gap-2"><h1 className="text-3xl font-bold text-aviation-dark sm:text-4xl"><SupplierName supplierId={supplier.id} label="Sign in to view supplier name" className="text-lg" fallback="Supplier" /></h1>{supplier.mro_capable && <span className="inline-flex items-center gap-1 rounded-full bg-[#eaf2ff] px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-aviation-primary"><Wrench size={12} />MRO services</span>}<VerificationStatusBadge status={supplier.verification_status || "Draft"} compact /></div>
                 <p className="mt-2 text-aviation-muted">{supplier.business_type || "Aviation supplier"}</p>
                 <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-aviation-muted">
                   {supplier.country && <span className="inline-flex items-center gap-2"><MapPin size={15} />{supplier.city ? `${supplier.city}, ${supplier.country}` : supplier.country}</span>}
-                  {supplier.website && <a href={supplier.website.startsWith("http") ? supplier.website : `https://${supplier.website}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-aviation-primary hover:underline"><Globe size={15} />Website</a>}
+                  <SupplierWebsite supplierId={supplier.id} className="inline-flex items-center gap-2 text-aviation-primary hover:underline"><Globe size={15} />Website</SupplierWebsite>
                 </div>
               </div>
             </div>

@@ -8,18 +8,39 @@ export enum RFQStatus {
   Pending = "Pending",
   Quoted = "Quoted",
   Accepted = "Accepted",
+  /** Legacy value only: the database stores it as Closed. */
   Rejected = "Rejected",
   Cancelled = "Cancelled",
   Closed = "Closed",
+  Expired = "Expired",
 }
 
 export enum QuoteStatus {
   Draft = "Draft",
   Sent = "Sent",
   Accepted = "Accepted",
+  /** Legacy value only: the database stores it as Closed. */
   Rejected = "Rejected",
   Expired = "Expired",
+  /** Not selected: the buyer accepted another quotation or closed the RFQ. */
+  Closed = "Closed",
 }
+
+/** "parts" = aircraft parts RFQ, "mro" = repair / overhaul service RFQ. */
+export type RFQType = "parts" | "mro";
+
+export const RFQ_TYPE_LABELS: Record<RFQType, string> = {
+  parts: "Aircraft Parts RFQ",
+  mro: "MRO Services RFQ",
+};
+
+/** Buyers must give suppliers at least this many days before the required-by date. */
+export const RFQ_MIN_LEAD_DAYS = 3;
+
+// "*" rather than a column list: rfq_type, required_date and attachment_urls come from the
+// 20261024000100 migration, and naming them would break every RFQ read until it is applied.
+// hydrateRFQs() falls back to the message text and defaults when they are absent.
+const RFQ_COLUMNS = "*";
 
 /* ==========================================================
    COMMON TYPES
@@ -67,8 +88,14 @@ export interface RFQ {
   message: string | null;
   status: RFQStatus;
   created_at: string;
+  rfq_type: RFQType;
 
   /* Derived / optional display fields. */
+  /** Storage paths in the private rfq-attachments bucket; see getRFQAttachmentUrl(). */
+  attachment_urls?: string[];
+  component?: string | null;
+  component_manufacturer?: string | null;
+  forward_exchange?: string | null;
   part_number?: string | null;
   description?: string | null;
   preferred_condition?: string | null;
@@ -93,6 +120,11 @@ export interface RFQ {
 }
 
 export interface CreateRFQData {
+  rfq_type?: RFQType;
+  /* MRO services RFQ fields. */
+  component?: string;
+  component_manufacturer?: string;
+  forward_exchange?: "Yes" | "No" | "";
   part_number: string;
   description: string;
   quantity: number;
@@ -268,6 +300,9 @@ async function hydrateRFQs(
     message: string | null;
     status: RFQStatus;
     created_at: string;
+    rfq_type?: RFQType | null;
+    required_date?: string | null;
+    attachment_urls?: string[] | null;
   }>;
 
   const buyerMap = await getProfilesByIds(
@@ -327,11 +362,15 @@ async function hydrateRFQs(
         null,
       quote_count: quoteCounts.get(row.id) ?? 0,
 
+      rfq_type: row.rfq_type === "mro" ? "mro" : "parts",
+      status: row.status === RFQStatus.Rejected ? RFQStatus.Closed : row.status,
+      required_date: row.required_date || details.required_date || null,
+      attachment_urls: row.attachment_urls ?? [],
+      attachments: row.attachment_urls ?? [],
+
       /* Parsed from rfqs.message: they are not columns in the rfqs table. */
-      required_date: details.required_date || null,
       delivery_location: details.delivery_location || null,
       notes: details.notes || null,
-      attachments: [],
       supplier_ids: row.supplier_id
         ? [row.supplier_id]
         : [],
@@ -350,12 +389,19 @@ async function hydrateRFQs(
 ========================================================== */
 
 type RFQDetailKey =
-  | "part_number" | "description" | "preferred_condition" | "certification_required"
+  | "component" | "part_number" | "description" | "component_manufacturer" | "forward_exchange"
+  | "preferred_condition" | "certification_required"
   | "ata_chapter" | "category" | "aircraft_manufacturer" | "aircraft_model"
   | "engine_manufacturer" | "engine_model" | "required_date" | "delivery_location" | "notes";
 
+// MRO-only labels are written only for MRO RFQs, so parts RFQ messages keep their format.
+const MRO_ONLY_KEYS: RFQDetailKey[] = ["component", "component_manufacturer", "forward_exchange"];
+
 const RFQ_DETAIL_LABELS: [RFQDetailKey, string][] = [
+  ["component", "Component"],
   ["part_number", "Part Number"],
+  ["component_manufacturer", "Component Manufacturer"],
+  ["forward_exchange", "Forward Exchange"],
   ["description", "Description"],
   ["preferred_condition", "Preferred Condition"],
   ["certification_required", "Certification Required"],
@@ -370,8 +416,14 @@ const RFQ_DETAIL_LABELS: [RFQDetailKey, string][] = [
   ["notes", "Notes"],
 ];
 
-export function composeRFQMessage(details: Partial<Record<RFQDetailKey, string | null | undefined>>): string {
-  return RFQ_DETAIL_LABELS.map(([key, label]) => `${label}: ${String(details[key] ?? "").trim() || "-"}`).join("\n");
+export function composeRFQMessage(
+  details: Partial<Record<RFQDetailKey, string | null | undefined>>,
+  rfqType: RFQType = "parts",
+): string {
+  return RFQ_DETAIL_LABELS
+    .filter(([key]) => rfqType === "mro" || !MRO_ONLY_KEYS.includes(key))
+    .map(([key, label]) => `${label}: ${String(details[key] ?? "").trim() || "-"}`)
+    .join("\n");
 }
 
 export function parseRFQMessage(message: string | null | undefined): Partial<Record<RFQDetailKey, string>> {
@@ -425,7 +477,11 @@ export async function createRFQ(
       return handleError("You can't request a quote from your own company.");
     }
 
-    const message = composeRFQMessage(rfq);
+    const dateError = validateRequiredDate(rfq.required_date);
+    if (dateError) return handleError(dateError);
+
+    const rfqType: RFQType = rfq.rfq_type === "mro" ? "mro" : "parts";
+    const message = composeRFQMessage(rfq, rfqType);
 
     const { data, error } = await supabase
       .from("rfqs")
@@ -436,10 +492,11 @@ export async function createRFQ(
         quantity: Number(rfq.quantity),
         message,
         status: RFQStatus.Pending,
+        rfq_type: rfqType,
+        required_date: rfq.required_date,
+        attachment_urls: rfq.attachments ?? [],
       })
-      .select(
-        "id, buyer_id, supplier_id, part_id, quantity, message, status, created_at"
-      )
+      .select(RFQ_COLUMNS)
       .single();
 
     if (error) {
@@ -464,12 +521,11 @@ export async function createRFQ(
 export async function getBuyerRFQs(): Promise<RFQ[]> {
   try {
     const user = await getCurrentUser();
+    await expireOverdueRFQs();
 
     const { data, error } = await supabase
       .from("rfqs")
-      .select(
-        "id, buyer_id, supplier_id, part_id, quantity, message, status, created_at"
-      )
+      .select(RFQ_COLUMNS)
       .eq("buyer_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -492,12 +548,11 @@ export async function getBuyerRFQs(): Promise<RFQ[]> {
 export async function getSupplierRFQs(): Promise<RFQ[]> {
   try {
     const user = await getCurrentUser();
+    await expireOverdueRFQs();
 
     const { data, error } = await supabase
       .from("rfqs")
-      .select(
-        "id, buyer_id, supplier_id, part_id, quantity, message, status, created_at"
-      )
+      .select(RFQ_COLUMNS)
       .or(`supplier_id.eq.${user.id},supplier_id.is.null`)
       .neq("buyer_id", user.id)
       .order("created_at", { ascending: false });
@@ -530,9 +585,7 @@ export async function getRFQById(
 
     const { data, error } = await supabase
       .from("rfqs")
-      .select(
-        "id, buyer_id, supplier_id, part_id, quantity, message, status, created_at"
-      )
+      .select(RFQ_COLUMNS)
       .eq("id", id)
       .or(
         `buyer_id.eq.${user.id},supplier_id.eq.${user.id},supplier_id.is.null`
@@ -559,81 +612,86 @@ export async function getRFQById(
 }
 
 /* ==========================================================
-   UPDATE RFQ
+   EXPIRY
+   Sent RFQs are read-only (enforced in the database). An RFQ
+   expires once its required-by date is reached.
 ========================================================== */
 
-export async function updateRFQ(
-  id: string,
-  updates: Partial<CreateRFQData>
-): Promise<ServiceResponse<RFQ>> {
-  try {
-    const user = await getCurrentUser();
+/** A date as YYYY-MM-DD in the user's local time zone. */
+function localISODate(date: Date) {
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 10);
+}
 
-    const payload: {
-      quantity?: number;
-      message?: string | null;
-      supplier_id?: string | null;
-    } = {};
+/** Earliest required-by date a buyer may choose (YYYY-MM-DD). */
+export function minRequiredDate(from = new Date()) {
+  const date = new Date(from);
+  date.setDate(date.getDate() + RFQ_MIN_LEAD_DAYS);
+  return localISODate(date);
+}
 
-    if (updates.quantity !== undefined) {
-      payload.quantity = Number(updates.quantity);
-    }
-
-    // The edit form sends every field, so rebuild the whole message rather than
-    // dropping the ones not listed here (ATA chapter, aircraft, engine, dates...).
-    if (updates.part_number !== undefined || updates.description !== undefined) {
-      payload.message = composeRFQMessage(updates);
-    }
-
-    if (
-      updates.distribution_method === "selected"
-    ) {
-      payload.supplier_id =
-        updates.supplier_ids?.[0] ?? null;
-    }
-
-    if (payload.supplier_id && payload.supplier_id === user.id) {
-      return handleError("You can't request a quote from your own company.");
-    }
-
-    const { data: existing } = await supabase
-      .from("rfqs")
-      .select("status")
-      .eq("id", id)
-      .eq("buyer_id", user.id)
-      .maybeSingle();
-
-    if (existing && existing.status !== RFQStatus.Pending) {
-      return handleError("This RFQ can no longer be edited because suppliers have already responded to it.");
-    }
-
-    const { data, error } = await supabase
-      .from("rfqs")
-      .update(payload)
-      .eq("id", id)
-      .eq("buyer_id", user.id)
-      .select(
-        "id, buyer_id, supplier_id, part_id, quantity, message, status, created_at"
-      )
-      .maybeSingle();
-
-    if (error) {
-      return handleError(error);
-    }
-
-    if (!data) {
-      return handleError("RFQ not found or you do not own it.");
-    }
-
-    const [hydrated] = await hydrateRFQs([data]);
-
-    return {
-      success: true,
-      data: hydrated,
-    };
-  } catch (error) {
-    return handleError(error);
+export function validateRequiredDate(value: string | null | undefined): string | null {
+  if (!value) return "Please choose the date the RFQ is required by.";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return "Please enter a valid required-by date.";
+  if (value < minRequiredDate()) {
+    return `The required-by date must be at least ${RFQ_MIN_LEAD_DAYS} days from today.`;
   }
+  return null;
+}
+
+/** True once the required-by date is reached: suppliers can no longer quote. */
+export function isRFQExpired(rfq: Pick<RFQ, "status" | "required_date">) {
+  if (rfq.status === RFQStatus.Expired) return true;
+  if (!rfq.required_date) return false;
+  const open = rfq.status === RFQStatus.Pending || rfq.status === RFQStatus.Quoted;
+  return open && rfq.required_date.slice(0, 10) <= localISODate(new Date());
+}
+
+/** Status to display, with expiry applied before the database catches up. */
+export function effectiveRFQStatus(rfq: Pick<RFQ, "status" | "required_date">): RFQStatus {
+  if (rfq.status === RFQStatus.Rejected) return RFQStatus.Closed;
+  return isRFQExpired(rfq) ? RFQStatus.Expired : rfq.status;
+}
+
+export function effectiveQuoteStatus(status: QuoteStatus | string): QuoteStatus {
+  return status === QuoteStatus.Rejected ? QuoteStatus.Closed : (status as QuoteStatus);
+}
+
+/**
+ * The RFQ's status as one supplier sees it in Received RFQs:
+ * Pending (can quote), Quoted (this supplier quoted), Accepted (this supplier's quote
+ * was accepted), Closed (buyer chose another quote, closed or cancelled the RFQ) or Expired.
+ */
+export function supplierRFQStatus(
+  rfq: Pick<RFQ, "status" | "required_date">,
+  myQuote?: Pick<Quote, "status"> | null,
+): RFQStatus {
+  if (myQuote) {
+    const quoteStatus = effectiveQuoteStatus(myQuote.status);
+    if (quoteStatus === QuoteStatus.Accepted) return RFQStatus.Accepted;
+    if (quoteStatus === QuoteStatus.Closed) return RFQStatus.Closed;
+    if (quoteStatus === QuoteStatus.Expired) return RFQStatus.Expired;
+    return RFQStatus.Quoted;
+  }
+  const status = effectiveRFQStatus(rfq);
+  if (status === RFQStatus.Pending || status === RFQStatus.Quoted) return RFQStatus.Pending;
+  if (status === RFQStatus.Expired) return RFQStatus.Expired;
+  return RFQStatus.Closed;
+}
+
+/** A supplier may submit a quote only while the RFQ is Pending for them. */
+export function canSupplierQuote(
+  rfq: Pick<RFQ, "status" | "required_date">,
+  myQuote?: Pick<Quote, "status"> | null,
+) {
+  return supplierRFQStatus(rfq, myQuote) === RFQStatus.Pending;
+}
+
+/** Moves overdue RFQs (and their open quotes) to Expired. Best effort. */
+export async function expireOverdueRFQs() {
+  const { error } = await supabase.rpc("expire_overdue_rfqs");
+  // PGRST202: the function arrives with the 20261024000100 migration; until then, skip quietly.
+  if (error && error.code !== "PGRST202") console.warn("EXPIRE OVERDUE RFQS ERROR:", error.message);
 }
 
 /* ==========================================================
@@ -724,9 +782,7 @@ async function hydrateQuotes(
   if (rfqIds.length) {
     const { data, error } = await supabase
       .from("rfqs")
-      .select(
-        "id, buyer_id, supplier_id, part_id, quantity, message, status, created_at"
-      )
+      .select(RFQ_COLUMNS)
       .in("id", rfqIds);
 
     if (!error) {
@@ -739,6 +795,7 @@ async function hydrateQuotes(
 
   return quoteRows.map((quote) => ({
     ...quote,
+    status: effectiveQuoteStatus(quote.status),
     supplier: supplierMap.get(quote.supplier_id),
     rfq: rfqMap.get(quote.rfq_id),
   }));
@@ -753,7 +810,7 @@ export async function createQuote(
     const { data: rfq, error: rfqError } = await supabase
       .from("rfqs")
       .select(
-        "id, buyer_id, supplier_id, quantity, part_id, message, status, created_at"
+        RFQ_COLUMNS
       )
       .eq("id", quote.rfq_id)
       .or(`supplier_id.eq.${user.id},supplier_id.is.null`)
@@ -768,8 +825,24 @@ export async function createQuote(
       );
     }
 
+    if (isRFQExpired(rfq as RFQ)) {
+      return handleError("This RFQ has expired: its required-by date has been reached.");
+    }
+
     if (rfq.status !== RFQStatus.Pending && rfq.status !== RFQStatus.Quoted) {
       return handleError("This RFQ is closed and no longer accepts quotations.");
+    }
+
+    const { data: existingQuote } = await supabase
+      .from("quotes")
+      .select("id")
+      .eq("rfq_id", rfq.id)
+      .eq("supplier_id", user.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingQuote) {
+      return handleError("You have already submitted a quotation for this RFQ.");
     }
 
     const { data, error } = await supabase
@@ -1007,10 +1080,28 @@ export async function acceptQuote(
   }
 }
 
-export async function rejectQuote(
+/** Buyer closes a quotation they will not take forward. */
+export async function closeQuote(
   id: string
 ): Promise<ServiceResponse> {
-  return updateQuoteStatus(id, QuoteStatus.Rejected);
+  return updateQuoteStatus(id, QuoteStatus.Closed);
+}
+
+/**
+ * After accepting a quotation: close every other open quotation on the RFQ so
+ * suppliers see it as Closed and stop quoting. Returns how many were closed.
+ */
+export async function closeOtherQuotes(
+  rfqId: string
+): Promise<ServiceResponse<{ closed: number }>> {
+  try {
+    await getCurrentUser();
+    const { data, error } = await supabase.rpc("close_other_quotes", { p_rfq_id: rfqId });
+    if (error) return { success: false, error: error.message };
+    return { success: true, data: { closed: Number(data ?? 0) } };
+  } catch (error) {
+    return handleError(error);
+  }
 }
 
 export async function withdrawQuote(
@@ -1029,12 +1120,15 @@ export async function uploadRFQAttachment(
   try {
     const user = await getCurrentUser();
 
-    const extension = file.name.includes(".")
-      ? `.${file.name.split(".").pop()}`
-      : "";
+    // Keep a readable file name after the UUID so suppliers see what they open.
+    const safeName = file.name
+      .normalize("NFKD")
+      .replace(/[^\w.\-]+/g, "_")
+      .replace(/_+/g, "_")
+      .slice(-80) || "file";
 
     const filePath =
-      `${user.id}/${crypto.randomUUID()}${extension}`;
+      `${user.id}/${crypto.randomUUID()}-${safeName}`;
 
     const { error } = await supabase.storage
       .from("rfq-attachments")
@@ -1050,13 +1144,10 @@ export async function uploadRFQAttachment(
       };
     }
 
-    const { data } = supabase.storage
-      .from("rfq-attachments")
-      .getPublicUrl(filePath);
-
+    // The bucket is private: keep the storage path and sign it when it is opened.
     return {
       success: true,
-      url: data.publicUrl,
+      url: filePath,
     };
   } catch (error) {
     return {
@@ -1069,22 +1160,38 @@ export async function uploadRFQAttachment(
   }
 }
 
+/** File name shown for an attachment path ("<user>/<uuid>-<name>"). */
+export function rfqAttachmentName(path: string) {
+  const file = path.split("/").pop() ?? path;
+  return decodeURIComponent(file.replace(/^[0-9a-f-]{36}-/i, "")) || "Attachment";
+}
+
+/** Short-lived link to an RFQ attachment (bucket is private). */
+export async function getRFQAttachmentUrl(path: string): Promise<string | null> {
+  if (/^https?:\/\//.test(path)) return path;
+  const { data, error } = await supabase.storage
+    .from("rfq-attachments")
+    .createSignedUrl(path, 60 * 10);
+  if (error) {
+    console.warn("RFQ ATTACHMENT URL ERROR:", error.message);
+    return null;
+  }
+  return data.signedUrl;
+}
+
 export async function deleteRFQAttachment(
-  publicUrl: string
+  path: string
 ): Promise<ServiceResponse> {
   try {
-    const url = new URL(publicUrl);
     const marker = "/rfq-attachments/";
+    const index = path.indexOf(marker);
+    const filePath = index === -1
+      ? path
+      : decodeURIComponent(new URL(path).pathname.split(marker)[1] ?? "");
 
-    const index = url.pathname.indexOf(marker);
-
-    if (index === -1) {
-      return handleError("Invalid attachment URL.");
+    if (!filePath) {
+      return handleError("Invalid attachment.");
     }
-
-    const filePath = decodeURIComponent(
-      url.pathname.substring(index + marker.length)
-    );
 
     const { error } = await supabase.storage
       .from("rfq-attachments")
@@ -1309,12 +1416,13 @@ export function getRFQStatusColor(status: RFQStatus) {
       return "blue";
     case RFQStatus.Accepted:
       return "green";
-    case RFQStatus.Rejected:
-      return "red";
     case RFQStatus.Cancelled:
       return "gray";
+    case RFQStatus.Rejected:
     case RFQStatus.Closed:
       return "slate";
+    case RFQStatus.Expired:
+      return "orange";
     default:
       return "gray";
   }
@@ -1329,7 +1437,8 @@ export function getQuoteStatusColor(status: QuoteStatus) {
     case QuoteStatus.Accepted:
       return "green";
     case QuoteStatus.Rejected:
-      return "red";
+    case QuoteStatus.Closed:
+      return "slate";
     case QuoteStatus.Expired:
       return "orange";
     default:

@@ -7,7 +7,10 @@ import { useParams, useRouter } from "next/navigation";
 import {
   getQuoteById,
   acceptQuote,
-  rejectQuote,
+  closeQuote,
+  closeOtherQuotes,
+  effectiveRFQStatus,
+  getQuotesForRFQ,
   formatCurrency,
   formatDate,
   type Quote,
@@ -85,6 +88,31 @@ export default function BuyerQuoteDetailsPage() {
         return;
       }
 
+      // Ask to close the other quotations so suppliers stop quoting on this RFQ.
+      if (quote.rfq_id) {
+        const others = (await getQuotesForRFQ(quote.rfq_id)).filter(
+          (other) =>
+            other.id !== quote.id &&
+            (other.status === QuoteStatus.Sent || other.status === QuoteStatus.Draft)
+        );
+
+        if (
+          others.length > 0 &&
+          window.confirm(
+            `Quotation accepted. Mark the other ${others.length} ${others.length === 1 ? "quotation" : "quotations"} for this RFQ as Closed?\n\nThe suppliers will see them as Closed and the RFQ stops taking new quotes.`
+          )
+        ) {
+          const closed = await closeOtherQuotes(quote.rfq_id);
+          if (!closed.success) {
+            alert(
+              typeof closed.error === "string"
+                ? closed.error
+                : "Unable to close the other quotations. You can close them from the RFQ page."
+            );
+          }
+        }
+      }
+
       setNextStep({
         title: "Thank you for accepting the quote",
         message: "Please create the purchase order to proceed with the order.",
@@ -107,11 +135,11 @@ export default function BuyerQuoteDetailsPage() {
     }
   }
 
-  async function handleReject() {
+  async function handleClose() {
     if (!quote) return;
 
     const confirmed = window.confirm(
-      "Are you sure you want to reject this quotation?"
+      "Close this quotation? The supplier will see it as Closed."
     );
 
     if (!confirmed) return;
@@ -119,7 +147,7 @@ export default function BuyerQuoteDetailsPage() {
     try {
       setActionLoading(true);
 
-      const result = await rejectQuote(
+      const result = await closeQuote(
         quote.id
       );
 
@@ -127,26 +155,26 @@ export default function BuyerQuoteDetailsPage() {
         alert(
           typeof result.error === "string"
             ? result.error
-            : "Unable to reject the quotation."
+            : "Unable to close the quotation."
         );
 
         return;
       }
 
       alert(
-        "Quotation rejected successfully."
+        "Quotation closed."
       );
 
       await loadQuote();
       router.refresh();
     } catch (error) {
       console.error(
-        "Failed to reject quote:",
+        "Failed to close quote:",
         error
       );
 
       alert(
-        "Unable to reject the quotation."
+        "Unable to close the quotation."
       );
     } finally {
       setActionLoading(false);
@@ -187,16 +215,16 @@ export default function BuyerQuoteDetailsPage() {
   }
 
   const rfq = quote.rfq;
+  const rfqStatus = rfq ? effectiveRFQStatus(rfq) : null;
 
+  // Quotes on an expired RFQ can still be accepted: the deadline limits new quotes only.
   const canAccept =
     quote.status === QuoteStatus.Sent &&
-    rfq?.status !== RFQStatus.Cancelled &&
-    rfq?.status !== RFQStatus.Closed;
+    rfqStatus !== RFQStatus.Cancelled &&
+    rfqStatus !== RFQStatus.Closed &&
+    rfqStatus !== RFQStatus.Accepted;
 
-  const canReject =
-    quote.status === QuoteStatus.Sent &&
-    rfq?.status !== RFQStatus.Cancelled &&
-    rfq?.status !== RFQStatus.Closed;
+  const canClose = canAccept;
 
   return (
     <div className="space-y-8">
@@ -237,8 +265,8 @@ export default function BuyerQuoteDetailsPage() {
             className={`rounded-full px-4 py-2 text-sm font-semibold ${
               quote.status === QuoteStatus.Accepted
                 ? "bg-aviation-success-soft text-aviation-success"
-                : quote.status === QuoteStatus.Rejected
-                ? "bg-aviation-error-soft text-aviation-error"
+                : quote.status === QuoteStatus.Closed
+                ? "bg-aviation-light text-aviation-dark"
                 : quote.status === QuoteStatus.Expired
                 ? "bg-aviation-warning-soft text-aviation-warning"
                 : "bg-aviation-success-soft text-aviation-success"
@@ -479,7 +507,7 @@ export default function BuyerQuoteDetailsPage() {
           ACTIONS
       ====================================================== */}
 
-      {(canAccept || canReject) && (
+      {(canAccept || canClose) && (
         <section className="rounded-2xl border border-aviation-border bg-aviation-success-soft p-8">
 
           <h2 className="text-xl font-bold text-aviation-primary">
@@ -494,16 +522,16 @@ export default function BuyerQuoteDetailsPage() {
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
 
-            {canReject && (
+            {canClose && (
               <button
                 type="button"
                 disabled={actionLoading}
-                onClick={handleReject}
+                onClick={handleClose}
                 className="rounded-xl border border-aviation-border bg-white px-7 py-3 font-semibold text-aviation-error transition hover:bg-aviation-error-soft disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {actionLoading
                   ? "Processing..."
-                  : "Reject Quote"}
+                  : "Close Quote"}
               </button>
             )}
 

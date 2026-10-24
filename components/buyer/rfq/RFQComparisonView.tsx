@@ -5,7 +5,7 @@ import { Clock3, MessageSquare, Star, CheckCircle2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { acceptQuote, getQuotesForRFQ, updateQuoteStatus, QuoteStatus, type Quote } from "@/lib/rfqs";
+import { acceptQuote, closeOtherQuotes, getQuotesForRFQ, type Quote } from "@/lib/rfqs";
 import NextStepDialog, { type NextStep } from "@/components/orders/NextStepDialog";
 
 function useCountdown(validUntil: string) {
@@ -32,7 +32,7 @@ function Expiry({ value }: { value: string }) {
 }
 
 function statusLabel(status: Quote["status"]) {
-  if (status === "Rejected") return "Not selected";
+  if (status === "Closed" || status === "Rejected") return "Closed";
   if (status === "Accepted") return "Accepted";
   if (status === "Expired") return "Expired";
   return "Awaiting decision";
@@ -66,15 +66,20 @@ export default function RFQComparisonView({ rfqId, initialQuotes }: Props) {
       window.alert("This quotation has expired.");
       return;
     }
-    if (!window.confirm(`Accept ${quote.supplier?.company_name || "this supplier"}'s response? Other responses will be marked Not selected.`)) return;
+    if (!window.confirm(`Accept ${quote.supplier?.company_name || "this supplier"}'s quotation?`)) return;
 
     setProcessing(quote.id);
     try {
       const result = await acceptQuote(quote.id);
       if (!result.success) throw new Error(typeof result.error === "string" ? result.error : "Unable to accept response.");
 
-      for (const other of quotes.filter((item) => item.id !== quote.id && item.status === "Sent")) {
-        await updateQuoteStatus(other.id, QuoteStatus.Rejected);
+      // Ask before closing the other quotations; closed quotes show as Closed to their suppliers.
+      const others = quotes.filter((item) => item.id !== quote.id && (item.status === "Sent" || item.status === "Draft"));
+      let closedOthers = false;
+      if (others.length > 0 && window.confirm(`Quotation accepted. Mark the other ${others.length} ${others.length === 1 ? "quotation" : "quotations"} for this RFQ as Closed?\n\nThe suppliers will see them as Closed and the RFQ stops taking new quotes.`)) {
+        const closed = await closeOtherQuotes(rfqId);
+        if (closed.success) closedOthers = true;
+        else window.alert(typeof closed.error === "string" ? closed.error : "Unable to close the other quotations. You can close them from the RFQ page.");
       }
 
       const supplierId = quote.supplier_id;
@@ -95,7 +100,9 @@ export default function RFQComparisonView({ rfqId, initialQuotes }: Props) {
       router.refresh();
       setNextStep({
         title: "Thank you for accepting the quote",
-        message: "Please create the purchase order to proceed with the order. Other supplier responses were marked Not selected.",
+        message: closedOthers
+          ? "Please create the purchase order to proceed with the order. The other quotations were marked Closed."
+          : "Please create the purchase order to proceed with the order.",
         action: { label: "Create purchase order", href: `/buyer/orders/${result.data?.orderId}?step=po` },
       });
     } catch (error) {
@@ -143,7 +150,7 @@ export default function RFQComparisonView({ rfqId, initialQuotes }: Props) {
                   <td className="px-4 py-5 text-aviation-dark">{quote.condition || "—"}</td>
                   <td className="px-4 py-5 text-aviation-dark">{quote.certification?.length ? quote.certification.join(", ") : "None"}</td>
                   <td className="px-4 py-5"><div className="flex items-center gap-2"><Clock3 size={14} className="text-aviation-muted"/><Expiry value={quote.valid_until} /></div><div className="mt-1 text-xs text-aviation-muted">{new Date(quote.valid_until).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</div></td>
-                  <td className="px-4 py-5"><span className={accepted ? "inline-flex items-center gap-1 rounded-full bg-aviation-success-soft px-2.5 py-1 text-xs font-bold text-aviation-success" : quote.status === "Rejected" ? "inline-flex rounded-full bg-aviation-error-soft px-2.5 py-1 text-xs font-bold text-aviation-error" : "inline-flex rounded-full bg-aviation-light px-2.5 py-1 text-xs font-bold text-aviation-dark"}>{accepted && <CheckCircle2 size={13}/>} {statusLabel(quote.status)}</span></td>
+                  <td className="px-4 py-5"><span className={accepted ? "inline-flex items-center gap-1 rounded-full bg-aviation-success-soft px-2.5 py-1 text-xs font-bold text-aviation-success" : quote.status === "Expired" ? "inline-flex rounded-full bg-aviation-warning-soft px-2.5 py-1 text-xs font-bold text-aviation-warning" : "inline-flex rounded-full bg-aviation-light px-2.5 py-1 text-xs font-bold text-aviation-dark"}>{accepted && <CheckCircle2 size={13}/>} {statusLabel(quote.status)}</span></td>
                   <td className="px-4 py-5">
                     <div className="flex min-w-[150px] flex-col gap-2">
                       <Link href={`/buyer/messages?rfqId=${rfqId}&supplierId=${quote.supplier_id}`} className="inline-flex items-center justify-center gap-2 rounded-lg border border-aviation-border px-3 py-2 text-xs font-bold text-aviation-dark hover:bg-aviation-light"><MessageSquare size={14}/> Message supplier</Link>

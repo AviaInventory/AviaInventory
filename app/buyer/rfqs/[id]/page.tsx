@@ -10,15 +10,20 @@ import {
   getQuotesForRFQ,
   cancelRFQ,
   closeRFQ,
+  closeOtherQuotes,
+  effectiveRFQStatus,
   formatDate,
   formatCurrency,
   type RFQ,
   type Quote,
+  QuoteStatus,
   RFQStatus,
+  RFQ_TYPE_LABELS,
 } from "@/lib/rfqs";
 
 import RFQStatusBadge from "@/components/buyer/rfq/RFQStatusBadge";
 import RFQMessageThread from "@/components/buyer/rfq/RFQMessageThread";
+import RFQAttachmentList from "@/components/rfq/RFQAttachmentList";
 
 export default function BuyerRFQDetailsPage() {
   const params = useParams();
@@ -145,6 +150,22 @@ export default function BuyerRFQDetailsPage() {
     }
   }
 
+  async function handleCloseOthers() {
+    if (!rfq) return;
+
+    try {
+      setActionLoading(true);
+      const result = await closeOtherQuotes(rfq.id);
+      if (!result.success) {
+        alert(typeof result.error === "string" ? result.error : "Unable to close the other quotations.");
+        return;
+      }
+      await loadRFQ();
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -176,16 +197,19 @@ export default function BuyerRFQDetailsPage() {
     );
   }
 
-  const canEdit =
-    rfq.status === RFQStatus.Pending;
+  const status = effectiveRFQStatus(rfq);
+  const isOpen =
+    status === RFQStatus.Pending ||
+    status === RFQStatus.Quoted;
 
-  const canCancel =
-    rfq.status !== RFQStatus.Cancelled &&
-    rfq.status !== RFQStatus.Closed;
+  const canCancel = isOpen;
+  const canClose = isOpen;
 
-  const canClose =
-    rfq.status !== RFQStatus.Cancelled &&
-    rfq.status !== RFQStatus.Closed;
+  const hasAccepted = quotes.some((quote) => quote.status === QuoteStatus.Accepted);
+  const openOtherQuotes = quotes.filter(
+    (quote) => quote.status === QuoteStatus.Sent || quote.status === QuoteStatus.Draft
+  );
+  const isMRO = rfq.rfq_type === "mro";
 
   return (
     <div className="space-y-8">
@@ -213,26 +237,25 @@ export default function BuyerRFQDetailsPage() {
               </h1>
 
               <RFQStatusBadge
-                status={rfq.status}
+                status={status}
               />
+
+              <span className="rounded-full border border-aviation-border bg-white px-3 py-1 text-xs font-semibold text-aviation-dark">
+                {RFQ_TYPE_LABELS[rfq.rfq_type]}
+              </span>
 
             </div>
 
             <p className="mt-2 text-aviation-muted">
-              Created on {formatDate(rfq.created_at)}
+              Created on {formatDate(rfq.created_at)} · Required by {formatDate(rfq.required_date)}
+            </p>
+
+            <p className="mt-1 text-xs text-aviation-muted">
+              Sent RFQs can&apos;t be edited. To change the request, cancel it and create a new RFQ.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-3">
-
-            {canEdit && (
-              <Link
-                href={`/buyer/rfqs/${rfq.id}/edit`}
-                className="rounded-xl border border-aviation-border px-5 py-3 font-semibold text-aviation-warning transition hover:bg-aviation-warning-soft"
-              >
-                Edit RFQ
-              </Link>
-            )}
 
             {canCancel && (
               <button
@@ -287,6 +310,28 @@ export default function BuyerRFQDetailsPage() {
 
         </div>
 
+        {hasAccepted && openOtherQuotes.length > 0 && (
+          <div className="mt-6 flex flex-col gap-4 rounded-xl border border-aviation-warning/30 bg-aviation-warning-soft p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-semibold text-aviation-dark">
+                You accepted a quotation. Close the other {openOtherQuotes.length}{" "}
+                {openOtherQuotes.length === 1 ? "quotation" : "quotations"}?
+              </p>
+              <p className="mt-1 text-sm text-aviation-muted">
+                The suppliers will see their quotations as Closed and this RFQ stops taking new quotes.
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={actionLoading}
+              onClick={handleCloseOthers}
+              className="shrink-0 rounded-xl bg-aviation-primary px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              Close other quotations
+            </button>
+          </div>
+        )}
+
         {quotes.length === 0 ? (
 
           <div className="mt-6 rounded-xl border border-dashed border-aviation-border bg-aviation-light p-10 text-center">
@@ -316,10 +361,13 @@ export default function BuyerRFQDetailsPage() {
 
                   <div>
 
-                    <h3 className="text-lg font-bold text-aviation-dark">
-                      {quote.supplier?.company_name ??
-                        "Supplier"}
-                    </h3>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h3 className="text-lg font-bold text-aviation-dark">
+                        {quote.supplier?.company_name ??
+                          "Supplier"}
+                      </h3>
+                      <RFQStatusBadge status={quote.status} />
+                    </div>
 
                     <p className="mt-1 text-sm text-aviation-muted">
                       {quote.supplier?.country ??
@@ -465,6 +513,27 @@ export default function BuyerRFQDetailsPage() {
           </span>
         </summary>
         <div className="space-y-6 px-4 pb-6 sm:px-8 sm:pb-8">
+      {isMRO ? (
+        <section className="rounded-xl border border-aviation-border p-6">
+          <h2 className="text-2xl font-bold text-aviation-primary">
+            Repair / Overhaul Request
+          </h2>
+
+          <div className="mt-6 grid gap-6 md:grid-cols-2">
+            <InfoItem label="Component" value={rfq.component} />
+            <InfoItem label="Part Number" value={rfq.part_number} />
+            <div className="md:col-span-2">
+              <InfoItem label="Description / Scope of Repair" value={rfq.description} />
+            </div>
+            <InfoItem label="Component Manufacturer" value={rfq.component_manufacturer} />
+            <InfoItem label="Aircraft Model" value={rfq.aircraft_model} />
+            <InfoItem label="Quantity" value={String(rfq.quantity)} />
+            <InfoItem label="Forward Exchange Available" value={rfq.forward_exchange} />
+            <InfoItem label="Date Required" value={formatDate(rfq.required_date)} />
+          </div>
+        </section>
+      ) : (
+        <>
       {/* =====================================================
           PART INFORMATION
       ====================================================== */}
@@ -565,7 +634,7 @@ export default function BuyerRFQDetailsPage() {
           />
 
           <InfoItem
-            label="Required Date"
+            label="Required By"
             value={formatDate(rfq.required_date)}
           />
 
@@ -596,56 +665,22 @@ export default function BuyerRFQDetailsPage() {
         )}
 
       </section>
+        </>
+      )}
 
       {/* =====================================================
           ATTACHMENTS
       ====================================================== */}
 
-      {(() => {
-        const attachments = rfq.attachments ?? [];
+      <section className="rounded-xl border border-aviation-border p-6">
+        <h2 className="text-2xl font-bold text-aviation-primary">
+          Photos & Documents
+        </h2>
 
-        return attachments.length > 0 && (
-        <section className="rounded-xl border border-aviation-border p-6">
-
-          <h2 className="text-2xl font-bold text-aviation-primary">
-            Attachments
-          </h2>
-
-          <div className="mt-6 space-y-3">
-
-            {attachments.map(
-              (url, index) => {
-
-                const fileName =
-                  decodeURIComponent(
-                    url.split("/").pop() ||
-                      `Attachment ${index + 1}`
-                  );
-
-                return (
-                  <a
-                    key={url}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between rounded-xl border bg-aviation-light p-4 transition hover:bg-aviation-light"
-                  >
-                    <span className="font-medium text-aviation-dark">
-                      {fileName}
-                    </span>
-
-                    <span className="text-sm font-semibold text-aviation-primary">
-                      Open
-                    </span>
-                  </a>
-                );
-              }
-            )}
-
-          </div>
-        </section>
-      );
-      })()}
+        <div className="mt-6">
+          <RFQAttachmentList paths={rfq.attachment_urls} emptyText="No files were attached to this RFQ." />
+        </div>
+      </section>
 
         </div>
       </details>

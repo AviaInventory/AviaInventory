@@ -15,8 +15,11 @@ const statusStyles: Record<string, string> = {
   Accepted:
     "bg-aviation-success-soft text-aviation-success",
 
-  Rejected:
-    "bg-aviation-error-soft text-aviation-error",
+  Sent:
+    "bg-aviation-success-soft text-aviation-primary",
+
+  Closed:
+    "bg-aviation-light text-aviation-dark",
 
   Expired:
     "bg-aviation-warning-soft text-aviation-warning",
@@ -44,6 +47,13 @@ function formatStatus(status: string) {
   switch (status) {
     case "UnderReview":
       return "Under Review";
+
+    case "Sent":
+      return "Awaiting decision";
+
+    // Legacy value: shown as Closed, never as "Rejected".
+    case "Rejected":
+      return "Closed";
 
     default:
       return status;

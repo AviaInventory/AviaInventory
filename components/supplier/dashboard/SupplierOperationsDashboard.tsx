@@ -21,7 +21,7 @@ import {
   Truck,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { getSupplierRFQs, getSupplierQuotes, QuoteStatus, RFQStatus, type Quote, type RFQ } from "@/lib/rfqs";
+import { canSupplierQuote, getSupplierRFQs, getSupplierQuotes, QuoteStatus, type Quote, type RFQ } from "@/lib/rfqs";
 import { getSupplierOrders, type Order } from "@/lib/orders";
 import { shipmentStatus } from "@/lib/shipments";
 import { documentExpiryState } from "@/lib/supplier-verification";
@@ -126,7 +126,9 @@ export default function SupplierOperationsDashboard() {
   const active = useMemo(() => state.parts.filter(p => p.status === "Published"), [state.parts]);
   const drafts = useMemo(() => state.parts.filter(p => p.status === "Draft"), [state.parts]);
   const attention = useMemo(() => state.parts.filter(p => p.status === "Published" && (!p.description || !p.category || !p.trace_certificate || (p.price_type !== "request_quote" && p.unit_price === null))), [state.parts]);
-  const incomingRFQs = state.rfqs.filter(r => r.status === RFQStatus.Pending);
+  // RFQs this supplier can still quote on: open, not expired and not already quoted by them.
+  const quotedRFQIds = new Set(state.quotes.map(q => q.rfq_id));
+  const incomingRFQs = state.rfqs.filter(r => !quotedRFQIds.has(r.id) && canSupplierQuote(r));
   const awaitingQuotes = state.quotes.filter(q => q.status === QuoteStatus.Sent);
   const acceptedQuotes = state.quotes.filter(q => q.status === QuoteStatus.Accepted);
   const activeOrders = state.orders.filter(o => !["Closed", "Cancelled"].includes(o.status));
@@ -175,7 +177,7 @@ export default function SupplierOperationsDashboard() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
-        <QueueCard icon={ClipboardList} eyebrow="DEMAND" title="Buyer RFQs" count={incomingRFQs.length} href="/supplier/rfqs" empty="No pending buyer RFQs." items={incomingRFQs.slice(0, 4).map(r => ({ title: r.part_number || r.description || `RFQ ${r.id.slice(0, 8).toUpperCase()}`, meta: `${r.quantity} units · ${r.preferred_condition || "Condition open"}`, status: r.status }))} />
+        <QueueCard icon={ClipboardList} eyebrow="DEMAND" title="Buyer RFQs" count={incomingRFQs.length} href="/supplier/rfqs" empty="No pending buyer RFQs." items={incomingRFQs.slice(0, 4).map(r => ({ title: r.part_number || r.description || `RFQ ${r.id.slice(0, 8).toUpperCase()}`, meta: `${r.quantity} units · ${r.preferred_condition || "Condition open"}`, status: "Pending" }))} />
         <QueueCard icon={FileText} eyebrow="COMMERCIAL" title="Quotations" count={awaitingQuotes.length + acceptedQuotes.length} href="/supplier/quotes" empty="No quotation actions pending." items={state.quotes.slice(0, 4).map(q => ({ title: q.rfq?.part_number || `RFQ ${q.rfq_id.slice(0, 8).toUpperCase()}`, meta: `${q.currency} ${Number(q.unit_price).toLocaleString()} · ${q.lead_time}`, status: q.status }))} />
         <QueueCard icon={ShoppingCartIcon} eyebrow="FULFILLMENT" title="Purchase orders" count={activeOrders.length} href="/supplier/purchase-orders" empty="No active purchase orders." items={activeOrders.slice(0, 4).map(o => ({ title: o.part?.part_number || `PO ${o.id.slice(0, 8).toUpperCase()}`, meta: `${o.quantity} units · ${o.currency} ${Number(o.total_amount).toLocaleString()}`, status: o.status }))} />
       </div>

@@ -154,9 +154,10 @@ export default function PartSearchAutocomplete({
   const listboxId = `${pathname.replace(/[^a-z0-9]/gi, "-")}-part-suggestions`;
 
   return (
-    <div ref={rootRef} className={`relative min-w-0 ${className}`}>
+    // text-aviation-dark: the hero sits in a text-white section and inputs/dropdown inherit it.
+    <div ref={rootRef} className={`relative min-w-0 text-aviation-dark ${className}`}>
       <div className="relative flex min-w-0 items-center">
-        {showSearchIcon && <Search className="pointer-events-none absolute left-4 z-10 text-aviation-muted" size={20} />}
+        {showSearchIcon && <Search className="pointer-events-none absolute left-4 z-10 text-[var(--aviation-muted)]" size={20} />}
         <input
           type="search"
           value={value}
@@ -169,13 +170,13 @@ export default function PartSearchAutocomplete({
           aria-expanded={open && suggestions.length > 0}
           aria-controls={listboxId}
           aria-activedescendant={activeIndex >= 0 ? `${listboxId}-${activeIndex}` : undefined}
-          className={`min-w-0 flex-1 rounded-xl border border-aviation-border bg-white py-3.5 pr-4 outline-none transition focus:border-aviation-primary focus:ring-2 focus:ring-aviation-primary/20 ${showSearchIcon ? "pl-12" : "pl-4"} ${inputClassName}`}
+          className={`min-w-0 flex-1 rounded-xl border border-aviation-border bg-white py-3.5 pr-4 text-aviation-dark outline-none placeholder:text-[var(--aviation-muted)] transition focus:border-aviation-primary focus:ring-2 focus:ring-aviation-primary/20 ${showSearchIcon ? "pl-12" : "pl-4"} ${inputClassName}`}
         />
         {loading && <span className="pointer-events-none absolute right-4 h-4 w-4 animate-spin rounded-full border-2 border-aviation-border border-t-aviation-primary" aria-label="Loading suggestions" />}
       </div>
 
       {open && (suggestions.length > 0 || (value.trim().length >= 2 && !loading)) && (
-        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-[60] overflow-hidden rounded-xl border border-aviation-border bg-white shadow-[var(--aviation-shadow-xl)]">
+        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-[60] overflow-hidden rounded-xl border border-aviation-border bg-white text-aviation-dark shadow-[var(--aviation-shadow-xl)]">
           {suggestions.length > 0 ? (
             <ul id={listboxId} role="listbox" aria-label="Part suggestions" className="max-h-[min(520px,70vh)] overflow-auto py-1">
               {suggestions.map((suggestion, index) => (
@@ -190,17 +191,17 @@ export default function PartSearchAutocomplete({
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-mono text-sm font-semibold text-aviation-primary">{suggestion.partNumber}</span>
-                      <span className="mt-0.5 block truncate text-sm text-aviation-muted">{suggestion.description}</span>
+                      <span className="mt-0.5 block truncate text-sm text-[var(--aviation-muted)]">{suggestion.description}</span>
                     </span>
-                    <span className="hidden shrink-0 rounded-full border border-aviation-border px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-aviation-muted sm:inline-flex">{suggestion.category}</span>
+                    <span className="hidden shrink-0 rounded-full border border-aviation-border px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--aviation-muted)] sm:inline-flex">{suggestion.category}</span>
                   </Link>
                 </li>
               ))}
             </ul>
           ) : (
-            <div className="px-4 py-4 text-sm text-aviation-muted">No matching parts. Press Enter to run the full search.</div>
+            <div className="px-4 py-4 text-sm text-[var(--aviation-muted)]">No matching parts. Press Enter to run the full search.</div>
           )}
-          {suggestions.length > 0 && <div className="border-t bg-aviation-light px-4 py-2 text-[11px] text-aviation-muted">Use ↑ ↓ to navigate · Enter to select · Enter with no selection searches all inventory</div>}
+          {suggestions.length > 0 && <div className="border-t bg-aviation-light px-4 py-2 text-[11px] text-[var(--aviation-muted)]">Use ↑ ↓ to navigate · Enter to select · Enter with no selection searches all inventory</div>}
         </div>
       )}
     </div>

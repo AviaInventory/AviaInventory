@@ -174,7 +174,7 @@ export default function QuotationsTable() {
               <td className="px-6 py-4">
 
                 <Link
-                  href={`/buyer/quotations/${quote.id}`}
+                  href={`/buyer/quotes/${quote.id}`}
                   className="font-medium text-aviation-primary hover:underline"
                 >
                   View

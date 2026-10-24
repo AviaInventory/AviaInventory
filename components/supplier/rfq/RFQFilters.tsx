@@ -56,16 +56,12 @@ export default function RFQFilters({
             Accepted
           </option>
 
-          <option value={RFQStatus.Rejected}>
-            Rejected
-          </option>
-
-          <option value={RFQStatus.Cancelled}>
-            Cancelled
-          </option>
-
           <option value={RFQStatus.Closed}>
             Closed
+          </option>
+
+          <option value={RFQStatus.Expired}>
+            Expired
           </option>
 
         </select>
