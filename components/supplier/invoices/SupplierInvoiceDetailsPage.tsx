@@ -22,6 +22,8 @@ export default function SupplierInvoiceDetailsPage({ invoiceId }: { invoiceId: s
       setInvoice(found);
       setOrder(result.order);
       setLoading(false);
+      // The list's Print / Download buttons open ?print=1: go straight to Print / Save as PDF.
+      if (found && result.order && new URLSearchParams(window.location.search).get("print") === "1") setPrinting(true);
     })();
     return () => { active = false; };
   }, [invoiceId]);
