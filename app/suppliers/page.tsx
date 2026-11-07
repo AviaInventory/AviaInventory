@@ -1,7 +1,10 @@
 import Link from "next/link";
-import { ArrowRight, Store, Wrench } from "lucide-react";
+import { ArrowRight, Wrench } from "lucide-react";
 import SupplierDirectoryCard from "@/components/home/SupplierDirectoryCard";
+import ListMroCapabilityButton from "@/components/mro/ListMroCapabilityButton";
 import { getSupplierDirectory } from "@/lib/homepage-data";
+import { getPublicSupabase } from "@/lib/marketplace-server";
+import { fetchMroProfiles } from "@/lib/mro-profiles";
 
 export const revalidate = 60;
 
@@ -13,6 +16,7 @@ export const metadata = {
 /** MRO Services: suppliers who ticked MRO (repair / overhaul) capability. */
 export default async function MROServicesPage() {
   const suppliers = await getSupplierDirectory(48, true);
+  const mroProfiles = await fetchMroProfiles(getPublicSupabase(), suppliers.map((supplier) => supplier.id));
 
   return (
     <main className="min-h-screen bg-aviation-light py-10 sm:py-14">
@@ -30,10 +34,8 @@ export default async function MROServicesPage() {
               <Link href="/buyer/rfqs/new?type=mro" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-aviation-accent px-6 py-3 font-semibold text-[#062a4a] hover:brightness-95">
                 <Wrench size={18} /> Request a repair / overhaul quote <ArrowRight size={17} />
               </Link>
-              <Link href="/register?type=supplier" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-6 py-3 font-semibold text-white hover:bg-white/15">
-                <Store size={18} /> List your MRO capability
-              </Link>
-              <p className="text-center text-xs text-white/60">Already selling on AviaInventory? Turn on MRO services in Account settings → Company.</p>
+              <ListMroCapabilityButton className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-6 py-3 font-semibold text-white hover:bg-white/15 disabled:opacity-70" />
+              <p className="text-center text-xs text-white/60">Already selling on AviaInventory? Sign in first and your answers are saved straight to your listing.</p>
             </div>
           </div>
         </section>
@@ -46,7 +48,7 @@ export default async function MROServicesPage() {
           </div>
         ) : (
           <div className="mt-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            {suppliers.map((supplier) => <SupplierDirectoryCard key={supplier.id} supplier={supplier} />)}
+            {suppliers.map((supplier) => <SupplierDirectoryCard key={supplier.id} supplier={supplier} mroProfile={mroProfiles.get(supplier.id)} />)}
           </div>
         )}
       </div>

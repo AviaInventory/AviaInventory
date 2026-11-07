@@ -2,6 +2,7 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import type { PartFormData } from "../types";
+import { numberInputValue, parseNumberInput } from "@/lib/number-input";
 
 interface Props {
   formData: PartFormData;
@@ -67,11 +68,11 @@ export default function InventoryDetails({
           <input
             type="number"
             min={1}
-            value={formData.quantity}
+            value={numberInputValue(formData.quantity)}
             onChange={(e) =>
               setFormData((prev) => ({
                 ...prev,
-                quantity: Number(e.target.value),
+                quantity: parseNumberInput(e.target.value),
               }))
             }
             className="w-full rounded-xl border p-3 focus:border-aviation-border focus:outline-none"
@@ -102,7 +103,7 @@ export default function InventoryDetails({
         </div>}
         <div>
           <label className="mb-2 block font-medium">Minimum Order Quantity</label>
-          <input type="number" min={1} value={formData.minimumOrderQuantity} onChange={(e) => setFormData((prev) => ({ ...prev, minimumOrderQuantity: Number(e.target.value) }))} className="w-full rounded-xl border p-3 font-mono" />
+          <input type="number" min={1} value={numberInputValue(formData.minimumOrderQuantity)} onChange={(e) => setFormData((prev) => ({ ...prev, minimumOrderQuantity: parseNumberInput(e.target.value) }))} className="w-full rounded-xl border p-3 font-mono" />
         </div>
         <div>
           <label className="mb-2 block font-medium">Currency</label>

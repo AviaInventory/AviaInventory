@@ -13,6 +13,7 @@ import {
 } from "@/lib/rfqs";
 
 import { Field, inputClass } from "./RFQFormFields";
+import { numberInputValue, parseNumberInput } from "@/lib/number-input";
 
 const MAX_FILE_MB = 20;
 
@@ -158,7 +159,7 @@ export default function MroRFQForm() {
           </Field>
 
           <Field label="Quantity" required>
-            <input type="number" min="1" required disabled={disabled} value={formData.quantity} onChange={(e) => updateField("quantity", Number(e.target.value))} className={inputClass} />
+            <input type="number" min="1" required disabled={disabled} value={numberInputValue(formData.quantity)} onChange={(e) => updateField("quantity", parseNumberInput(e.target.value))} className={inputClass} />
           </Field>
 
           <Field label="Availability of forward exchange option" required>

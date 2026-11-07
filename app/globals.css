@@ -58,7 +58,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { border-color
 /* Responsive accessibility primitives */
 @media (max-width: 1023px) {
   button, a { min-height: 44px; }
-  input, select, textarea { min-height: 44px; }
+  /* Checkboxes and radios keep their own size; a 44px box pushes them out of line with their label. */
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea { min-height: 44px; }
 }
 .aviation-table-wrap { width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-gutter: stable; }
 .aviation-table-wrap table { min-width: 720px; }

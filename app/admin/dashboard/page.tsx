@@ -62,20 +62,40 @@ export default async function AdminDashboard() {
             <BarChart3 className="text-aviation-primary" />
             <div>
               <h2 className="text-2xl font-bold text-aviation-dark">Sales Overview</h2>
-              <p className="text-sm text-aviation-muted">Order value across accepted quotations.</p>
+              <p className="text-sm text-aviation-muted">Order value across accepted quotations, in Kenya shillings.</p>
             </div>
           </div>
 
           <div className="mt-6 rounded-2xl bg-aviation-success-soft p-6">
             <p className="text-sm text-aviation-muted">Total Order Value</p>
-            <p className="mt-2 text-4xl font-bold text-aviation-primary">
-              USD {stats.totalOrderValue.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </p>
+            <p className="mt-2 text-4xl font-bold text-aviation-primary">KES {formatMoney(stats.sales.totalKes)}</p>
+            {stats.sales.usdKesRate !== null && stats.sales.convertedUsd > 0 && (
+              <p className="mt-2 text-sm text-aviation-muted">
+                Includes USD {formatMoney(stats.sales.convertedUsd)} converted at 1 USD = KES {stats.sales.usdKesRate.toLocaleString("en-KE")} (the billing rate).
+              </p>
+            )}
+            {stats.sales.unconverted.length > 0 && (
+              <div className="mt-4 border-t border-aviation-border pt-4 text-sm">
+                <p className="font-semibold text-aviation-dark">Not included — no KES rate configured</p>
+                <ul className="mt-1 space-y-0.5 text-aviation-muted">
+                  {stats.sales.unconverted.map((row) => (
+                    <li key={row.currency}>{row.currency} {formatMoney(row.amount)}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </section>
+
+        <div className="flex flex-wrap gap-3 text-sm">
+          <Link href="/admin/dashboard/supplier-verifications" className="inline-flex items-center gap-2 rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">Review Supplier Verification</Link>
+          <Link href="/admin/dashboard/listing-certifications" className="inline-flex items-center gap-2 rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">Review Listing Certifications</Link>
+          <Link href="/admin/dashboard/subscriptions" className="rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">Subscriptions</Link>
+          <Link href="/admin/dashboard/promotions" className="rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">Promotions</Link>
+          <Link href="/admin/dashboard/intelligence-reports" className="rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">Market reports</Link>
+          <Link href="/marketplace" className="rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">View Marketplace</Link>
+          <Link href="/" className="rounded-xl border border-aviation-border bg-white px-5 py-3 font-semibold text-aviation-dark">Home</Link>
+        </div>
 
         <section className="rounded-3xl bg-white shadow-sm">
           <div className="border-b p-8">
@@ -149,17 +169,13 @@ export default async function AdminDashboard() {
           )}
         </section>
 
-        <div className="flex flex-wrap gap-3 text-sm">
-          <Link href="/admin/dashboard/supplier-verifications" className="inline-flex items-center gap-2 rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">Review Supplier Verification</Link>
-          <Link href="/admin/dashboard/listing-certifications" className="inline-flex items-center gap-2 rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">Review Listing Certifications</Link>
-          <Link href="/admin/dashboard/subscriptions" className="rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">Subscriptions</Link>
-          <Link href="/admin/dashboard/promotions" className="rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">Promotions</Link>
-          <Link href="/marketplace" className="rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">View Marketplace</Link>
-          <Link href="/" className="rounded-xl border border-aviation-border bg-white px-5 py-3 font-semibold text-aviation-dark">Home</Link>
-        </div>
       </div>
     </main>
   );
+}
+
+function formatMoney(value: number) {
+  return value.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function StatCard({ title, value, icon: Icon }: { title: string; value: number; icon: LucideIcon }) {

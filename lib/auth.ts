@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import type { MroProfile } from "@/lib/mro-form";
 import { resolveRoles, type AccountRole } from "./auth-redirect";
 import type { RegistrationData } from "@/types/auth";
 
@@ -38,6 +39,8 @@ function authCallbackUrl(params: { next?: string; flow?: "signup" } = {}): strin
 export async function registerUser(
   form: RegistrationData,
   onboardingCompletion = 100,
+  /** MRO Capabilities & Approvals answers; saved to the MRO listing when the supplier row is created. */
+  mroProfile: MroProfile | null = null,
 ): Promise<AuthResult<{ needsEmailConfirmation: boolean; roles: AccountRole[] }>> {
   const roles: AccountRole[] = form.accountType === "hybrid" ? ["buyer", "supplier"] : ["buyer"];
 
@@ -79,6 +82,7 @@ export async function registerUser(
           shippingCapabilities: form.shippingCapabilities,
           commercialTerms: form.commercialTerms,
           verificationNotes: form.verificationNotes,
+          ...(form.accountType === "hybrid" && mroProfile ? { mroProfile } : {}),
           // Opt-in for promotions (Data Protection Act s.37); keep when it was given.
           marketingConsent: form.subscribeNewsletter,
           marketingConsentAt: form.subscribeNewsletter ? new Date().toISOString() : null,

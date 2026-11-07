@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm, useWatch, type UseFormRegister } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, ChevronLeft, ChevronRight, Eye, EyeOff, Info, ShieldCheck, Save, Building2, ShoppingCart, PlaneTakeoff, Boxes, FileCheck2, Truck, LockKeyhole } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, EyeOff, Info, Pencil, Save, Wrench, Building2, ShoppingCart, PlaneTakeoff, Boxes, FileCheck2, Truck, LockKeyhole } from "lucide-react";
 import toast from "react-hot-toast";
 import { isPossiblePhoneNumber } from "libphonenumber-js";
 import StepIndicator from "./StepIndicator";
@@ -17,6 +17,8 @@ import { PasswordChecklist } from "./PasswordInput";
 import { COUNTRIES, findCountryByName, phoneWithDialCode } from "@/lib/countries";
 import type { RegistrationAccountType, RegistrationData } from "@/types/auth";
 import RequiredMark from "@/components/ui/RequiredMark";
+import MroCapabilityDialog from "@/components/mro/MroCapabilityDialog";
+import { EMPTY_MRO_PROFILE, readMroDraft, writeMroDraft, type MroProfile } from "@/lib/mro-form";
 
 const STORAGE_KEY = "aviainventory_onboarding_draft_v2";
 
@@ -71,27 +73,48 @@ const defaults: RegistrationData = {
   password: "", confirmPassword: "", agreeTerms: false, subscribeNewsletter: false,
 };
 
-function Field({ label, name, register, error, required = false, placeholder, type = "text" }: { label: string; name: keyof FormValues; register: UseFormRegister<FormValues>; error?: string; required?: boolean; placeholder?: string; type?: string }) {
-  const [revealed, setRevealed] = useState(false);
-  const isPassword = type === "password";
-  return <div>
-    <label htmlFor={name} className="mb-2 block text-sm font-semibold text-aviation-dark">{label}{required && <RequiredMark />}</label>
-    <div className="relative">
-      <input id={name} type={isPassword && revealed ? "text" : type} placeholder={placeholder} autoComplete={isPassword ? "new-password" : undefined} {...register(name)} aria-invalid={Boolean(error)} aria-describedby={error ? `${name}-error` : undefined} className={`min-h-11 w-full rounded-xl border bg-white px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-aviation-primary/20 ${isPassword ? "pr-12" : ""} ${error ? "border-red-500" : "border-aviation-border focus:border-aviation-primary"}`} />
-      {isPassword && <button type="button" onClick={() => setRevealed((shown) => !shown)} aria-label={revealed ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`} aria-pressed={revealed} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-aviation-muted hover:text-aviation-primary">{revealed ? <EyeOff size={19} /> : <Eye size={19} />}</button>}
+// Compact form styling: label beside the input on desktop, small controls, inline checkboxes.
+const inputBase = "h-10 w-full rounded-md border bg-white px-3 text-sm outline-none transition focus:ring-2 focus:ring-aviation-primary/20 sm:h-9";
+const inputBorder = (error?: string) => (error ? "border-red-500" : "border-aviation-border focus:border-aviation-primary");
+const textareaClass = "w-full rounded-md border border-aviation-border bg-white px-3 py-2 text-sm outline-none focus:border-aviation-primary focus:ring-2 focus:ring-aviation-primary/20";
+
+function Row({ label, htmlFor, required = false, optional = false, hint, error, errorId, children }: { label: string; htmlFor?: string; required?: boolean; optional?: boolean; hint?: string; error?: string; errorId?: string; children: React.ReactNode }) {
+  const LabelTag = htmlFor ? "label" : "p";
+  return <div className="grid gap-x-5 gap-y-1 sm:grid-cols-[170px_minmax(0,1fr)] sm:items-start">
+    <LabelTag {...(htmlFor ? { htmlFor } : {})} className="text-sm font-semibold text-aviation-dark sm:pt-2">{label}{required && <RequiredMark />}{optional && <span className="ml-1 font-normal text-aviation-muted">(optional)</span>}</LabelTag>
+    <div className="min-w-0">
+      {children}
+      {hint && !error && <p className="mt-1 text-xs italic text-aviation-muted">{hint}</p>}
+      {error && <p id={errorId} className="mt-1 text-xs font-medium text-red-600">{error}</p>}
     </div>
-    {error && <p id={`${name}-error`} className="mt-1 text-xs font-medium text-red-600">{error}</p>}
   </div>;
 }
 
-function ChoiceGrid({ title, description, options, value, onChange, columns = "sm:grid-cols-2 lg:grid-cols-3" }: { title: string; description?: string; options: string[]; value: string[]; onChange: (next: string[]) => void; columns?: string }) {
-  const toggle = (item: string) => onChange(value.includes(item) ? value.filter((v) => v !== item) : [...value, item]);
-  return <section>
-    <div className="mb-5"><h2 className="text-2xl font-bold text-aviation-primary">{title}</h2>{description && <p className="mt-1 text-sm text-aviation-muted">{description}</p>}</div>
-    <div className={`grid gap-3 ${columns}`}>
-      {options.map((item) => { const selected = value.includes(item); return <button key={item} type="button" aria-pressed={selected} onClick={() => toggle(item)} className={`h-full min-h-11 rounded-xl border p-4 text-left text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-aviation-primary/30 ${selected ? "border-aviation-primary bg-aviation-success-soft text-aviation-primary" : "border-aviation-border bg-white hover:border-aviation-primary/50"}`}><span className="flex items-center justify-between gap-3">{item}<Check size={18} aria-hidden="true" className={`shrink-0 ${selected ? "" : "invisible"}`} /></span></button>; })}
+function Field({ label, name, register, error, required = false, placeholder, type = "text", hint }: { label: string; name: keyof FormValues; register: UseFormRegister<FormValues>; error?: string; required?: boolean; placeholder?: string; type?: string; hint?: string }) {
+  const [revealed, setRevealed] = useState(false);
+  const isPassword = type === "password";
+  return <Row label={label} htmlFor={name} required={required} hint={hint} error={error} errorId={`${name}-error`}>
+    <div className="relative">
+      <input id={name} type={isPassword && revealed ? "text" : type} placeholder={placeholder} autoComplete={isPassword ? "new-password" : undefined} {...register(name)} aria-invalid={Boolean(error)} aria-describedby={error ? `${name}-error` : undefined} className={`${inputBase} ${isPassword ? "pr-10" : ""} ${inputBorder(error)}`} />
+      {isPassword && <button type="button" onClick={() => setRevealed((shown) => !shown)} aria-label={revealed ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`} aria-pressed={revealed} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-aviation-muted hover:text-aviation-primary">{revealed ? <EyeOff size={16} /> : <Eye size={16} />}</button>}
     </div>
-  </section>;
+  </Row>;
+}
+
+function ChoiceGrid({ title, description, options, value, onChange, columns = "grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3" }: { title: string; description?: string; options: string[]; value: string[]; onChange: (next: string[]) => void; columns?: string }) {
+  const toggle = (item: string) => onChange(value.includes(item) ? value.filter((v) => v !== item) : [...value, item]);
+  return <Row label={title} hint={description}>
+    <div role="group" aria-label={title} className={`grid gap-x-4 gap-y-1.5 sm:pt-2 ${columns}`}>
+      {options.map((item) => <label key={item} className="flex cursor-pointer items-center gap-2 py-0.5 text-sm text-aviation-dark">
+        <input type="checkbox" checked={value.includes(item)} onChange={() => toggle(item)} className="h-4 w-4 shrink-0 rounded border-aviation-border accent-[var(--aviation-primary)]" />
+        <span>{item}</span>
+      </label>)}
+    </div>
+  </Row>;
+}
+
+function StepHeading({ title, text }: { title: string; text: string }) {
+  return <div className="mb-5 border-b border-aviation-border pb-3"><h2 className="text-lg font-bold text-aviation-primary">{title}</h2><p className="mt-0.5 text-xs leading-5 text-aviation-muted">{text}</p></div>;
 }
 
 export default function RegistrationWizard({ initialAccountType }: { initialAccountType?: RegistrationAccountType }) {
@@ -108,6 +131,9 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
   const formTopRef = useRef<HTMLDivElement>(null);
   // Country chosen before the current one, so its dial code can be swapped out of the phone number.
   const previousCountryRef = useRef("");
+  // MRO Capabilities & Approvals form, filled from the MRO Services page or the selling step.
+  const [mroProfile, setMroProfile] = useState<MroProfile | null>(null);
+  const [mroFormOpen, setMroFormOpen] = useState(false);
 
   const form = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: defaults as FormValues, mode: "onTouched" });
   const accountType = useWatch({ control: form.control, name: "accountType" });
@@ -139,6 +165,11 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
     } catch { /* ignore corrupt local drafts */ }
     // An explicit link such as "Become a Supplier" (/register?type=supplier) sets the account type.
     if (initialAccountType) form.setValue("accountType", initialAccountType);
+    const mroDraft = readMroDraft();
+    if (mroDraft) {
+      setMroProfile(mroDraft);
+      applyMroAccount();
+    }
     // Only offer drafts that contain something worth resuming.
     if (draft && (draft.email || draft.companyName || draft.fullName)) {
       setSavedDraft(draft);
@@ -148,6 +179,21 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
     // Runs once on mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /** An MRO form was filled in: sign up as Buyer & Supplier, listed as an MRO. */
+  function applyMroAccount() {
+    form.setValue("accountType", "hybrid");
+    form.setValue("supplierType", "MRO / Repair Station");
+    form.setValue("mroCapable", true);
+  }
+
+  function saveMroForm(profile: MroProfile) {
+    setMroProfile(profile);
+    writeMroDraft(profile);
+    form.setValue("mroCapable", true, { shouldDirty: true });
+    setMroFormOpen(false);
+    toast.success("MRO capabilities added. Carry on to finish creating your account.");
+  }
 
   function resumeDraft() {
     if (!savedDraft) return;
@@ -161,6 +207,7 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
     form.reset({ ...restored, accountType: normalizedAccountType ?? defaults.accountType, password: "", confirmPassword: "" } as FormValues);
     previousCountryRef.current = savedDraft.country ?? "";
     setStep(Math.max(1, savedDraft.step || 1));
+    if (mroProfile) applyMroAccount();
     setSavedDraft(null);
     setDraftLoaded(true);
   }
@@ -168,6 +215,7 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
   function startNewRegistration() {
     try { localStorage.removeItem(STORAGE_KEY); } catch { /* storage unavailable */ }
     form.reset({ ...defaults, accountType: initialAccountType ?? defaults.accountType } as FormValues);
+    if (mroProfile) applyMroAccount();
     previousCountryRef.current = "";
     setStep(1);
     setSavedDraft(null);
@@ -226,7 +274,7 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
 
   const submit = form.handleSubmit(async (values) => {
     setLoading(true);
-    const result = await registerUser(values as RegistrationData, profileCompletion);
+    const result = await registerUser(values as RegistrationData, profileCompletion, values.accountType === "hybrid" ? mroProfile : null);
     if (!result.success) {
       toast.error(result.error);
       setLoading(false);
@@ -234,6 +282,7 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
     }
     completedRef.current = true;
     try { localStorage.removeItem(STORAGE_KEY); } catch { /* storage unavailable */ }
+    writeMroDraft(null);
     if (result.needsEmailConfirmation) {
       setConfirmationSentTo(values.email.trim());
       setLoading(false);
@@ -253,46 +302,174 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
 
   const setArray = (name: keyof FormValues) => (next: string[]) => form.setValue(name, next as never, { shouldDirty: true, shouldTouch: true });
 
+  const errors = form.formState.errors;
+  const selectClass = (error?: string) => `${inputBase} ${inputBorder(error)}`;
+
   const renderStep = () => {
     const key = steps[Math.min(step, totalSteps) - 1].key;
     if (key === "identity") return <>
-      <div className="mb-7"><p className="text-xs font-bold uppercase tracking-[0.16em] text-aviation-primary">Start with the essentials</p><h2 className="mt-2 text-2xl font-bold text-aviation-primary">Your aviation marketplace account</h2><p className="mt-2 text-sm leading-6 text-aviation-muted">Only the information needed to create your account is required now. You can build the rest of your profile later.</p></div>
-      <div className="grid gap-5 md:grid-cols-2"><Field label="Full name" name="fullName" register={form.register} required error={form.formState.errors.fullName?.message} placeholder="Jane Smith" /><Field label="Business email" name="email" register={form.register} required error={form.formState.errors.email?.message} placeholder="jane@company.com" type="email" /><div><label htmlFor="country" className="mb-2 block text-sm font-semibold text-aviation-dark">Country<RequiredMark /></label><select id="country" {...form.register("country", { onChange: (event) => { const next = findCountryByName(event.target.value); if (next) form.setValue("phone", phoneWithDialCode(form.getValues("phone"), findCountryByName(previousCountryRef.current), next)); previousCountryRef.current = event.target.value; } })} aria-invalid={Boolean(form.formState.errors.country)} className={`min-h-11 w-full rounded-xl border bg-white px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-aviation-primary/20 ${form.formState.errors.country ? "border-red-500" : "border-aviation-border focus:border-aviation-primary"}`}><option value="">Select your country</option>{COUNTRIES.map((country) => <option key={country.code} value={country.name}>{country.name} ({country.dialCode})</option>)}</select>{form.formState.errors.country?.message && <p className="mt-1 text-xs font-medium text-red-600">{form.formState.errors.country.message}</p>}</div><Field label="Phone number" name="phone" register={form.register} required error={form.formState.errors.phone?.message} placeholder="Select your country first" type="tel" /></div>
+      <StepHeading title="Your account" text="Only what is needed to create your account is required now. You can complete your profile later." />
+      <div className="space-y-4">
+        <Field label="Full name" name="fullName" register={form.register} required error={errors.fullName?.message} placeholder="Jane Smith" />
+        <Field label="Business email" name="email" register={form.register} required error={errors.email?.message} placeholder="jane@company.com" type="email" />
+        <Row label="Country" htmlFor="country" required error={errors.country?.message}>
+          <select id="country" {...form.register("country", { onChange: (event) => { const next = findCountryByName(event.target.value); if (next) form.setValue("phone", phoneWithDialCode(form.getValues("phone"), findCountryByName(previousCountryRef.current), next)); previousCountryRef.current = event.target.value; } })} aria-invalid={Boolean(errors.country)} className={selectClass(errors.country?.message)}><option value="">Select your country</option>{COUNTRIES.map((country) => <option key={country.code} value={country.name}>{country.name} ({country.dialCode})</option>)}</select>
+        </Row>
+        <Field label="Phone number" name="phone" register={form.register} required error={errors.phone?.message} placeholder="Select your country first" type="tel" hint="Include the country code, e.g. +254 712 345 678" />
+      </div>
     </>;
-    if (key === "company") return <><div className="mb-7"><p className="text-xs font-bold uppercase tracking-[0.16em] text-aviation-primary">Company identity</p><h2 className="mt-2 text-2xl font-bold text-aviation-primary">Tell us about your organisation</h2><p className="mt-2 text-sm leading-6 text-aviation-muted">Company identity is shared between your Buying and Selling workspaces.</p></div><div className="grid gap-5 md:grid-cols-2"><Field label="Legal / trading company name" name="companyName" register={form.register} required error={form.formState.errors.companyName?.message} placeholder="Example Aviation Ltd" /><div><label htmlFor="businessType" className="mb-2 block text-sm font-semibold">Organisation type <RequiredMark /></label><select id="businessType" {...form.register("businessType")} className="min-h-11 w-full rounded-xl border border-aviation-border bg-white px-4 py-3 text-sm focus:border-aviation-primary focus:outline-none"><option value="">Select organisation type</option><option>Airline / Aircraft Operator</option><option>MRO</option><option>Aircraft Parts Distributor</option><option>OEM</option><option>Aircraft Broker</option><option>Aircraft Dismantler</option><option>Engine Shop</option><option>Avionics Shop</option><option>Government / Institutional</option><option>Other</option></select>{form.formState.errors.businessType?.message && <p className="mt-1 text-xs text-red-600">{form.formState.errors.businessType.message}</p>}</div><Field label="Job title / role" name="jobTitle" register={form.register} placeholder="Procurement Manager" /><Field label="Company registration number" name="registrationNumber" register={form.register} placeholder="Optional for now" /><Field label="Website" name="website" register={form.register} placeholder="https://company.com" type="url" /><Field label="City" name="city" register={form.register} placeholder="Nairobi" /></div><div className="mt-5"><label htmlFor="address" className="mb-2 block text-sm font-semibold">Company address <span className="font-normal text-aviation-muted">(optional)</span></label><textarea id="address" rows={3} {...form.register("address")} className="w-full rounded-xl border border-aviation-border bg-white px-4 py-3 text-sm focus:border-aviation-primary focus:outline-none" /></div></>;
-    if (key === "buying") return <div className="space-y-9"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-aviation-primary">Buying profile</p><h2 className="mt-2 text-2xl font-bold text-aviation-primary">Help us understand how you source</h2><p className="mt-2 text-sm text-aviation-muted">These preferences are optional and can be changed later.</p></div><div><label htmlFor="procurementRole" className="mb-2 block text-sm font-semibold">Your procurement role</label><select id="procurementRole" {...form.register("procurementRole")} className="min-h-11 w-full rounded-xl border border-aviation-border bg-white px-4 py-3 text-sm focus:border-aviation-primary focus:outline-none"><option value="">Select role</option><option>Procurement / Purchasing</option><option>Maintenance / Engineering</option><option>Materials / Supply Chain</option><option>Quality / Compliance</option><option>Management</option><option>Other</option></select></div><ChoiceGrid title="Parts you purchase" description="Select the categories most relevant to your procurement activity." options={categories} value={form.watch("buyerCategories")} onChange={setArray("buyerCategories")} /><ChoiceGrid title="What matters when sourcing?" options={priorities} value={form.watch("procurementPriorities")} onChange={setArray("procurementPriorities")} /><ChoiceGrid title="Certification / documentation requirements" options={["FAA 8130-3", "EASA Form 1", "Certificate of Conformity", "Trace / maintenance records", "No specific requirement"]} value={form.watch("certificationRequirements")} onChange={setArray("certificationRequirements")} /><ChoiceGrid title="Preferred supplier criteria" options={["Verified supplier", "Strong rating / reviews", "Local or regional stock", "AOG capability", "Fast response", "Competitive pricing", "Warranty offered"]} value={form.watch("preferredSupplierCriteria")} onChange={setArray("preferredSupplierCriteria")} /></div>;
-    if (key === "selling") return <div className="space-y-9"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-aviation-primary">Supplier profile</p><h2 className="mt-2 text-2xl font-bold text-aviation-primary">Build your selling profile</h2><p className="mt-2 text-sm text-aviation-muted">Tell buyers what your company can supply. You can refine this after registration.</p></div><div><label htmlFor="supplierType" className="mb-2 block text-sm font-semibold">Supplier type</label><select id="supplierType" {...form.register("supplierType")} className="min-h-11 w-full rounded-xl border border-aviation-border bg-white px-4 py-3 text-sm focus:border-aviation-primary focus:outline-none"><option value="">Select supplier type</option><option>Parts Distributor</option><option>MRO / Repair Station</option><option>OEM</option><option>Broker</option><option>Dismantler</option><option>Engine Specialist</option><option>Avionics Specialist</option><option>Other</option></select></div><label htmlFor="mroCapable" className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors ${form.watch("mroCapable") ? "border-aviation-primary bg-[#eaf2ff]" : "border-aviation-border hover:border-aviation-primary/50"}`}><input id="mroCapable" type="checkbox" {...form.register("mroCapable")} className="mt-1 h-4 w-4 accent-[var(--aviation-primary)]" /><span><span className="block font-semibold text-aviation-dark">MRO capabilities: we offer MRO services (repair / overhaul of components)</span><span className="mt-0.5 block text-sm text-aviation-muted">You will be listed on MRO Services and receive repair and overhaul RFQs from buyers.</span></span></label><ChoiceGrid title="Product categories" options={supplierCategories} value={form.watch("supplierCategories")} onChange={setArray("supplierCategories")} /><ChoiceGrid title="Aviation capabilities" options={capabilities} value={form.watch("aviationCapabilities")} onChange={setArray("aviationCapabilities")} /><ChoiceGrid title="Aircraft / platform specialties" description="Examples can include Boeing, Airbus, ATR, Dash 8, Embraer, helicopters, engines or specific platforms." options={["Airbus", "Boeing", "ATR", "De Havilland / Dash 8", "Embraer", "Regional aircraft", "Helicopters", "Business aviation", "Military / government where applicable"]} value={form.watch("aircraftSpecialties")} onChange={setArray("aircraftSpecialties")} /></div>;
-    if (key === "compliance") return <div className="space-y-9"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-aviation-primary">Trust & compliance</p><h2 className="mt-2 text-2xl font-bold text-aviation-primary">Prepare your supplier verification profile</h2><p className="mt-2 text-sm text-aviation-muted">Nothing here is required to create your account. Verification documents can be uploaded and reviewed after registration.</p></div><ChoiceGrid title="Approvals / certifications" options={certifications} value={form.watch("certifications")} onChange={setArray("certifications")} /><ChoiceGrid title="Traceability you can provide" options={["FAA 8130-3", "EASA Form 1", "Certificate of Conformity", "OEM documentation", "Maintenance records", "Serial / batch trace", "No trace available for some stock"]} value={form.watch("traceabilityCapabilities")} onChange={setArray("traceabilityCapabilities")} /><div><label htmlFor="qualityInformation" className="mb-2 block text-sm font-semibold">Quality / compliance notes</label><textarea id="qualityInformation" rows={4} {...form.register("qualityInformation")} placeholder="Quality systems, approvals, inspection capabilities or other relevant information..." className="w-full rounded-xl border border-aviation-border px-4 py-3 text-sm focus:border-aviation-primary focus:outline-none" /></div><div><label htmlFor="verificationNotes" className="mb-2 block text-sm font-semibold">Verification notes <span className="font-normal text-aviation-muted">(optional)</span></label><textarea id="verificationNotes" rows={3} {...form.register("verificationNotes")} placeholder="Anything the AviaInventory verification team should know..." className="w-full rounded-xl border border-aviation-border px-4 py-3 text-sm focus:border-aviation-primary focus:outline-none" /></div></div>;
-    if (key === "logistics") return <div className="space-y-9"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-aviation-primary">Commercial profile</p><h2 className="mt-2 text-2xl font-bold text-aviation-primary">Set expectations for buyers</h2><p className="mt-2 text-sm text-aviation-muted">These details help buyers understand how you operate. They can be completed or changed later.</p></div><ChoiceGrid title="Geographic coverage" options={["Kenya / East Africa", "Africa", "Middle East", "Europe", "North America", "Latin America", "Asia-Pacific", "Worldwide"]} value={form.watch("geographicCoverage")} onChange={setArray("geographicCoverage")} /><ChoiceGrid title="Shipping capabilities" options={["Courier / express", "Freight forwarding", "Dangerous goods capable where applicable", "Export documentation", "AOG dispatch", "Buyer-arranged collection"]} value={form.watch("shippingCapabilities")} onChange={setArray("shippingCapabilities")} /><div><label htmlFor="commercialTerms" className="mb-2 block text-sm font-semibold">Commercial terms</label><textarea id="commercialTerms" rows={4} {...form.register("commercialTerms")} placeholder="Payment terms, warranty approach, lead-time notes, minimum order information, etc." className="w-full rounded-xl border border-aviation-border px-4 py-3 text-sm focus:border-aviation-primary focus:outline-none" /></div></div>;
-    return <div className="space-y-7"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-aviation-primary">Secure your account</p><h2 className="mt-2 text-2xl font-bold text-aviation-primary">Ready for take-off</h2><p className="mt-2 text-sm text-aviation-muted">Required information is limited to account creation. Optional aviation profile information can be completed later.</p></div><div className="grid gap-4 sm:grid-cols-3"><div className="rounded-xl border border-aviation-border bg-aviation-light p-4"><ShieldCheck className="text-aviation-primary" size={22}/><p className="mt-3 text-sm font-bold">Secure account</p><p className="mt-1 text-xs text-aviation-muted">Use 8–16 characters mixing upper and lower case, numbers and symbols.</p></div><div className="rounded-xl border border-aviation-border bg-aviation-light p-4"><FileCheck2 className="text-aviation-primary" size={22}/><p className="mt-3 text-sm font-bold">Verification later</p><p className="mt-1 text-xs text-aviation-muted">Supplier documents can be reviewed after registration.</p></div><div className="rounded-xl border border-aviation-border bg-aviation-light p-4"><Save className="text-aviation-primary" size={22}/><p className="mt-3 text-sm font-bold">Draft saved</p><p className="mt-1 text-xs text-aviation-muted">Your optional onboarding choices are saved in this browser.</p></div></div><div className="grid gap-5 md:grid-cols-2"><Field label="Password" name="password" register={form.register} required error={form.formState.errors.password?.message} placeholder="8–16 characters" type="password"/><Field label="Confirm password" name="confirmPassword" register={form.register} required error={form.formState.errors.confirmPassword?.message} placeholder="Repeat your password" type="password"/></div><div className="rounded-xl bg-aviation-light p-4"><PasswordChecklist password={data.password ?? ""} /></div><label className="flex min-h-11 items-start gap-3 rounded-xl border border-aviation-border bg-white p-4 text-sm"><input type="checkbox" {...form.register("agreeTerms")} className="mt-1 h-4 w-4"/><span>I agree to the AviaInventory <a href="/terms" target="_blank" className="font-semibold text-aviation-primary underline">Terms &amp; Conditions</a> and <a href="/privacy" target="_blank" className="font-semibold text-aviation-primary underline">Privacy Policy</a>.</span></label>{form.formState.errors.agreeTerms?.message && <p className="text-xs text-red-600">{form.formState.errors.agreeTerms.message}</p>}<label className="flex min-h-11 items-start gap-3 rounded-xl border border-aviation-border bg-white p-4 text-sm"><input type="checkbox" {...form.register("subscribeNewsletter")} className="mt-1 h-4 w-4"/><span>Send me AviaInventory product updates and aviation marketplace news.</span></label></div>;
+    if (key === "company") return <>
+      <StepHeading title="Company" text="Company details are shared between your Buying and Selling workspaces." />
+      <div className="space-y-4">
+        <Field label="Company name" name="companyName" register={form.register} required error={errors.companyName?.message} placeholder="Example Aviation Ltd" />
+        <Row label="Organisation type" htmlFor="businessType" required error={errors.businessType?.message}>
+          <select id="businessType" {...form.register("businessType")} className={selectClass(errors.businessType?.message)}><option value="">Select organisation type</option><option>Airline / Aircraft Operator</option><option>MRO</option><option>Aircraft Parts Distributor</option><option>OEM</option><option>Aircraft Broker</option><option>Aircraft Dismantler</option><option>Engine Shop</option><option>Avionics Shop</option><option>Government / Institutional</option><option>Other</option></select>
+        </Row>
+        <Field label="Job title" name="jobTitle" register={form.register} placeholder="Procurement Manager" />
+        <Field label="Registration no." name="registrationNumber" register={form.register} placeholder="Optional for now" />
+        <Field label="Website" name="website" register={form.register} placeholder="https://company.com" type="url" />
+        <Field label="City" name="city" register={form.register} placeholder="Nairobi" />
+        <Row label="Company address" htmlFor="address" optional>
+          <textarea id="address" rows={2} {...form.register("address")} className={textareaClass} />
+        </Row>
+      </div>
+    </>;
+    if (key === "buying") return <>
+      <StepHeading title="Buying profile" text="Optional — helps us show you relevant parts and suppliers. You can change it later." />
+      <div className="space-y-5">
+        <Row label="Procurement role" htmlFor="procurementRole">
+          <select id="procurementRole" {...form.register("procurementRole")} className={selectClass()}><option value="">Select role</option><option>Procurement / Purchasing</option><option>Maintenance / Engineering</option><option>Materials / Supply Chain</option><option>Quality / Compliance</option><option>Management</option><option>Other</option></select>
+        </Row>
+        <ChoiceGrid title="Parts you purchase" options={categories} value={form.watch("buyerCategories")} onChange={setArray("buyerCategories")} />
+        <ChoiceGrid title="What matters when sourcing" options={priorities} value={form.watch("procurementPriorities")} onChange={setArray("procurementPriorities")} />
+        <ChoiceGrid title="Certification needs" options={["FAA 8130-3", "EASA Form 1", "Certificate of Conformity", "Trace / maintenance records", "No specific requirement"]} value={form.watch("certificationRequirements")} onChange={setArray("certificationRequirements")} />
+        <ChoiceGrid title="Preferred suppliers" options={["Verified supplier", "Strong rating / reviews", "Local or regional stock", "AOG capability", "Fast response", "Competitive pricing", "Warranty offered"]} value={form.watch("preferredSupplierCriteria")} onChange={setArray("preferredSupplierCriteria")} />
+      </div>
+    </>;
+    if (key === "selling") return <>
+      <StepHeading title="Selling profile" text="Tell buyers what your company can supply. You can refine this after registration." />
+      <div className="space-y-5">
+        <Row label="Supplier type" htmlFor="supplierType">
+          <select id="supplierType" {...form.register("supplierType", { onChange: (event) => { if (/mro/i.test(event.target.value)) { form.setValue("mroCapable", true); if (!mroProfile) setMroFormOpen(true); } } })} className={selectClass()}><option value="">Select supplier type</option><option>Parts Distributor</option><option>MRO / Repair Station</option><option>OEM</option><option>Broker</option><option>Dismantler</option><option>Engine Specialist</option><option>Avionics Specialist</option><option>Other</option></select>
+        </Row>
+        <Row label="MRO services" hint="You will be listed on MRO Services and receive repair and overhaul RFQs.">
+          <label htmlFor="mroCapable" className="flex cursor-pointer items-center gap-2 text-sm text-aviation-dark sm:pt-2"><input id="mroCapable" type="checkbox" {...form.register("mroCapable")} className="h-4 w-4 accent-[var(--aviation-primary)]" />We repair / overhaul components</label>
+        </Row>
+        {(data.mroCapable || /mro/i.test(data.supplierType ?? "")) && <Row label="MRO capabilities" hint="Capabilities and approvals shown on your MRO Services listing.">
+          <div className="flex flex-wrap items-center gap-3 sm:pt-1">
+            {mroProfile
+              ? <span className="text-sm text-aviation-dark">{mroProfile.capabilities.length} capabilities · {mroProfile.approvals.length} approvals</span>
+              : <span className="text-sm text-aviation-muted">Not filled in yet</span>}
+            <button type="button" onClick={() => setMroFormOpen(true)} className={`${smallButton} border border-aviation-primary/40 bg-white text-aviation-primary hover:bg-aviation-light`}>
+              {mroProfile ? <><Pencil size={14} /> Edit</> : <><Wrench size={14} /> Fill in MRO form</>}
+            </button>
+          </div>
+        </Row>}
+        <ChoiceGrid title="Product categories" options={supplierCategories} value={form.watch("supplierCategories")} onChange={setArray("supplierCategories")} />
+        <ChoiceGrid title="Capabilities" options={capabilities} value={form.watch("aviationCapabilities")} onChange={setArray("aviationCapabilities")} />
+        <ChoiceGrid title="Aircraft specialties" options={["Airbus", "Boeing", "ATR", "De Havilland / Dash 8", "Embraer", "Regional aircraft", "Helicopters", "Business aviation", "Military / government where applicable"]} value={form.watch("aircraftSpecialties")} onChange={setArray("aircraftSpecialties")} />
+      </div>
+    </>;
+    if (key === "compliance") return <>
+      <StepHeading title="Trust & compliance" text="Nothing here is required. Verification documents can be uploaded and reviewed after registration." />
+      <div className="space-y-5">
+        <ChoiceGrid title="Approvals" options={certifications} value={form.watch("certifications")} onChange={setArray("certifications")} />
+        <ChoiceGrid title="Traceability" options={["FAA 8130-3", "EASA Form 1", "Certificate of Conformity", "OEM documentation", "Maintenance records", "Serial / batch trace", "No trace available for some stock"]} value={form.watch("traceabilityCapabilities")} onChange={setArray("traceabilityCapabilities")} />
+        <Row label="Quality notes" htmlFor="qualityInformation" optional>
+          <textarea id="qualityInformation" rows={3} {...form.register("qualityInformation")} placeholder="Quality systems, approvals, inspection capabilities…" className={textareaClass} />
+        </Row>
+        <Row label="Verification notes" htmlFor="verificationNotes" optional>
+          <textarea id="verificationNotes" rows={2} {...form.register("verificationNotes")} placeholder="Anything our verification team should know…" className={textareaClass} />
+        </Row>
+      </div>
+    </>;
+    if (key === "logistics") return <>
+      <StepHeading title="Logistics & terms" text="Helps buyers understand how you operate. Can be completed or changed later." />
+      <div className="space-y-5">
+        <ChoiceGrid title="Coverage" options={["Kenya / East Africa", "Africa", "Middle East", "Europe", "North America", "Latin America", "Asia-Pacific", "Worldwide"]} value={form.watch("geographicCoverage")} onChange={setArray("geographicCoverage")} />
+        <ChoiceGrid title="Shipping" options={["Courier / express", "Freight forwarding", "Dangerous goods capable where applicable", "Export documentation", "AOG dispatch", "Buyer-arranged collection"]} value={form.watch("shippingCapabilities")} onChange={setArray("shippingCapabilities")} />
+        <Row label="Commercial terms" htmlFor="commercialTerms" optional>
+          <textarea id="commercialTerms" rows={3} {...form.register("commercialTerms")} placeholder="Payment terms, warranty, lead times, minimum orders…" className={textareaClass} />
+        </Row>
+      </div>
+    </>;
+    return <>
+      <StepHeading title="Secure your account" text="Choose a password to finish. Supplier documents can be added after registration." />
+      <div className="space-y-4">
+        <Field label="Password" name="password" register={form.register} required error={errors.password?.message} placeholder="8–16 characters" type="password" />
+        <Field label="Confirm password" name="confirmPassword" register={form.register} required error={errors.confirmPassword?.message} placeholder="Repeat your password" type="password" />
+        <Row label="Password rules">
+          <div className="rounded-md bg-aviation-light px-3 py-2 text-xs [&_ul]:text-xs"><PasswordChecklist password={data.password ?? ""} /></div>
+        </Row>
+        <Row label="Agreements" required error={errors.agreeTerms?.message}>
+          <div className="space-y-2 text-sm sm:pt-2">
+            <label className="flex cursor-pointer items-start gap-2"><input type="checkbox" {...form.register("agreeTerms")} className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--aviation-primary)]" /><span>I agree to the <a href="/terms" target="_blank" className="font-semibold text-aviation-primary underline">Terms &amp; Conditions</a> and <a href="/privacy" target="_blank" className="font-semibold text-aviation-primary underline">Privacy Policy</a>.</span></label>
+            <label className="flex cursor-pointer items-start gap-2"><input type="checkbox" {...form.register("subscribeNewsletter")} className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--aviation-primary)]" /><span>Send me product updates and aviation marketplace news.</span></label>
+          </div>
+        </Row>
+      </div>
+    </>;
   };
 
-  return <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-    <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <aside className="hidden lg:block lg:sticky lg:top-28 lg:h-fit"><div className="rounded-2xl border border-aviation-border bg-aviation-dark p-6 text-white shadow-lg"><PlaneTakeoff size={28}/><p className="mt-5 text-xs font-bold uppercase tracking-[0.16em] text-white/60">AviaInventory onboarding</p><h1 className="mt-2 text-2xl font-bold">Build your aviation workspace.</h1><p className="mt-3 text-sm leading-6 text-white/75">Start with the essentials, then progressively add the company, procurement and, when enabled, supplier details that matter to your business.</p><div className="mt-7 space-y-3">{steps.map((item, i) => { const Icon = item.icon; return <div key={item.key} className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${i + 1 === step ? "bg-white/10 font-bold" : "text-white/60"}`}><Icon size={16}/><span>{item.label}</span></div>; })}</div></div></aside>
-      <section className="min-w-0">
-        <div className="mb-6"><div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-aviation-primary">Create your account</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-aviation-primary sm:text-4xl">Join AviaInventory</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-aviation-muted">A professional workspace for sourcing and supplying aircraft parts.</p></div><div className="rounded-xl border border-aviation-border bg-white px-4 py-3 text-sm"><span className="font-semibold">{profileCompletion}% profile complete</span><span className="ml-2 text-aviation-muted">· draft saved automatically</span></div></div></div>
-        <div className="mb-6 rounded-2xl border border-aviation-border bg-white p-4 shadow-sm sm:p-6"><p className="mb-1 text-sm font-bold text-aviation-dark">Choose your account</p><p className="mb-3 text-xs text-aviation-muted">You can upgrade from Buyer to Buyer & Supplier at any time without creating another company account.</p><div className="grid gap-3 md:grid-cols-2">{accountCards.map((card) => { const selected = accountType === card.type; return <button key={card.type} type="button" onClick={() => { form.setValue("accountType", card.type, { shouldDirty: true }); setStep(1); }} disabled={loading} className={`h-full min-h-11 rounded-xl border p-4 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-aviation-primary/30 ${selected ? "border-aviation-primary bg-aviation-success-soft" : "border-aviation-border hover:border-aviation-primary/50"}`}><span className="flex items-start justify-between gap-3"><span><span className="block text-sm font-bold text-aviation-dark">{card.title}</span><span className="mt-1 block text-xs leading-5 text-aviation-muted">{card.text}</span></span><Check size={19} aria-hidden="true" className={`shrink-0 text-aviation-primary ${selected ? "" : "invisible"}`}/></span></button>; })}</div></div>
+  const smallButton = "inline-flex h-10 items-center justify-center gap-1 rounded-md px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 sm:h-9";
+
+  return <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:py-10">
+    <div className="overflow-hidden rounded-xl border border-aviation-border bg-white shadow-sm">
+      <div className="flex flex-col gap-1 bg-aviation-dark px-5 py-4 text-white sm:flex-row sm:items-end sm:justify-between sm:px-8">
+        <div className="flex items-center gap-3"><PlaneTakeoff size={22} aria-hidden="true" /><div><h1 className="text-xl font-bold sm:text-2xl">Join AviaInventory</h1><p className="text-xs text-white/70">Fill in the form to create your account.</p></div></div>
+        <p className="text-xs text-white/70">{profileCompletion}% profile complete · draft saved automatically</p>
+      </div>
+
+      <div className="space-y-5 px-5 py-5 sm:px-8 sm:py-6">
+        <Row label="Account type" required>
+          <div role="radiogroup" aria-label="Account type" className="grid gap-2 sm:grid-cols-2">
+            {accountCards.map((card) => { const selected = accountType === card.type; return <button key={card.type} type="button" role="radio" aria-checked={selected} onClick={() => { form.setValue("accountType", card.type, { shouldDirty: true }); setStep(1); }} disabled={loading} className={`flex items-start gap-2 rounded-md border px-3 py-2 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-aviation-primary/30 ${selected ? "border-aviation-primary bg-aviation-success-soft" : "border-aviation-border hover:border-aviation-primary/50"}`}><span aria-hidden="true" className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${selected ? "border-aviation-primary" : "border-aviation-border"}`}>{selected && <span className="h-2 w-2 rounded-full bg-aviation-primary" />}</span><span><span className="block text-sm font-semibold text-aviation-dark">{card.title}</span><span className="block text-xs leading-5 text-aviation-muted">{card.text}</span></span></button>; })}
+          </div>
+        </Row>
+
         {savedDraft && (
-          <div role="status" className="mb-6 flex flex-col gap-4 rounded-2xl border border-aviation-primary/30 bg-aviation-success-soft p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-            <div>
-              <p className="font-semibold text-aviation-dark">
-                You have an unfinished registration{savedDraft.companyName ? ` for ${savedDraft.companyName}` : savedDraft.email ? ` for ${savedDraft.email}` : ""}.
-              </p>
-              <p className="mt-0.5 text-sm text-[var(--aviation-muted)]">
-                {savedDraft.savedAt ? `Saved ${new Date(savedDraft.savedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} on this device. ` : ""}Continue where you left off, or start a new registration.
-              </p>
-            </div>
+          <div role="status" className="flex flex-col gap-3 rounded-md border border-aviation-primary/30 bg-aviation-success-soft p-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-aviation-dark">
+              <span className="font-semibold">You have an unfinished registration{savedDraft.companyName ? ` for ${savedDraft.companyName}` : savedDraft.email ? ` for ${savedDraft.email}` : ""}.</span>{" "}
+              <span className="text-[var(--aviation-muted)]">{savedDraft.savedAt ? `Saved ${new Date(savedDraft.savedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} on this device.` : ""}</span>
+            </p>
             <div className="flex shrink-0 gap-2">
-              <button type="button" onClick={resumeDraft} className="min-h-11 rounded-xl bg-aviation-primary px-4 py-2 text-sm font-semibold text-white">Continue</button>
-              <button type="button" onClick={startNewRegistration} className="min-h-11 rounded-xl border border-aviation-border bg-white px-4 py-2 text-sm font-semibold text-aviation-dark">Start new</button>
+              <button type="button" onClick={resumeDraft} className={`${smallButton} bg-aviation-primary text-white`}>Continue</button>
+              <button type="button" onClick={startNewRegistration} className={`${smallButton} border border-aviation-border bg-white text-aviation-dark`}>Start new</button>
             </div>
           </div>
         )}
-        <div ref={formTopRef} className="mb-6 scroll-mt-28 rounded-2xl border border-aviation-border bg-white p-4 shadow-sm sm:p-6"><StepIndicator currentStep={step} totalSteps={totalSteps} labels={steps.map((s) => s.label)} /></div>
-        <form onSubmit={submit} noValidate><div className="rounded-2xl border border-aviation-border bg-white p-5 shadow-sm sm:p-8">{renderStep()}</div><div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between"><button type="button" disabled={step === 1 || loading} onClick={() => changeStep(Math.max(1, step - 1))} className="min-h-11 rounded-xl border border-aviation-border bg-white px-5 py-3 text-sm font-bold text-aviation-dark disabled:cursor-not-allowed disabled:opacity-40"><ChevronLeft className="mr-1 inline" size={18}/>Back</button><div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center"><button type="button" onClick={() => { toast.success("Your onboarding draft is saved. You can continue later from this device."); router.push("/"); }} className="min-h-11 rounded-xl px-5 py-3 text-sm font-bold text-aviation-primary hover:bg-aviation-light"><Save className="mr-2 inline" size={17}/>Save & continue later</button>{step < totalSteps ? <button key="continue" type="button" onClick={goNext} disabled={loading} className="min-h-11 rounded-xl bg-aviation-primary px-6 py-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">Continue <ChevronRight className="ml-1 inline" size={18}/></button> : <button key="submit" type="submit" disabled={loading} className="min-h-11 rounded-xl bg-aviation-primary px-6 py-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{loading ? "Creating account…" : "Create AviaInventory account"}</button>}</div></div></form>
-        <div className="mt-5 flex items-start gap-3 rounded-xl border border-aviation-border bg-aviation-light p-4 text-xs leading-5 text-aviation-muted"><Info size={16} className="mt-0.5 shrink-0 text-aviation-primary"/><p><strong className="text-aviation-dark">Progressive onboarding:</strong> only account-creation essentials are required. Supplier verification, documents and detailed procurement preferences can be completed later from your account workspace.</p></div>
-      </section>
+
+        {mroProfile && (
+          <div className="mb-4 flex flex-col gap-2 rounded-md border border-[#0f5b6b]/25 bg-[#e8f3f4] px-3 py-2.5 text-sm text-[#0f5b6b] sm:flex-row sm:items-center sm:justify-between">
+            <p className="flex items-start gap-2"><Wrench size={16} className="mt-0.5 shrink-0" aria-hidden="true" /><span><span className="font-semibold">Your MRO capabilities are saved</span> ({mroProfile.capabilities.length} capabilities, {mroProfile.approvals.length} approvals). Finish creating your account to publish them on MRO Services.</span></p>
+            <button type="button" onClick={() => setMroFormOpen(true)} className={`${smallButton} shrink-0 border border-[#0f5b6b]/30 bg-white text-[#0f5b6b]`}><Pencil size={14} /> Edit</button>
+          </div>
+        )}
+
+        <div ref={formTopRef} className="scroll-mt-28"><StepIndicator currentStep={step} totalSteps={totalSteps} labels={steps.map((s) => s.label)} /></div>
+
+        <form onSubmit={submit} noValidate>
+          {renderStep()}
+          <div className="mt-6 flex flex-col-reverse gap-2 border-t border-aviation-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <button type="button" disabled={step === 1 || loading} onClick={() => changeStep(Math.max(1, step - 1))} className={`${smallButton} border border-aviation-border bg-white text-aviation-dark`}><ChevronLeft size={16} aria-hidden="true" />Back</button>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
+              <button type="button" onClick={() => { toast.success("Your onboarding draft is saved. You can continue later from this device."); router.push("/"); }} className={`${smallButton} text-aviation-primary hover:bg-aviation-light`}><Save size={15} aria-hidden="true" />Save &amp; finish later</button>
+              {step < totalSteps
+                ? <button key="continue" type="button" onClick={goNext} disabled={loading} className={`${smallButton} bg-aviation-primary text-white hover:opacity-90`}>Continue <ChevronRight size={16} aria-hidden="true" /></button>
+                : <button key="submit" type="submit" disabled={loading} className={`${smallButton} bg-aviation-primary text-white hover:opacity-90`}>{loading ? "Creating account…" : "Create account"}</button>}
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
+    <p className="mt-3 flex items-start gap-2 px-1 text-xs leading-5 text-aviation-muted"><Info size={14} className="mt-0.5 shrink-0 text-aviation-primary" aria-hidden="true" />Only account essentials are required. Supplier verification, documents and detailed preferences can be completed later from your account.</p>
+    <MroCapabilityDialog
+      open={mroFormOpen}
+      initial={mroProfile ?? EMPTY_MRO_PROFILE}
+      onClose={() => setMroFormOpen(false)}
+      onSubmit={saveMroForm}
+      submitLabel="Save & continue sign-up"
+    />
   </main>;
 }

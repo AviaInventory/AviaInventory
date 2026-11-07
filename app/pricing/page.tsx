@@ -7,7 +7,7 @@ import { accountBillingType, type AccountBillingType, type PlanCode } from "@/li
 
 export const metadata: Metadata = {
   title: "AviaInventory Pricing | Aviation Marketplace Plans",
-  description: "Compare AviaInventory Buyer and Buyer & Supplier subscription plans, including the 90-day free trial and premium marketplace visibility services.",
+  description: "Compare AviaInventory Buyer and Buyer & Supplier subscription plans, including the 90-day Platinum trial and premium marketplace visibility services.",
   openGraph: { title: "AviaInventory Pricing", description: "Subscription plans for aviation procurement and supplier operations." },
 };
 
@@ -26,7 +26,7 @@ export default async function PricingPage() {
     currentPlanCode = subscription?.plan_code ?? null;
   }
   return <main className="min-h-screen bg-aviation-light"><div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
-    <div className="max-w-3xl"><p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-aviation-accent">AVIAINVENTORY COMMERCIAL PLANS</p><h1 className="mt-2 text-3xl font-bold tracking-tight text-aviation-dark sm:text-5xl">Choose the service level that matches your aviation operation.</h1><p className="mt-4 text-base leading-7 text-aviation-muted">Start with a 90-day free trial. Buyer accounts can add selling capability at any time through the same company account.</p></div>
+    <div className="max-w-3xl"><p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-aviation-accent">AVIAINVENTORY COMMERCIAL PLANS</p><h1 className="mt-2 text-3xl font-bold tracking-tight text-aviation-dark sm:text-5xl">Choose the service level that matches your aviation operation.</h1><p className="mt-4 text-base leading-7 text-aviation-muted">Every new account gets all Platinum features free for 90 days, then moves to Basic unless you choose a paid plan. Buyer accounts can add selling capability at any time through the same company account.</p></div>
     <PricingPlans accountType={accountType} currentPlanCode={currentPlanCode} />
     {!user && <div className="mt-6 text-sm text-aviation-muted">Already have an account? <Link href="/login?next=/pricing" className="font-semibold text-aviation-primary">Sign in</Link> to choose a paid plan.</div>}
   </div></main>;

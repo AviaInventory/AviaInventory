@@ -1,5 +1,5 @@
 import "server-only";
-import { getPlan, type PlanCode } from "@/lib/billing/plans";
+import { basicPlanFor, getPlan, PLATINUM_ENTITLEMENTS, type PlanCode } from "@/lib/billing/plans";
 
 export type SubscriptionAccess = {
   id: string;
@@ -20,6 +20,8 @@ export type SubscriptionAccess = {
   /** True when Paystack's card-management page is available. */
   canManageCard: boolean;
   entitlements: string[];
+  /** The 90-day Platinum trial has ended and the account now runs on Basic for free. */
+  onBasicAfterTrial: boolean;
   effectiveActive: boolean;
   effectiveStatus: "trialing" | "active" | "past_due" | "trial_expired" | "expired" | "cancelled" | "incomplete" | "payment_failed";
 };
@@ -37,8 +39,10 @@ export function buildSubscriptionAccess(row: Record<string, unknown>): Subscript
   // A paid period ends at current_period_end: M-Pesa plans don't renew, and a card renewal
   // that Paystack hasn't confirmed yet is covered by the grace days.
   const paidPeriodOpen = periodEnd === null || periodEnd + graceDays * 86_400_000 > now;
+  // The trial grants Platinum for 90 days; afterwards the account drops to Basic
+  // (no charge) until the customer pays for a plan.
   const active = (status === "active" && paidPeriodOpen)
-    || (status === "trialing" && !trialExpired)
+    || status === "trialing"
     || (status === "past_due" && graceEnd !== null && graceEnd > now);
 
   let effectiveStatus: SubscriptionAccess["effectiveStatus"] = status as SubscriptionAccess["effectiveStatus"];
@@ -50,7 +54,7 @@ export function buildSubscriptionAccess(row: Record<string, unknown>): Subscript
     userId: String(row.user_id),
     accountType: String(row.account_type) === "hybrid" ? "hybrid" : "buyer",
     planCode: plan.code,
-    planName: plan.name,
+    planName: trialExpired ? basicPlan(row).name : plan.name,
     status,
     billingInterval: row.billing_interval === "month" || row.billing_interval === "year" ? row.billing_interval : null,
     trialStartedAt: row.trial_started_at ? String(row.trial_started_at) : null,
@@ -61,11 +65,19 @@ export function buildSubscriptionAccess(row: Record<string, unknown>): Subscript
     cancelledAt: row.cancelled_at ? String(row.cancelled_at) : null,
     paymentMethod: row.payment_method === "card" || row.payment_method === "mpesa" ? row.payment_method : null,
     canManageCard: row.provider === "paystack" && Boolean(row.provider_subscription_id),
-    entitlements: plan.entitlements,
+    entitlements: trialExpired ? basicPlan(row).entitlements : plan.entitlements,
+    onBasicAfterTrial: trialExpired,
     effectiveActive: active,
     effectiveStatus,
   };
 }
+
+function basicPlan(row: Record<string, unknown>) {
+  return basicPlanFor(String(row.account_type) === "hybrid" ? "hybrid" : "buyer");
+}
+
+/** Used for the admin bypass, which gets every Platinum capability. */
+export const ALL_ENTITLEMENTS = PLATINUM_ENTITLEMENTS;
 
 export function hasEntitlement(subscription: SubscriptionAccess | null, entitlement: string): boolean {
   return Boolean(subscription?.effectiveActive && subscription.entitlements.includes(entitlement));

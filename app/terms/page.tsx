@@ -111,7 +111,7 @@ const sections: LegalSection[] = [
     heading: "Subscriptions, fees and payment",
     body: (
       <ul>
-        <li>New accounts receive a <strong>90-day free trial</strong>. No payment is taken automatically when the trial ends.</li>
+        <li>New accounts receive a <strong>90-day free trial with all Platinum features</strong>. When the trial ends the account moves to the Basic plan; Platinum features require a paid plan. No payment is taken automatically when the trial ends.</li>
         <li>Paid plans are billed in advance for the chosen period (monthly or annual) at the prices on our <Link className={link} href="/pricing">Pricing</Link> page. Prices are in US dollars, and payment in Kenya shillings is converted at the payment provider&apos;s rate on the day of payment.</li>
         <li>Prices include applicable taxes unless stated otherwise. We issue invoices in line with the VAT Act, 2013 and the Tax Procedures Act, 2015.</li>
         <li>Payments are processed by Paystack. You can pay by card or M-Pesa. Card payments renew automatically until cancelled; M-Pesa payments are made each period and you will be asked to approve each one on your phone.</li>

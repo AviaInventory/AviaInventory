@@ -111,7 +111,7 @@ export default function PricingPlans({
         </div>
         <div className="p-5 text-xs leading-5 text-[var(--aviation-muted)]">
           Bronze and Platinum are available only to Buyer &amp; Supplier accounts. Premium marketing services are subject to
-          AviaInventory review and actual service availability. Every plan starts with a 90-day free trial.
+          AviaInventory review and actual service availability. Every new account starts with a 90-day trial of all Platinum features, then moves to Basic unless a paid plan is chosen.
         </div>
       </section>
     </>

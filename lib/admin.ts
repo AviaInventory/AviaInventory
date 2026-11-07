@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { usdKesRate } from "@/lib/billing/pricing";
 
 export interface AdminPartRow {
   id: string;
@@ -49,7 +50,49 @@ export interface DashboardStats {
   totalQuotes: number;
   totalOrders: number;
   totalPurchasedQuantity: number;
-  totalOrderValue: number;
+  sales: SalesOverview;
+}
+
+export interface SalesOverview {
+  /** KES orders plus USD orders converted at the billing rate. */
+  totalKes: number;
+  /** BILLING_USD_KES_RATE, or null when it is not configured (USD then stays unconverted). */
+  usdKesRate: number | null;
+  /** USD included in totalKes, before conversion. */
+  convertedUsd: number;
+  /** Order value in currencies with no configured KES rate, kept out of totalKes. */
+  unconverted: { currency: string; amount: number }[];
+}
+
+/** Totals order value in Kenya shillings, converting USD with the same rate billing uses. */
+function buildSalesOverview(rows: Array<{ total_amount: number | null; currency: string | null }>): SalesOverview {
+  let rate: number | null = null;
+  try {
+    rate = usdKesRate();
+  } catch (error) {
+    console.error("ADMIN SALES OVERVIEW:", error instanceof Error ? error.message : error);
+  }
+
+  const byCurrency = new Map<string, number>();
+  for (const row of rows) {
+    const currency = (row.currency || "USD").toUpperCase();
+    byCurrency.set(currency, (byCurrency.get(currency) ?? 0) + Number(row.total_amount ?? 0));
+  }
+
+  const kes = byCurrency.get("KES") ?? 0;
+  const usd = byCurrency.get("USD") ?? 0;
+  byCurrency.delete("KES");
+  if (rate !== null) byCurrency.delete("USD");
+
+  return {
+    totalKes: kes + (rate !== null ? usd * rate : 0),
+    usdKesRate: rate,
+    convertedUsd: rate !== null ? usd : 0,
+    unconverted: [...byCurrency]
+      .filter(([, amount]) => amount !== 0)
+      .map(([currency, amount]) => ({ currency, amount }))
+      .sort((a, b) => a.currency.localeCompare(b.currency)),
+  };
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
@@ -64,14 +107,14 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       supabase.from("parts").select("id", { count: "exact", head: true }),
       supabase.from("rfqs").select("id", { count: "exact", head: true }),
       supabase.from("quotes").select("id", { count: "exact", head: true }),
-      supabase.from("orders").select("quantity, total_amount"),
+      supabase.from("orders").select("quantity, total_amount, currency"),
     ]);
 
   for (const [name, result] of Object.entries({ users, buyers, suppliers, published, parts, rfqs, quotes, orders })) {
     if (result.error) console.error(`ADMIN ${name.toUpperCase()} ERROR:`, result.error);
   }
 
-  const orderRows = (orders.data ?? []) as Array<{ quantity: number | null; total_amount: number | null }>;
+  const orderRows = (orders.data ?? []) as Array<{ quantity: number | null; total_amount: number | null; currency: string | null }>;
 
   return {
     totalUsers: users.count ?? 0,
@@ -83,7 +126,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     totalQuotes: quotes.count ?? 0,
     totalOrders: orderRows.length,
     totalPurchasedQuantity: orderRows.reduce((sum, row) => sum + Number(row.quantity ?? 0), 0),
-    totalOrderValue: orderRows.reduce((sum, row) => sum + Number(row.total_amount ?? 0), 0),
+    sales: buildSalesOverview(orderRows),
   };
 }
 

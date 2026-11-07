@@ -196,7 +196,22 @@ function Workflow() {
   const steps = [
     ["Profile", "/supplier/profile", Building2], ["Verification", "/supplier/verification", ShieldCheck], ["Inventory", "/supplier/inventory", Boxes], ["Buyer RFQ", "/supplier/rfqs", ClipboardList], ["Quote", "/supplier/quotes", FileText], ["Purchase Order", "/supplier/purchase-orders", PackageCheck], ["Shipment", "/supplier/shipments", Truck], ["Payment", "/supplier/invoices", Receipt],
   ] as const;
-  return <section className="overflow-x-auto rounded-2xl border border-aviation-border bg-aviation-dark p-4 text-white sm:p-5" aria-label="Supplier sales workflow"><div className="flex min-w-[850px] items-center gap-2">{steps.map(([label, href, Icon], index) => <div key={label} className="flex min-w-0 flex-1 items-center gap-2"><Link href={href} className="group flex min-w-0 flex-1 items-center gap-2 rounded-xl p-2 hover:bg-white/10"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/10 text-aviation-accent"><Icon size={16}/></span><span className="min-w-0"><span className="block truncate text-xs font-semibold">{label}</span><span className="font-mono text-[9px] uppercase tracking-wider text-white/40">STEP {String(index + 1).padStart(2, "0")}</span></span></Link>{index < steps.length - 1 && <ArrowRight size={14} className="shrink-0 text-white/25" aria-hidden="true"/>}</div>)}</div></section>;
+  // Phones: 2 columns, tablets: 4, wide screens: one row with arrows. No sideways scrolling.
+  return <section className="rounded-2xl border border-aviation-border bg-aviation-dark p-3 text-white sm:p-5" aria-label="Supplier sales workflow">
+    <p className="mb-2 px-1 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-aviation-accent xl:hidden">Sales workflow</p>
+    <ol className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:flex xl:items-center xl:gap-1">
+      {steps.map(([label, href, Icon], index) => <li key={label} className="flex min-w-0 items-center xl:flex-1">
+        <Link href={href} className="group flex w-full min-w-0 items-center gap-2.5 rounded-xl bg-white/[0.06] p-2.5 hover:bg-white/10 xl:bg-transparent xl:p-2">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/10 text-aviation-accent"><Icon size={16}/></span>
+          <span className="min-w-0">
+            <span className="block whitespace-nowrap font-mono text-[9px] uppercase tracking-wider text-white/45">Step {String(index + 1).padStart(2, "0")}</span>
+            <span className="block text-xs font-semibold leading-4 sm:text-[13px]">{label}</span>
+          </span>
+        </Link>
+        {index < steps.length - 1 && <ArrowRight size={14} className="hidden shrink-0 text-white/25 xl:block" aria-hidden="true"/>}
+      </li>)}
+    </ol>
+  </section>;
 }
 
 function TrustPanel({ verification, expiringDocs }: { verification: DashboardState["verification"]; expiringDocs: DashboardState["expiringDocs"] }) {

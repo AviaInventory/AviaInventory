@@ -209,7 +209,7 @@ export default function PlanCards({ accountType, currentPlanCode, allowRenewCurr
                   href={plan.accountType === "hybrid" ? "/register?type=supplier" : "/register?type=buyer"}
                   className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-aviation-primary px-4 py-3 text-sm font-bold text-white"
                 >
-                  Start 90-day free trial
+                  Start 90-day Platinum trial
                 </Link>
               ) : plan.accountType !== accountType ? (
                 accountType === "buyer" ? (
@@ -275,7 +275,7 @@ export default function PlanCards({ accountType, currentPlanCode, allowRenewCurr
 
       {showTrial && (
         <div className="rounded-xl border border-aviation-border bg-aviation-light p-4 text-sm text-aviation-muted">
-          <strong className="text-aviation-dark">90-day Free Trial:</strong> New Buyer and Buyer & Supplier accounts receive trial access before paid billing is required. No automatic charge is made when the trial ends.
+          <strong className="text-aviation-dark">90-day Platinum Trial:</strong> Every new account gets all Platinum features free for 90 days. When the trial ends the account moves to Basic; choose a paid plan to keep Platinum features. No automatic charge is made.
         </div>
       )}
     </div>

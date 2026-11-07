@@ -5,6 +5,9 @@ import { ArrowLeft, Building2, Globe, MapPin, Package, Star, Tags, Wrench } from
 import { SupplierName, SupplierWebsite } from "@/components/auth/Revealed";
 import { getPublicSupplierProfile } from "@/lib/homepage-data";
 import VerificationStatusBadge from "@/components/supplier/verification/VerificationStatusBadge";
+import MroProfileDetails from "@/components/mro/MroProfileDetails";
+import { getPublicSupabase } from "@/lib/marketplace-server";
+import { fetchMroProfiles } from "@/lib/mro-profiles";
 
 export const revalidate = 60;
 
@@ -29,6 +32,7 @@ export default async function PublicSupplierProfile({ params }: Props) {
   if (!data) notFound();
 
   const { supplier, reviews, rating, reviewCount, listingCount } = data;
+  const mroProfile = supplier.mro_capable ? (await fetchMroProfiles(getPublicSupabase(), [supplier.id])).get(supplier.id) : undefined;
 
   return (
     <main className="min-h-screen bg-aviation-light py-8 sm:py-12">
@@ -57,6 +61,8 @@ export default async function PublicSupplierProfile({ params }: Props) {
             <div className="rounded-xl border border-aviation-border bg-aviation-light p-4"><p className="text-xs uppercase tracking-wider text-aviation-muted">Categories</p><p className="mt-1 text-2xl font-bold text-aviation-primary">{supplier.supplier_categories?.length ?? 0}</p></div>
           </div>
         </section>
+
+        {mroProfile && <MroProfileDetails profile={mroProfile} />}
 
         <section className="mt-6 rounded-[var(--aviation-radius-xl)] bg-white p-6 shadow-sm sm:p-8">
           <div className="flex items-center gap-3"><Tags size={20} className="text-aviation-primary" /><h2 className="text-xl font-bold text-aviation-primary">Supplier categories</h2></div>

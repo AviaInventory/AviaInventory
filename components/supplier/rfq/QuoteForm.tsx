@@ -11,6 +11,7 @@ import type {
 } from "@/lib/rfqs";
 import RequiredMark from "@/components/ui/RequiredMark";
 import { QUOTE_CERTIFICATION_OPTIONS } from "@/lib/rfq-options";
+import { numberInputValue, parseNumberInput } from "@/lib/number-input";
 
 interface Props {
   rfq: RFQ;
@@ -143,11 +144,11 @@ export default function QuoteForm({
               step="0.01"
               required
               disabled={loading}
-              value={formData.unit_price}
+              value={numberInputValue(formData.unit_price)}
               onChange={(e) =>
                 setFormData({
                   ...formData,
-                  unit_price: Number(e.target.value),
+                  unit_price: parseNumberInput(e.target.value),
                 })
               }
               className="w-full rounded-xl border p-3 disabled:bg-aviation-light"

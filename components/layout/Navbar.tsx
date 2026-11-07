@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Menu, PlayCircle, Search, X } from "lucide-react";
+import { LayoutDashboard, Menu, PlayCircle, Search, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import NotificationBell from "./NotificationBell";
 import UserMenu from "./UserMenu";
-import { useSessionProfile } from "./useSessionProfile";
+import { useSessionProfile, type SessionProfile } from "./useSessionProfile";
+import { dashboardPathForRoles } from "@/lib/auth-redirect";
 
 // RFQs live in the buying/selling dashboards; Account appears only once signed in.
 const publicNavItems = [
@@ -16,6 +17,16 @@ const publicNavItems = [
   { label: "MRO Services", href: "/suppliers" },
 ];
 const accountNavItem = { label: "Account", href: "/account/profile" };
+
+/**
+ * Signed-out visitors see "Book a Demo"; signed-in users get a shortcut to their
+ * dashboard, named after the sides of the marketplace their account can use.
+ */
+function headerCta(profile: SessionProfile | null | undefined) {
+  if (!profile) return { label: "Book a Demo", short: "Book a Demo", href: "/book-demo", demo: true };
+  const short = profile.roles.includes("admin") ? "Admin" : profile.roles.includes("supplier") ? "Buyer / Seller" : "Buyer";
+  return { label: `${short} Dashboard`, short, href: dashboardPathForRoles(profile.roles), demo: false };
+}
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -29,6 +40,7 @@ export default function Navbar() {
   // undefined while the session loads: render nothing there rather than flash "Login".
   const profile = useSessionProfile();
   const navItems = profile ? [...publicNavItems, accountNavItem] : publicNavItems;
+  const cta = headerCta(profile);
 
   return (
     <header className="sticky top-0 z-[100] border-b border-[#dbe5ef] bg-white/95 shadow-[0_4px_20px_rgba(6,35,63,0.08)] backdrop-blur-xl">
@@ -63,13 +75,16 @@ export default function Navbar() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2 lg:ml-6">
-          <Link prefetch={false}
-            href="/book-demo"
-            className="hidden min-h-11 items-center gap-2 rounded-lg bg-[#f4a72c] px-4 py-2 text-sm font-bold text-[#062a4a] shadow-sm hover:bg-[#e0951a] md:inline-flex"
-          >
-            <PlayCircle size={17} aria-hidden="true" />
-            Book a Demo
-          </Link>
+          {profile !== undefined && (
+            <Link prefetch={false}
+              href={cta.href}
+              className="hidden min-h-11 items-center gap-2 whitespace-nowrap rounded-lg bg-[#f4a72c] px-4 py-2 text-sm font-bold text-[#062a4a] shadow-sm hover:bg-[#e0951a] md:inline-flex"
+            >
+              {cta.demo ? <PlayCircle size={17} aria-hidden="true" /> : <LayoutDashboard size={17} aria-hidden="true" />}
+              <span className="xl:hidden">{cta.short}</span>
+              <span className="hidden xl:inline">{cta.label}</span>
+            </Link>
+          )}
           <Link prefetch={false}
             href="/marketplace"
             aria-label="Search marketplace"
@@ -128,13 +143,15 @@ export default function Navbar() {
               </Link>
             );
           })}
-          <Link prefetch={false}
-            href="/book-demo"
-            onClick={() => setMobileOpen(false)}
-            className="shrink-0 rounded-full bg-[#f4a72c] px-3 py-2 text-xs font-bold text-[#062a4a] md:hidden"
-          >
-            Book a Demo
-          </Link>
+          {profile !== undefined && (
+            <Link prefetch={false}
+              href={cta.href}
+              onClick={() => setMobileOpen(false)}
+              className="shrink-0 whitespace-nowrap rounded-full bg-[#f4a72c] px-3 py-2 text-xs font-bold text-[#062a4a] md:hidden"
+            >
+              {cta.label}
+            </Link>
+          )}
         </div>
       </div>
 

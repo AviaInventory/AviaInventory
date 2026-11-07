@@ -18,6 +18,7 @@ import SupplierSelector from "./SupplierSelector";
 import MroRFQForm from "./MroRFQForm";
 import { Field, inputClass } from "./RFQFormFields";
 import { RFQ_CERTIFICATION_OPTIONS } from "@/lib/rfq-options";
+import { numberInputValue, parseNumberInput } from "@/lib/number-input";
 
 /** Buyers first choose the kind of RFQ; each kind has its own form. */
 export default function NewRFQForm({ initialType = null }: { initialType?: RFQType | null }) {
@@ -577,13 +578,11 @@ function PartsRFQForm() {
               min="1"
               required
               disabled={disabled}
-              value={formData.quantity}
+              value={numberInputValue(formData.quantity)}
               onChange={(e) =>
                 updateField(
                   "quantity",
-                  Number(
-                    e.target.value
-                  )
+                  parseNumberInput(e.target.value)
                 )
               }
               className={inputClass}

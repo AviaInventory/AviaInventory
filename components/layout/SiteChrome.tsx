@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
+import CookieConsent from "@/components/consent/CookieConsent";
 
 /**
  * The site navigation is mounted once at the root so it remains available
@@ -16,6 +17,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
     <>
       {!restrictedConsole && <Navbar />}
       {children}
+      {!restrictedConsole && <CookieConsent />}
     </>
   );
 }

@@ -21,11 +21,17 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
 
-  const { error } = code
+  const { data, error } = code
     ? await supabase.auth.exchangeCodeForSession(code)
     : tokenHash && type
       ? await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
-      : { error: new Error("Missing confirmation token") };
+      : { data: { session: null }, error: new Error("Missing confirmation token") };
+
+  // A reset link that lost its `next=/reset-password` (see proxy.ts) still opens the
+  // change-password page: recovery sessions are marked in the token's `amr` claim.
+  if (!error && !next && !isSignupConfirmation && (type === "recovery" || isRecoverySession(data.session?.access_token))) {
+    return NextResponse.redirect(new URL("/reset-password", request.url));
+  }
 
   if (isSignupConfirmation) {
     // Product decision: confirming the email does not sign the user in. They sign in
@@ -62,4 +68,16 @@ export async function GET(request: NextRequest) {
     .maybeSingle();
 
   return NextResponse.redirect(new URL(dashboardPathForRoles(resolveRoles(profile)), request.url));
+}
+
+/** The token comes straight from Supabase's code exchange, so its claims are only read, not verified. */
+function isRecoverySession(accessToken: string | undefined): boolean {
+  const payload = accessToken?.split(".")[1];
+  if (!payload) return false;
+  try {
+    const claims = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { amr?: Array<{ method?: string }> };
+    return Boolean(claims.amr?.some((entry) => entry.method === "recovery"));
+  } catch {
+    return false;
+  }
 }

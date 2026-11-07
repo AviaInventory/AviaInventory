@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { FaFacebookF, FaLinkedinIn, FaXTwitter } from "react-icons/fa6";
 import { SITE } from "@/lib/site-config";
+import CookieSettingsLink from "@/components/consent/CookieSettingsLink";
 
 const LINK_COLUMNS = [
   {
@@ -125,6 +126,7 @@ export default function Footer() {
                 {link.label}
               </Link>
             ))}
+            <CookieSettingsLink className="hover:text-white" />
           </div>
         </div>
       </div>

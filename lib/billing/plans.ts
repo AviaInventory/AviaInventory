@@ -12,18 +12,21 @@ export type PlanDefinition = {
   entitlements: string[];
 };
 
+/** Everything Platinum includes. The 90-day trial grants all of it, for every account. */
+export const PLATINUM_ENTITLEMENTS = ["marketplace", "buyer_features", "supplier_features", "featured_listings", "promotions", "priority_search", "aviation_intelligence", "newsletter_promotion", "whatsapp_promotion", "external_advertising"];
+
 export const PLAN_DEFINITIONS: Record<PlanCode, PlanDefinition> = {
   buyer_trial: {
-    code: "buyer_trial", name: "Free Trial", accountType: "buyer", monthlyUsdCents: 0, annualUsdCents: 0, trialDays: 90,
-    entitlements: ["marketplace", "buyer_features"],
+    code: "buyer_trial", name: "Platinum Trial", accountType: "buyer", monthlyUsdCents: 0, annualUsdCents: 0, trialDays: 90,
+    entitlements: PLATINUM_ENTITLEMENTS,
   },
   buyer_basic: {
     code: "buyer_basic", name: "Basic — Buyer", accountType: "buyer", monthlyUsdCents: 1200, annualUsdCents: 10000, trialDays: 0,
     entitlements: ["marketplace", "buyer_features"],
   },
   hybrid_trial: {
-    code: "hybrid_trial", name: "Free Trial", accountType: "hybrid", monthlyUsdCents: 0, annualUsdCents: 0, trialDays: 90,
-    entitlements: ["marketplace", "buyer_features", "supplier_features"],
+    code: "hybrid_trial", name: "Platinum Trial", accountType: "hybrid", monthlyUsdCents: 0, annualUsdCents: 0, trialDays: 90,
+    entitlements: PLATINUM_ENTITLEMENTS,
   },
   hybrid_basic: {
     code: "hybrid_basic", name: "Basic — Buyer & Supplier", accountType: "hybrid", monthlyUsdCents: 2500, annualUsdCents: 20000, trialDays: 0,
@@ -35,7 +38,7 @@ export const PLAN_DEFINITIONS: Record<PlanCode, PlanDefinition> = {
   },
   hybrid_platinum: {
     code: "hybrid_platinum", name: "Platinum — Buyer & Supplier", accountType: "hybrid", monthlyUsdCents: 9500, annualUsdCents: 100000, trialDays: 0,
-    entitlements: ["marketplace", "buyer_features", "supplier_features", "featured_listings", "promotions", "priority_search", "aviation_intelligence", "newsletter_promotion", "whatsapp_promotion", "external_advertising"],
+    entitlements: PLATINUM_ENTITLEMENTS,
   },
 };
 
@@ -44,6 +47,11 @@ export const PLAN_ORDER: PlanCode[] = ["buyer_trial", "buyer_basic", "hybrid_tri
 export function getPlan(code: string | null | undefined): PlanDefinition | null {
   if (!code) return null;
   return PLAN_DEFINITIONS[code as PlanCode] ?? null;
+}
+
+/** The plan an account falls back to, free of charge, once its 90-day trial ends. */
+export function basicPlanFor(accountType: AccountBillingType): PlanDefinition {
+  return accountType === "hybrid" ? PLAN_DEFINITIONS.hybrid_basic : PLAN_DEFINITIONS.buyer_basic;
 }
 
 export function accountBillingType(roles: string[] | null | undefined): AccountBillingType {
@@ -84,7 +92,7 @@ const SUBSCRIPTION_STATUS_LABELS: Record<string, string> = {
   trialing: "Trial Plan",
   active: "Active",
   past_due: "Payment overdue",
-  trial_expired: "Trial ended",
+  trial_expired: "Basic (trial ended)",
   expired: "Expired",
   cancelled: "Cancelled",
   incomplete: "Payment pending",

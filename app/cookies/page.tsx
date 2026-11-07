@@ -39,6 +39,24 @@ const STORAGE_ITEMS = [
     purpose: "Saves an unfinished parts listing on the supplier's own device.",
     duration: "Until the listing is saved or you clear your browser data",
   },
+  {
+    name: "aviainventory_consent",
+    type: "Cookie (essential)",
+    purpose: "Remembers your cookie choices so we only use analytics and advertising cookies if you allowed them.",
+    duration: "12 months",
+  },
+  {
+    name: "Analytics cookies (e.g. Google Analytics _ga)",
+    type: "Cookie (analytics, optional)",
+    purpose: "Measure how the site is used so we can improve it. Only set if you accept analytics cookies.",
+    duration: "Up to 2 years",
+  },
+  {
+    name: "Advertising cookies (e.g. Meta _fbp)",
+    type: "Cookie (advertising, optional)",
+    purpose: "Measure our advertising and show relevant AviaInventory ads on other sites. Only set if you accept advertising cookies.",
+    duration: "Up to 3 months",
+  },
 ];
 
 const sections: LegalSection[] = [
@@ -81,8 +99,8 @@ const sections: LegalSection[] = [
           </table>
         </div>
         <p>
-          We do <strong>not</strong> use advertising, tracking or third-party analytics cookies, and we do not sell or share
-          cookie data.
+          Analytics and advertising cookies are optional. They are only set after you accept them in the cookie banner, and you
+          can withdraw that consent at any time. We do not sell cookie data.
         </p>
         <p>
           When you pay for a subscription you are taken to Paystack&apos;s secure checkout. Paystack may set its own cookies on
@@ -96,9 +114,9 @@ const sections: LegalSection[] = [
     heading: "Consent and the law",
     body: (
       <p>
-        Essential cookies are needed to provide the service you ask for, so they do not require consent. If we ever introduce
-        analytics or marketing cookies, we will ask for your consent first, as the Data Protection Act, 2019 and its
-        regulations require, and update this policy.
+        Essential cookies are needed to provide the service you ask for, so they do not require consent. Analytics and
+        advertising cookies are only used with your consent, as the Data Protection Act, 2019 and its regulations require.
+        Rejecting them does not affect your use of the site.
       </p>
     ),
   },
@@ -108,7 +126,8 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          You can delete or block cookies and browser storage in your browser settings. If you block essential cookies you will
+          You can change your choice at any time using &ldquo;Cookie settings&rdquo; at the bottom of every page. You can also
+          delete or block cookies and browser storage in your browser settings. If you block essential cookies you will
           not be able to sign in. Clearing browser storage deletes any unsaved registration or listing drafts.
         </p>
         <p>

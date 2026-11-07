@@ -1,7 +1,7 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { buildSubscriptionAccess, hasEntitlement, type SubscriptionAccess } from "@/lib/billing/entitlements";
+import { ALL_ENTITLEMENTS, buildSubscriptionAccess, hasEntitlement, type SubscriptionAccess } from "@/lib/billing/entitlements";
 import { accountBillingType, allowedPaidPlans, type AccountBillingType, type PlanCode } from "@/lib/billing/plans";
 
 export async function getCurrentSubscription(userId?: string): Promise<SubscriptionAccess | null> {
@@ -31,7 +31,7 @@ export async function requireActiveSubscription(entitlement?: string): Promise<S
     return {
       id: "admin-bypass", userId: user.id, accountType: "hybrid", planCode: "hybrid_platinum", planName: "Admin access", status: "active", billingInterval: null,
       trialStartedAt: null, trialEndsAt: null, currentPeriodStart: null, currentPeriodEnd: null, cancelAtPeriodEnd: false, cancelledAt: null, paymentMethod: null, canManageCard: false,
-      entitlements: ["marketplace", "buyer_features", "supplier_features", "featured_listings", "promotions", "priority_search", "aviation_intelligence", "newsletter_promotion", "whatsapp_promotion", "external_advertising"],
+      entitlements: ALL_ENTITLEMENTS, onBasicAfterTrial: false,
       effectiveActive: true, effectiveStatus: "active",
     };
   }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { supabase } from "@/lib/supabase";
 import { minRequiredDate, validateRequiredDate, RFQ_MIN_LEAD_DAYS } from "@/lib/rfqs";
+import { numberInputValue, parseNumberInput } from "@/lib/number-input";
 
 interface RFQFormProps {
   partId: string;
@@ -554,21 +555,8 @@ export default function RFQForm({
           <input
             type="number"
             min={1}
-            value={quantity}
-            onChange={(e) => {
-              const value =
-                Number(
-                  e.target.value
-                );
-
-              setQuantity(
-                Number.isFinite(
-                  value
-                ) && value >= 1
-                  ? value
-                  : 1
-              );
-            }}
+            value={numberInputValue(quantity)}
+            onChange={(e) => setQuantity(parseNumberInput(e.target.value))}
             disabled={loading}
             className="w-full rounded-xl border border-aviation-border p-3 outline-none transition focus:border-aviation-border focus:ring-2 focus:ring-aviation-primary/10 disabled:bg-aviation-light"
           />
