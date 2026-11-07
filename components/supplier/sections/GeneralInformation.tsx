@@ -3,6 +3,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { PartFormData } from "../types";
 import RequiredMark from "@/components/ui/RequiredMark";
+import { FormPanel, FormSection, fieldInput, fieldLabel, fieldTextarea } from "@/components/ui/form";
 
 interface Props {
   formData: PartFormData;
@@ -14,30 +15,19 @@ export default function GeneralInformation({
   setFormData,
 }: Props) {
   return (
-    <section className="rounded-2xl bg-white p-8 shadow-sm">
+    <FormPanel>
+      <FormSection
+        title="General Information"
+        text="Enter the basic information about the aircraft part."
+      />
 
-      <div className="mb-6">
-
-        <h2 className="text-2xl font-bold text-aviation-primary">
-          General Information
-        </h2>
-
-        <p className="mt-2 text-aviation-muted">
-          Enter the basic information about the aircraft part.
-        </p>
-
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-x-5 gap-y-3 md:grid-cols-2">
 
         {/* Part Number */}
-
         <div>
-
-          <label className="mb-2 block font-medium">
+          <label className={fieldLabel}>
             Part Number <RequiredMark />
           </label>
-
           <input
             type="text"
             value={formData.partNumber}
@@ -47,20 +37,16 @@ export default function GeneralInformation({
                 partNumber: e.target.value,
               }))
             }
-            className="w-full rounded-xl border p-3 focus:border-aviation-border focus:outline-none"
+            className={fieldInput}
             placeholder="e.g. BACB30NN4K5"
           />
-
         </div>
 
         {/* Alternate Part Number */}
-
         <div>
-
-          <label className="mb-2 block font-medium">
+          <label className={fieldLabel}>
             Alternate Part Number
           </label>
-
           <input
             type="text"
             value={formData.alternatePartNumber}
@@ -70,20 +56,16 @@ export default function GeneralInformation({
                 alternatePartNumber: e.target.value,
               }))
             }
-            className="w-full rounded-xl border p-3 focus:border-aviation-border focus:outline-none"
+            className={fieldInput}
             placeholder="Optional"
           />
-
         </div>
 
         {/* Manufacturer */}
-
         <div>
-
-          <label className="mb-2 block font-medium">
+          <label className={fieldLabel}>
             Manufacturer <RequiredMark />
           </label>
-
           <input
             type="text"
             value={formData.manufacturer}
@@ -93,20 +75,16 @@ export default function GeneralInformation({
                 manufacturer: e.target.value,
               }))
             }
-            className="w-full rounded-xl border p-3 focus:border-aviation-border focus:outline-none"
+            className={fieldInput}
             placeholder="Boeing, Honeywell, Collins Aerospace..."
           />
-
         </div>
 
         {/* Serial Number */}
-
         <div>
-
-          <label className="mb-2 block font-medium">
+          <label className={fieldLabel}>
             Serial Number
           </label>
-
           <input
             type="text"
             value={formData.serialNumber}
@@ -116,37 +94,31 @@ export default function GeneralInformation({
                 serialNumber: e.target.value,
               }))
             }
-            className="w-full rounded-xl border p-3 focus:border-aviation-border focus:outline-none"
+            className={fieldInput}
             placeholder="Optional"
           />
+        </div>
 
+        {/* Description */}
+        <div className="md:col-span-2">
+          <label className={fieldLabel}>
+            Description <RequiredMark />
+          </label>
+          <textarea
+            rows={5}
+            value={formData.description}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                description: e.target.value,
+              }))
+            }
+            className={fieldTextarea}
+            placeholder="Describe the aircraft part, specifications, compatibility, condition and any important information..."
+          />
         </div>
 
       </div>
-
-      {/* Description */}
-
-      <div className="mt-6">
-
-        <label className="mb-2 block font-medium">
-          Description <RequiredMark />
-        </label>
-
-        <textarea
-          rows={5}
-          value={formData.description}
-          onChange={(e) =>
-            setFormData((prev) => ({
-              ...prev,
-              description: e.target.value,
-            }))
-          }
-          className="w-full rounded-xl border p-3 focus:border-aviation-border focus:outline-none"
-          placeholder="Describe the aircraft part, specifications, compatibility, condition and any important information..."
-        />
-
-      </div>
-
-    </section>
+    </FormPanel>
   );
 }

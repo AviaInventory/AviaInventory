@@ -21,6 +21,7 @@ import {
 
 import StatusBadge from "@/components/dashboard/StatusBadge";
 import { nextAction } from "@/components/orders/workflow";
+import { useDisplayCurrency } from "@/components/ui/useDisplayCurrency";
 
 /* ==========================================================
    BUYER ORDERS PAGE
@@ -28,6 +29,7 @@ import { nextAction } from "@/components/orders/workflow";
 
 export default function BuyerOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const money = useDisplayCurrency();
 
   const [loading, setLoading] =
     useState(true);
@@ -262,6 +264,9 @@ export default function BuyerOrdersPage() {
                   <OrderFact label="Unit price">{formatOrderAmount(order.unit_price, order.currency)}</OrderFact>
                   <OrderFact label="Total">
                     <span className="text-aviation-primary">{formatOrderAmount(order.total_amount, order.currency)}</span>
+                    {money.ready && (order.currency || "USD").toUpperCase() !== money.currency && (
+                      <span className="block text-xs font-normal text-[var(--aviation-muted)]">≈ {money.format(Number(order.total_amount), order.currency)}</span>
+                    )}
                   </OrderFact>
                 </dl>
 

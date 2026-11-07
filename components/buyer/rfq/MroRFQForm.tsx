@@ -12,7 +12,7 @@ import {
   RFQ_MIN_LEAD_DAYS,
 } from "@/lib/rfqs";
 
-import { Field, inputClass } from "./RFQFormFields";
+import { FormFooter, FormPanel, FormRow, FormSection, btnPrimary, btnSecondary, fieldInput, fieldSelect, fieldTextarea } from "@/components/ui/form";
 import { numberInputValue, parseNumberInput } from "@/lib/number-input";
 
 const MAX_FILE_MB = 20;
@@ -128,91 +128,87 @@ export default function MroRFQForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
-      <section className="rounded-2xl bg-white p-8 shadow">
-        <h2 className="mb-2 text-2xl font-bold text-aviation-primary">Repair / Overhaul Request</h2>
-        <p className="mb-8 text-sm text-aviation-muted">
-          Describe the component and the work you need. Your RFQ goes to every MRO-capable supplier on AviaInventory.
-        </p>
+    <form onSubmit={handleSubmit}>
+      <FormPanel>
+        <FormSection
+          title="Repair / Overhaul Request"
+          text="Describe the component and the work you need. Your RFQ goes to every MRO-capable supplier on AviaInventory."
+        />
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <Field label="Component" required>
-            <input type="text" required disabled={disabled} value={formData.component} onChange={(e) => updateField("component", e.target.value)} placeholder="e.g. Main landing gear actuator" className={inputClass} />
-          </Field>
+        <FormRow label="Component" htmlFor="mro-component" required labelWidth="200px">
+          <input id="mro-component" type="text" required disabled={disabled} value={formData.component} onChange={(e) => updateField("component", e.target.value)} placeholder="e.g. Main landing gear actuator" className={fieldInput} />
+        </FormRow>
 
-          <Field label="Part Number" required>
-            <input type="text" required disabled={disabled} value={formData.part_number} onChange={(e) => updateField("part_number", e.target.value)} placeholder="e.g. 065-311-200" className={inputClass} />
-          </Field>
+        <FormRow label="Part Number" htmlFor="mro-part-number" required labelWidth="200px">
+          <input id="mro-part-number" type="text" required disabled={disabled} value={formData.part_number} onChange={(e) => updateField("part_number", e.target.value)} placeholder="e.g. 065-311-200" className={fieldInput} />
+        </FormRow>
 
-          <div className="md:col-span-2">
-            <Field label="Description / Brief scope of repair service needed" required>
-              <textarea required rows={4} disabled={disabled} value={formData.description} onChange={(e) => updateField("description", e.target.value)} placeholder="e.g. Unit leaking hydraulic fluid; requires inspection, repair or overhaul with EASA Form 1 / FAA 8130-3 release." className={inputClass} />
-            </Field>
-          </div>
+        <FormRow label="Description / Brief scope of repair service needed" htmlFor="mro-description" required labelWidth="200px">
+          <textarea id="mro-description" required rows={4} disabled={disabled} value={formData.description} onChange={(e) => updateField("description", e.target.value)} placeholder="e.g. Unit leaking hydraulic fluid; requires inspection, repair or overhaul with EASA Form 1 / FAA 8130-3 release." className={fieldTextarea} />
+        </FormRow>
 
-          <Field label="Component Manufacturer" required>
-            <input type="text" required disabled={disabled} value={formData.component_manufacturer} onChange={(e) => updateField("component_manufacturer", e.target.value)} placeholder="e.g. Collins Aerospace" className={inputClass} />
-          </Field>
+        <FormRow label="Component Manufacturer" htmlFor="mro-component-manufacturer" required labelWidth="200px">
+          <input id="mro-component-manufacturer" type="text" required disabled={disabled} value={formData.component_manufacturer} onChange={(e) => updateField("component_manufacturer", e.target.value)} placeholder="e.g. Collins Aerospace" className={fieldInput} />
+        </FormRow>
 
-          <Field label="Aircraft Model" required>
-            <input type="text" required disabled={disabled} value={formData.aircraft_model} onChange={(e) => updateField("aircraft_model", e.target.value)} placeholder="e.g. Dash 8-400" className={inputClass} />
-          </Field>
+        <FormRow label="Aircraft Model" htmlFor="mro-aircraft-model" required labelWidth="200px">
+          <input id="mro-aircraft-model" type="text" required disabled={disabled} value={formData.aircraft_model} onChange={(e) => updateField("aircraft_model", e.target.value)} placeholder="e.g. Dash 8-400" className={fieldInput} />
+        </FormRow>
 
-          <Field label="Quantity" required>
-            <input type="number" min="1" required disabled={disabled} value={numberInputValue(formData.quantity)} onChange={(e) => updateField("quantity", parseNumberInput(e.target.value))} className={inputClass} />
-          </Field>
+        <FormRow label="Quantity" htmlFor="mro-quantity" required labelWidth="200px">
+          <input id="mro-quantity" type="number" min="1" required disabled={disabled} value={numberInputValue(formData.quantity)} onChange={(e) => updateField("quantity", parseNumberInput(e.target.value))} className={`${fieldInput} sm:max-w-[200px]`} />
+        </FormRow>
 
-          <Field label="Availability of forward exchange option" required>
-            <select required disabled={disabled} value={formData.forward_exchange} onChange={(e) => updateField("forward_exchange", e.target.value as MroFormData["forward_exchange"])} className={inputClass}>
-              <option value="">Select</option>
-              <option value="Yes">Yes</option>
-              <option value="No">No</option>
-            </select>
-          </Field>
+        <FormRow label="Availability of forward exchange option" htmlFor="mro-forward-exchange" required labelWidth="200px">
+          <select id="mro-forward-exchange" required disabled={disabled} value={formData.forward_exchange} onChange={(e) => updateField("forward_exchange", e.target.value as MroFormData["forward_exchange"])} className={`${fieldSelect} sm:max-w-[200px]`}>
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </FormRow>
 
-          <Field label="Date Required" required hint={`At least ${RFQ_MIN_LEAD_DAYS} days from today. MROs can quote until this date.`}>
-            <input type="date" required disabled={disabled} min={minRequiredDate()} value={formData.required_date} onChange={(e) => updateField("required_date", e.target.value)} className={inputClass} />
-          </Field>
-        </div>
-      </section>
+        <FormRow label="Date Required" htmlFor="mro-required-date" required labelWidth="200px" hint={`At least ${RFQ_MIN_LEAD_DAYS} days from today. MROs can quote until this date.`}>
+          <input id="mro-required-date" type="date" required disabled={disabled} min={minRequiredDate()} value={formData.required_date} onChange={(e) => updateField("required_date", e.target.value)} className={`${fieldInput} sm:max-w-[200px]`} />
+        </FormRow>
 
-      <section className="rounded-2xl bg-white p-8 shadow">
-        <h2 className="mb-2 text-2xl font-bold text-aviation-primary">Photos & Documents</h2>
-        <p className="mb-6 text-sm text-aviation-muted">
-          Upload photos of the component, data plates, teardown reports, work orders or other documents (up to {MAX_FILE_MB} MB each).
-        </p>
+        <FormSection
+          title="Photos & Documents"
+          text={`Upload photos of the component, data plates, teardown reports, work orders or other documents (up to ${MAX_FILE_MB} MB each).`}
+        />
 
-        <label className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-aviation-border p-6 text-sm font-semibold text-aviation-primary hover:border-aviation-primary ${disabled ? "pointer-events-none opacity-50" : ""}`}>
-          <Paperclip size={18} />
-          Add photos or documents
-          <input type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" disabled={disabled} onChange={handleFiles} className="sr-only" />
-        </label>
+        <FormRow label="Files" optional labelWidth="200px">
+          <label className={`${btnSecondary} cursor-pointer ${disabled ? "pointer-events-none opacity-50" : ""}`}>
+            <Paperclip size={15} />
+            Add photos or documents
+            <input type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" disabled={disabled} onChange={handleFiles} className="sr-only" />
+          </label>
 
-        {files.length > 0 && (
-          <ul className="mt-6 space-y-3">
-            {files.map((file, index) => (
-              <li key={`${file.name}-${file.size}-${index}`} className="flex items-center justify-between gap-4 rounded-xl border bg-aviation-light p-4">
-                <span className="min-w-0">
-                  <span className="block truncate font-medium text-aviation-dark">{file.name}</span>
-                  <span className="mt-1 block text-xs text-aviation-muted">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
-                </span>
-                <button type="button" disabled={disabled} onClick={() => setFiles((prev) => prev.filter((_, i) => i !== index))} aria-label={`Remove ${file.name}`} className="rounded-lg p-2 text-aviation-error hover:bg-aviation-error-soft disabled:opacity-50">
-                  <X size={18} />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+          {files.length > 0 && (
+            <ul className="mt-2 divide-y divide-aviation-border rounded-md border border-aviation-border">
+              {files.map((file, index) => (
+                <li key={`${file.name}-${file.size}-${index}`} className="flex items-center justify-between gap-3 px-2.5 py-1.5">
+                  <span className="min-w-0 text-[13px]">
+                    <span className="block truncate font-medium text-aviation-dark">{file.name}</span>
+                    <span className="block text-xs text-[var(--aviation-muted)]">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                  </span>
+                  <button type="button" disabled={disabled} onClick={() => setFiles((prev) => prev.filter((_, i) => i !== index))} aria-label={`Remove ${file.name}`} className="grid h-8 w-8 shrink-0 place-items-center rounded text-aviation-error hover:bg-aviation-error-soft disabled:opacity-50 sm:h-7 sm:w-7">
+                    <X size={15} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </FormRow>
 
-      <div className="flex flex-col-reverse gap-4 pb-6 sm:flex-row sm:justify-end">
-        <button type="button" disabled={disabled} onClick={() => router.push("/buyer/rfqs")} className="rounded-xl border border-aviation-border px-8 py-3 font-semibold text-aviation-dark transition hover:bg-aviation-light disabled:cursor-not-allowed disabled:opacity-50">
-          Cancel
-        </button>
-        <button type="submit" disabled={disabled} className="rounded-xl bg-aviation-primary px-8 py-3 font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50">
-          {uploading ? "Uploading files..." : loading ? "Sending RFQ..." : "Send MRO Services RFQ"}
-        </button>
-      </div>
+        <FormFooter>
+          <button type="button" disabled={disabled} onClick={() => router.push("/buyer/rfqs")} className={btnSecondary}>
+            Cancel
+          </button>
+          <button type="submit" disabled={disabled} className={btnPrimary}>
+            {uploading ? "Uploading files..." : loading ? "Sending RFQ..." : "Send MRO Services RFQ"}
+          </button>
+        </FormFooter>
+      </FormPanel>
     </form>
   );
 }

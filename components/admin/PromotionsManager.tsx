@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BadgeCheck, Loader2, Megaphone, Search, Star, Wrench } from "lucide-react";
 import type { AdminPromotionsSnapshot, PromotableListingRow } from "@/lib/admin-promotions";
+import { btnPrimary, btnSecondary, fieldCheckbox, fieldInput } from "@/components/ui/form";
 
 const PAGE_SIZE = 25;
 
@@ -46,9 +47,9 @@ export default function PromotionsManager({ snapshot }: { snapshot: AdminPromoti
   }
 
   return (
-    <div className="space-y-6">
+    <div className="compact-form space-y-6">
       {(error || notice) && (
-        <p role="status" className={`rounded-xl border px-4 py-3 text-sm font-medium ${error ? "border-aviation-error/30 bg-aviation-error-soft text-aviation-error" : "border-aviation-success/30 bg-aviation-success-soft text-aviation-success"}`}>
+        <p role="status" className={`rounded-md border px-3 py-2 text-[13px] font-medium ${error ? "border-aviation-error/30 bg-aviation-error-soft text-aviation-error" : "border-aviation-success/30 bg-aviation-success-soft text-aviation-success"}`}>
           {error || notice}
         </p>
       )}
@@ -95,12 +96,12 @@ function Requests({ snapshot, busy, run }: { snapshot: AdminPromotionsSnapshot; 
                     <td className="px-4 py-4 text-aviation-dark">{request.supplier_name}</td>
                     <td className="px-4 py-4 text-aviation-dark">{formatDate(request.requested_at)}</td>
                     <td className="px-4 py-4">
-                      <input type="date" value={endDate} min={new Date().toISOString().slice(0, 10)} onChange={(event) => setEndDates((current) => ({ ...current, [request.id]: event.target.value }))} className="rounded-lg border border-aviation-border px-3 py-2 text-aviation-dark" aria-label={`Promote ${request.part_number} until`} />
+                      <input type="date" value={endDate} min={new Date().toISOString().slice(0, 10)} onChange={(event) => setEndDates((current) => ({ ...current, [request.id]: event.target.value }))} className={`${fieldInput} w-40`} aria-label={`Promote ${request.part_number} until`} />
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex justify-end gap-2">
-                        <button type="button" disabled={busy !== null} onClick={() => run(`request-${request.id}`, `/api/admin/promotions/requests/${request.id}`, { decision: "decline" }, `Request for ${request.part_number} declined.`)} className="rounded-lg border border-aviation-border px-3 py-2 font-semibold text-aviation-dark hover:bg-aviation-light disabled:opacity-50">Decline</button>
-                        <button type="button" disabled={busy !== null} onClick={() => run(`request-${request.id}`, `/api/admin/promotions/requests/${request.id}`, { decision: "approve", endDate }, `${request.part_number} is now promoted on the homepage.`)} className="inline-flex items-center gap-2 rounded-lg bg-aviation-primary px-3 py-2 font-semibold text-white disabled:opacity-50">
+                        <button type="button" disabled={busy !== null} onClick={() => run(`request-${request.id}`, `/api/admin/promotions/requests/${request.id}`, { decision: "decline" }, `Request for ${request.part_number} declined.`)} className={btnSecondary}>Decline</button>
+                        <button type="button" disabled={busy !== null} onClick={() => run(`request-${request.id}`, `/api/admin/promotions/requests/${request.id}`, { decision: "approve", endDate }, `${request.part_number} is now promoted on the homepage.`)} className={btnPrimary}>
                           {busy === `request-${request.id}` && <Loader2 size={14} className="animate-spin" />}Approve
                         </button>
                       </div>
@@ -137,12 +138,12 @@ function Listings({ listings, busy, run }: { listings: PromotableListingRow[]; b
       <SectionHeader icon={Star} title="Promoted listings" description={`Choose published listings to feature in "Promoted Parts, Services & Products" on the homepage. ${promotedCount} currently promoted.`} />
       <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center">
         <label className="relative flex-1">
-          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--aviation-muted)]" />
-          <input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Search part number, description or supplier" className="w-full rounded-xl border border-aviation-border py-2.5 pl-9 pr-3 text-sm text-aviation-dark" />
+          <Search size={15} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--aviation-muted)]" />
+          <input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Search part number, description or supplier" className={`${fieldInput} pl-8`} />
         </label>
-        <label className="inline-flex items-center gap-2 text-sm font-medium text-aviation-dark"><input type="checkbox" checked={onlyPromoted} onChange={(event) => { setOnlyPromoted(event.target.checked); setPage(1); }} />Promoted only</label>
-        <label className="inline-flex items-center gap-2 text-sm font-medium text-aviation-dark">New promotions run until
-          <input type="date" value={endDate} min={new Date().toISOString().slice(0, 10)} onChange={(event) => setEndDate(event.target.value)} className="rounded-lg border border-aviation-border px-3 py-2" />
+        <label className="inline-flex cursor-pointer items-center gap-2 text-[13px] text-aviation-dark"><input type="checkbox" checked={onlyPromoted} onChange={(event) => { setOnlyPromoted(event.target.checked); setPage(1); }} className={fieldCheckbox} />Promoted only</label>
+        <label className="inline-flex items-center gap-2 text-[13px] font-semibold text-aviation-dark">New promotions run until
+          <input type="date" value={endDate} min={new Date().toISOString().slice(0, 10)} onChange={(event) => setEndDate(event.target.value)} className={`${fieldInput} w-40`} />
         </label>
       </div>
 
@@ -169,7 +170,7 @@ function Listings({ listings, busy, run }: { listings: PromotableListingRow[]; b
                       type="button"
                       disabled={busy !== null}
                       onClick={() => run(`listing-${listing.id}`, `/api/admin/promotions/listings/${listing.id}`, listing.promoted ? { promote: false } : { promote: true, endDate }, listing.promoted ? `Stopped promoting ${listing.part_number}.` : `${listing.part_number} is now promoted on the homepage.`)}
-                      className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 font-semibold disabled:opacity-50 ${listing.promoted ? "border border-aviation-border text-aviation-dark hover:bg-aviation-light" : "bg-aviation-primary text-white"}`}
+                      className={listing.promoted ? btnSecondary : btnPrimary}
                     >
                       {busy === `listing-${listing.id}` && <Loader2 size={14} className="animate-spin" />}
                       {listing.promoted ? "Stop promoting" : "Promote"}
@@ -183,9 +184,9 @@ function Listings({ listings, busy, run }: { listings: PromotableListingRow[]; b
       )}
       {pages > 1 && (
         <div className="mt-4 flex items-center justify-end gap-2 text-sm">
-          <button type="button" disabled={page <= 1} onClick={() => setPage((current) => current - 1)} className="rounded-lg border border-aviation-border px-3 py-1.5 disabled:opacity-40">Previous</button>
+          <button type="button" disabled={page <= 1} onClick={() => setPage((current) => current - 1)} className={btnSecondary}>Previous</button>
           <span className="text-[var(--aviation-muted)]">Page {Math.min(page, pages)} of {pages}</span>
-          <button type="button" disabled={page >= pages} onClick={() => setPage((current) => current + 1)} className="rounded-lg border border-aviation-border px-3 py-1.5 disabled:opacity-40">Next</button>
+          <button type="button" disabled={page >= pages} onClick={() => setPage((current) => current + 1)} className={btnSecondary}>Next</button>
         </div>
       )}
     </section>

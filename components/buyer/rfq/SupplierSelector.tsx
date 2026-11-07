@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { getApprovedSuppliers } from "@/lib/suppliers";
+import { fieldInput } from "@/components/ui/form";
 import { supabase } from "@/lib/supabase";
 
 interface Supplier {
@@ -73,14 +74,14 @@ export default function SupplierSelector({
 
   if (loading) {
     return (
-      <div className="rounded-xl border p-6 text-center">
+      <div className="rounded-md border border-aviation-border p-4 text-center text-[13px]">
         Loading suppliers...
       </div>
     );
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
 
       <input
         type="text"
@@ -89,14 +90,14 @@ export default function SupplierSelector({
         onChange={(e) =>
           setSearch(e.target.value)
         }
-        className="w-full rounded-xl border p-3 focus:border-aviation-border focus:outline-none"
+        className={fieldInput}
       />
 
-      <div className="max-h-96 overflow-y-auto rounded-xl border">
+      <div className="max-h-80 overflow-y-auto rounded-md border border-aviation-border">
 
         {filteredSuppliers.length === 0 ? (
 
-          <div className="p-8 text-center text-aviation-muted">
+          <div className="p-5 text-center text-[13px] text-[var(--aviation-muted)]">
             No suppliers found.
           </div>
 
@@ -111,7 +112,7 @@ export default function SupplierSelector({
 
               <label
                 key={supplier.id}
-                className="flex cursor-pointer items-start gap-4 border-b p-4 hover:bg-aviation-light"
+                className="flex cursor-pointer items-start gap-3 border-b border-aviation-border px-3 py-2.5 last:border-b-0 hover:bg-aviation-light"
               >
                 <input
                   type="checkbox"
@@ -119,26 +120,26 @@ export default function SupplierSelector({
                   onChange={() =>
                     toggleSupplier(supplier.id)
                   }
-                  className="mt-1 h-5 w-5"
+                  className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-[var(--aviation-primary)]"
                 />
 
                 <div className="flex-1">
 
-                  <h3 className="font-semibold text-aviation-primary">
+                  <h3 className="text-[13px] font-semibold text-aviation-primary">
                     {supplier.company_name}
                   </h3>
 
-                  <p className="mt-1 text-sm text-aviation-muted">
+                  <p className="mt-0.5 text-xs text-[var(--aviation-muted)]">
                     {supplier.country || "Location not provided"}
                   </p>
 
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
 
                     {supplier.categories.map((category) => (
 
                       <span
                         key={category}
-                        className="rounded-full bg-aviation-light px-3 py-1 text-xs"
+                        className="rounded-full bg-aviation-light px-2 py-0.5 text-[11px]"
                       >
                         {category}
                       </span>
@@ -158,7 +159,7 @@ export default function SupplierSelector({
 
       </div>
 
-      <p className="text-sm text-aviation-muted">
+      <p className="text-xs text-[var(--aviation-muted)]">
         Selected Suppliers:{" "}
         <strong>{selectedSuppliers.length}</strong>
       </p>

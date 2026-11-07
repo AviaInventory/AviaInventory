@@ -4,11 +4,8 @@ import { useEffect, useState } from "react";
 import { Loader2, Send } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { formatOrderAmount, issuePurchaseOrder, type Order } from "@/lib/orders";
-import RequiredMark from "@/components/ui/RequiredMark";
+import { FieldGroup, FormFooter, FormNotice, FormRow, FormSection, btnPrimary, fieldInput, fieldLabel, fieldSelect, fieldTextarea } from "@/components/ui/form";
 import { ACCOUNT_REQUIRED_METHODS, SHIPPING_METHODS } from "./workflow";
-
-const field = "min-h-11 w-full rounded-xl border border-aviation-border bg-white px-4 py-2.5 text-sm focus:border-aviation-primary focus:outline-none disabled:bg-aviation-light";
-const label = "mb-1.5 block text-sm font-semibold text-aviation-dark";
 
 /**
  * The buyer's purchase order: delivery details and shipping method. The accepted
@@ -74,64 +71,58 @@ export default function PurchaseOrderForm({ order, onIssued }: { order: Order; o
     onIssued(result.data);
   }
 
+  const readOnly = "flex h-10 items-center rounded-md bg-aviation-light px-2.5 text-[13px] font-semibold sm:h-8";
+
   return (
-    <form onSubmit={submit} noValidate className="space-y-5">
-      <div className="grid gap-4 sm:grid-cols-3">
+    <form onSubmit={submit} noValidate className="compact-form space-y-4">
+      <FormSection title="Quotation" text="These come from the quotation you accepted and are final. To change them, ask the supplier for a new quotation." />
+      <FieldGroup columns={3}>
         <div>
-          <p className={label}>Quantity (quoted)</p>
-          <p className="flex min-h-11 items-center rounded-xl bg-aviation-light px-4 text-sm font-semibold">{order.quantity.toLocaleString()}</p>
+          <p className={fieldLabel}>Quantity (quoted)</p>
+          <p className={readOnly}>{order.quantity.toLocaleString()}</p>
         </div>
         <div>
-          <p className={label}>Unit price (quoted)</p>
-          <p className="flex min-h-11 items-center rounded-xl bg-aviation-light px-4 text-sm font-semibold">{formatOrderAmount(Number(order.unit_price), order.currency)}</p>
+          <p className={fieldLabel}>Unit price (quoted)</p>
+          <p className={readOnly}>{formatOrderAmount(Number(order.unit_price), order.currency)}</p>
         </div>
         <div>
-          <p className={label}>Order total</p>
-          <p className="flex min-h-11 items-center rounded-xl bg-aviation-light px-4 text-sm font-bold text-aviation-primary">{formatOrderAmount(Number(order.total_amount), order.currency)}</p>
+          <p className={fieldLabel}>Order total</p>
+          <p className={`${readOnly} font-bold text-aviation-primary`}>{formatOrderAmount(Number(order.total_amount), order.currency)}</p>
         </div>
-      </div>
-      <p className="-mt-2 text-xs text-aviation-muted">These come from the quotation you accepted and are final. To change them, ask the supplier for a new quotation.</p>
+      </FieldGroup>
 
-      <fieldset className="space-y-4">
-        <legend className="text-sm font-bold uppercase tracking-wider text-aviation-muted">Ship to</legend>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div><label htmlFor="po-name" className={label}>Contact name <RequiredMark /></label><input id="po-name" value={form.shipToName} onChange={set("shipToName")} autoComplete="name" className={field} /></div>
-          <div><label htmlFor="po-company" className={label}>Company</label><input id="po-company" value={form.shipToCompany} onChange={set("shipToCompany")} autoComplete="organization" className={field} /></div>
-        </div>
-        <div><label htmlFor="po-address" className={label}>Delivery address <RequiredMark /></label><textarea id="po-address" rows={2} value={form.shipToAddress} onChange={set("shipToAddress")} autoComplete="street-address" placeholder="Building, street, hangar or warehouse" className={field} /></div>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div><label htmlFor="po-city" className={label}>City <RequiredMark /></label><input id="po-city" value={form.shipToCity} onChange={set("shipToCity")} autoComplete="address-level2" className={field} /></div>
-          <div><label htmlFor="po-country" className={label}>Country <RequiredMark /></label><input id="po-country" value={form.shipToCountry} onChange={set("shipToCountry")} autoComplete="country-name" className={field} /></div>
-          <div><label htmlFor="po-phone" className={label}>Phone</label><input id="po-phone" type="tel" value={form.shipToPhone} onChange={set("shipToPhone")} autoComplete="tel" className={field} /></div>
-        </div>
+      <fieldset className="space-y-3">
+        <legend className="mb-3 w-full"><FormSection title="Ship to" /></legend>
+        <FormRow label="Contact name" htmlFor="po-name" required><input id="po-name" value={form.shipToName} onChange={set("shipToName")} autoComplete="name" className={fieldInput} /></FormRow>
+        <FormRow label="Company" htmlFor="po-company"><input id="po-company" value={form.shipToCompany} onChange={set("shipToCompany")} autoComplete="organization" className={fieldInput} /></FormRow>
+        <FormRow label="Delivery address" htmlFor="po-address" required><textarea id="po-address" rows={2} value={form.shipToAddress} onChange={set("shipToAddress")} autoComplete="street-address" placeholder="Building, street, hangar or warehouse" className={fieldTextarea} /></FormRow>
+        <FormRow label="City" htmlFor="po-city" required><input id="po-city" value={form.shipToCity} onChange={set("shipToCity")} autoComplete="address-level2" className={fieldInput} /></FormRow>
+        <FormRow label="Country" htmlFor="po-country" required><input id="po-country" value={form.shipToCountry} onChange={set("shipToCountry")} autoComplete="country-name" className={fieldInput} /></FormRow>
+        <FormRow label="Phone" htmlFor="po-phone"><input id="po-phone" type="tel" value={form.shipToPhone} onChange={set("shipToPhone")} autoComplete="tel" className={fieldInput} /></FormRow>
       </fieldset>
 
-      <fieldset className="space-y-4">
-        <legend className="text-sm font-bold uppercase tracking-wider text-aviation-muted">Shipping</legend>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div>
-            <label htmlFor="po-method" className={label}>Shipping method <RequiredMark /></label>
-            <select id="po-method" value={form.shippingMethod} onChange={set("shippingMethod")} className={field}>
-              <option value="">Select method</option>
-              {SHIPPING_METHODS.map((method) => <option key={method} value={method}>{method}</option>)}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="po-account" className={label}>Shipping account no. {needsAccount && <RequiredMark />}</label>
-            <input id="po-account" value={form.shippingAccountNumber} onChange={set("shippingAccountNumber")} placeholder={needsAccount ? `Your ${form.shippingMethod} account` : "If you have one"} className={field} />
-          </div>
-          <div><label htmlFor="po-date" className={label}>Required by</label><input id="po-date" type="date" min={today} value={form.requiredDate} onChange={set("requiredDate")} className={field} /></div>
-        </div>
-        <div><label htmlFor="po-notes" className={label}>Notes for the supplier</label><textarea id="po-notes" rows={3} value={form.notes} onChange={set("notes")} placeholder="Packing, documentation or delivery instructions" className={field} /></div>
+      <fieldset className="space-y-3">
+        <legend className="mb-3 w-full"><FormSection title="Shipping" /></legend>
+        <FormRow label="Shipping method" htmlFor="po-method" required>
+          <select id="po-method" value={form.shippingMethod} onChange={set("shippingMethod")} className={fieldSelect}>
+            <option value="">Select method</option>
+            {SHIPPING_METHODS.map((method) => <option key={method} value={method}>{method}</option>)}
+          </select>
+        </FormRow>
+        <FormRow label="Shipping account no." htmlFor="po-account" required={needsAccount}>
+          <input id="po-account" value={form.shippingAccountNumber} onChange={set("shippingAccountNumber")} placeholder={needsAccount ? `Your ${form.shippingMethod} account` : "If you have one"} className={fieldInput} />
+        </FormRow>
+        <FormRow label="Required by" htmlFor="po-date"><input id="po-date" type="date" min={today} value={form.requiredDate} onChange={set("requiredDate")} className={fieldInput} /></FormRow>
+        <FormRow label="Notes for the supplier" htmlFor="po-notes"><textarea id="po-notes" rows={3} value={form.notes} onChange={set("notes")} placeholder="Packing, documentation or delivery instructions" className={fieldTextarea} /></FormRow>
       </fieldset>
 
-      {error && <p role="alert" className="rounded-xl bg-aviation-error-soft p-3 text-sm text-aviation-error">{error}</p>}
-      <div className="flex justify-end">
-        <button type="submit" disabled={saving} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-aviation-primary px-6 py-3 text-sm font-bold text-white disabled:opacity-60">
-          {saving ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+      {error && <FormNotice tone="error">{error}</FormNotice>}
+      <FormFooter>
+        <button type="submit" disabled={saving} className={btnPrimary}>
+          {saving ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
           {saving ? "Sending…" : order.po_number ? "Update purchase order" : "Send purchase order"}
         </button>
-      </div>
+      </FormFooter>
     </form>
   );
 }

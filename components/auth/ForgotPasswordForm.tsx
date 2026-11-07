@@ -2,8 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Mail } from "lucide-react";
+import { KeyRound, Mail } from "lucide-react";
 import { requestPasswordReset } from "@/lib/auth";
+import { btnPrimary, fieldInput } from "@/components/ui/form";
+
+const row = "grid gap-x-5 gap-y-1 sm:grid-cols-[120px_minmax(0,1fr)] sm:items-start";
+const label = "text-[13px] font-semibold text-aviation-dark sm:pt-1.5";
 
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -27,66 +31,68 @@ export default function ForgotPasswordForm() {
     setSent(true);
   }
 
-  if (sent) {
-    return (
-      <div className="text-center">
-        <Mail className="mx-auto text-aviation-primary" size={40} />
-        <h1 className="mt-4 text-3xl font-bold text-aviation-primary">Check your email</h1>
-        <p className="mt-3 text-aviation-muted">
-          We&apos;ve sent a link to reset your password to <strong className="text-aviation-dark">{email}</strong>.
-          The link expires in one hour. Open it in this browser.
-        </p>
-        <Link href="/login" className="mt-8 inline-block font-semibold text-aviation-primary hover:underline">
-          Back to sign in
-        </Link>
-      </div>
-    );
-  }
-
   return (
-    <div>
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-aviation-primary">Reset your password</h1>
-        <p className="mt-3 text-aviation-muted">Enter your account email and we&apos;ll send you a reset link.</p>
+    <div className="compact-form overflow-hidden rounded-xl border border-aviation-border bg-white shadow-sm">
+      <div className="flex items-center gap-3 bg-aviation-dark px-5 py-4 text-white sm:px-7">
+        {sent ? <Mail size={20} aria-hidden="true" /> : <KeyRound size={20} aria-hidden="true" />}
+        <div>
+          <h1 className="text-xl font-bold text-white">{sent ? "Check your email" : "Reset your password"}</h1>
+          <p className="text-xs text-white/70">
+            {sent ? "A reset link is on its way." : "Enter your account email and we'll send you a reset link."}
+          </p>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-10 space-y-6">
-        <div>
-          <label htmlFor="email" className="mb-2 block font-medium">
-            Email Address
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
-            className="w-full rounded-xl border border-aviation-border px-4 py-3 outline-none transition disabled:bg-aviation-light"
-          />
-        </div>
-
-        {error && (
-          <div role="alert" className="rounded-xl bg-aviation-error-soft p-4 text-sm text-aviation-error">
-            {error}
+      <div className="px-5 py-5 sm:px-7 sm:py-6">
+        {sent ? (
+          <div className="space-y-4">
+            <p className="text-[13px] leading-6 text-aviation-dark">
+              We&apos;ve sent a link to reset your password to <strong className="break-all">{email}</strong>.
+              The link expires in one hour. Open it in this browser.
+            </p>
+            <div className="border-t border-aviation-border pt-4">
+              <Link href="/login" className="text-[13px] font-semibold text-aviation-primary hover:underline">
+                Back to sign in
+              </Link>
+            </div>
           </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+            <div className={row}>
+              <label htmlFor="email" className={label}>Email</label>
+              <input
+                id="email"
+                type="email"
+                required
+                autoComplete="email"
+                placeholder="you@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                className={fieldInput}
+              />
+            </div>
+
+            {error && (
+              <div role="alert" className="rounded-md bg-aviation-error-soft px-3 py-2 text-[13px] text-aviation-error">
+                {error}
+              </div>
+            )}
+
+            <div className="flex flex-col-reverse gap-3 border-t border-aviation-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-center text-[13px] text-[var(--aviation-muted)] sm:text-left">
+                Remembered it?{" "}
+                <Link href="/login" className="font-semibold text-aviation-primary hover:underline">
+                  Back to sign in
+                </Link>
+              </p>
+              <button type="submit" disabled={loading} className={`${btnPrimary} px-5`}>
+                <Mail size={15} aria-hidden="true" />
+                {loading ? "Sending..." : "Send reset link"}
+              </button>
+            </div>
+          </form>
         )}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-xl bg-aviation-primary py-3 font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {loading ? "Sending..." : "Send reset link"}
-        </button>
-      </form>
-
-      <div className="mt-8 text-center text-sm text-aviation-muted">
-        Remembered it?{" "}
-        <Link href="/login" className="font-semibold text-aviation-primary hover:underline">
-          Back to sign in
-        </Link>
       </div>
     </div>
   );

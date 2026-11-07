@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Part } from "@/lib/parts";
 
 export const MARKETPLACE_CONDITIONS = ["New", "Serviceable", "Overhauled", "As Removed"] as const;
-export const MARKETPLACE_CERTIFICATIONS = ["FAA 8130-3", "EASA Form 1", "Dual Release", "Certificate of Conformity", "OEM documentation", "Other", "None"] as const;
+export const MARKETPLACE_CERTIFICATIONS = ["FAA 8130-3", "EASA Form 1", "Dual Release", "Certificate of Conformity", "Maintenance Release", "OEM documentation", "Other", "None"] as const;
 export const MARKETPLACE_CATEGORIES = ["Airframes", "Engines", "Avionics", "Components", "Landing Gear", "Consumables", "Electrical", "Safety Equipment"] as const;
 export type MarketplaceSort = "newest" | "price-low" | "price-high" | "rating";
 export interface MarketplaceFilters { conditions:string[]; certifications:string[]; categories:string[]; manufacturers:string[]; countries:string[]; sort:MarketplaceSort; query:string; }
@@ -18,7 +18,7 @@ function cleanList(values:string[]|undefined, allowed?:readonly string[]){const 
 export function normalizeMarketplaceFilters(input:Partial<MarketplaceFilters>={}):MarketplaceFilters { const sort=input.sort&&["newest","price-low","price-high","rating"].includes(input.sort)?input.sort:"newest"; return {conditions:cleanList(input.conditions,MARKETPLACE_CONDITIONS),certifications:cleanList(input.certifications,MARKETPLACE_CERTIFICATIONS),categories:cleanList(input.categories,MARKETPLACE_CATEGORIES),manufacturers:cleanList(input.manufacturers),countries:cleanList(input.countries),sort,query:(input as Partial<MarketplaceFilters>).query?.trim()||""}; }
 export function parseMarketplaceSearchParams(searchParams:Record<string,string|string[]|undefined>):MarketplaceFilters { const list=(key:string)=>{const v=searchParams[key]; return Array.isArray(v)?v.flatMap(x=>x.split(",")):(v?v.split(","):[])}; return normalizeMarketplaceFilters({conditions:list("condition"),certifications:list("certification"),categories:list("category"),manufacturers:list("manufacturer"),countries:list("country"),sort:(Array.isArray(searchParams.sort)?searchParams.sort[0]:searchParams.sort) as MarketplaceSort|undefined,query:Array.isArray(searchParams.q)?searchParams.q[0]:(searchParams.q||"")}); }
 export function marketplaceFilterCount(f:MarketplaceFilters){return f.conditions.length+f.certifications.length+f.categories.length+f.manufacturers.length+f.countries.length;}
-function certificationLabel(value:string|null){const n=(value??"").trim().toLowerCase(); if(n.includes("faa")||n.includes("8130")) return "FAA 8130-3"; if(n.includes("easa")||n.includes("form 1")) return "EASA Form 1"; if(n.includes("dual")) return "Dual Release"; if(n.includes("conformity")) return "Certificate of Conformity"; if(n.includes("oem")) return "OEM documentation"; if(n && n !== "none") return "Other"; return "None";}
+function certificationLabel(value:string|null){const n=(value??"").trim().toLowerCase(); if(n.includes("faa")||n.includes("8130")) return "FAA 8130-3"; if(n.includes("easa")||n.includes("form 1")) return "EASA Form 1"; if(n.includes("dual")) return "Dual Release"; if(n.includes("conformity")) return "Certificate of Conformity"; if(n.includes("maintenance release")) return "Maintenance Release"; if(n.includes("oem")) return "OEM documentation"; if(n && n !== "none") return "Other"; return "None";}
 
 async function getVerifiedCertificationMap(supabase:SupabaseClient, partIds:string[]){
   if(!partIds.length) return new Map<string,string[]>();

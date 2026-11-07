@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { minRequiredDate, validateRequiredDate, RFQ_MIN_LEAD_DAYS } from "@/lib/rfqs";
 import { numberInputValue, parseNumberInput } from "@/lib/number-input";
+import { FileText } from "lucide-react";
+import { FormCard, FormFooter, FormNotice, FormRow, btnPrimary, fieldInput, fieldTextarea } from "@/components/ui/form";
 
 interface RFQFormProps {
   partId: string;
@@ -519,136 +521,75 @@ export default function RFQForm({
   }
 
   return (
-    <div>
+    <FormCard
+      icon={FileText}
+      title="Request a Quote"
+      subtitle={
+        <>
+          Part Number: <strong className="text-white">{partNumber}</strong>
+        </>
+      }
+    >
+      <FormRow label="Quantity Required" htmlFor="rfq-quantity" labelWidth="140px">
+        <input
+          id="rfq-quantity"
+          type="number"
+          min={1}
+          value={numberInputValue(quantity)}
+          onChange={(e) => setQuantity(parseNumberInput(e.target.value))}
+          disabled={loading}
+          className={`${fieldInput} sm:max-w-[200px]`}
+        />
+      </FormRow>
 
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
+      <FormRow
+        label="Required By"
+        htmlFor="rfq-required-date"
+        required
+        labelWidth="140px"
+        hint={`At least ${RFQ_MIN_LEAD_DAYS} days from today. The supplier can quote until this date.`}
+      >
+        <input
+          id="rfq-required-date"
+          type="date"
+          required
+          min={minRequiredDate()}
+          value={requiredDate}
+          onChange={(e) => setRequiredDate(e.target.value)}
+          disabled={loading}
+          className={`${fieldInput} sm:max-w-[200px]`}
+        />
+      </FormRow>
 
-      <h2 className="text-2xl font-bold text-aviation-primary">
-        Request a Quote
-      </h2>
+      <FormRow label="Additional Requirements" htmlFor="rfq-message" labelWidth="140px">
+        <textarea
+          id="rfq-message"
+          rows={6}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          disabled={loading}
+          placeholder="8130, EASA Form 1, Trace, Fresh OH, delivery requirements, etc."
+          className={fieldTextarea}
+        />
+      </FormRow>
 
-      <p className="mt-2 text-aviation-muted">
-        Part Number:{" "}
-        <strong>
-          {partNumber}
-        </strong>
-      </p>
+      <FormNotice>
+        <span className="font-semibold">RFQ Information.</span>{" "}
+        Your request will be sent directly to the supplier for quotation.
+      </FormNotice>
 
-      {/* =====================================================
-          FORM
-      ===================================================== */}
-
-      <div className="mt-8 space-y-6">
-
-        {/* ===================================================
-            QUANTITY
-        =================================================== */}
-
-        <div>
-
-          <label className="mb-2 block font-medium text-aviation-dark">
-            Quantity Required
-          </label>
-
-          <input
-            type="number"
-            min={1}
-            value={numberInputValue(quantity)}
-            onChange={(e) => setQuantity(parseNumberInput(e.target.value))}
-            disabled={loading}
-            className="w-full rounded-xl border border-aviation-border p-3 outline-none transition focus:border-aviation-border focus:ring-2 focus:ring-aviation-primary/10 disabled:bg-aviation-light"
-          />
-
-        </div>
-
-        {/* ===================================================
-            REQUIRED BY
-        =================================================== */}
-
-        <div>
-
-          <label htmlFor="rfq-required-date" className="mb-2 block font-medium text-aviation-dark">
-            Required By <span className="text-aviation-error">*</span>
-          </label>
-
-          <input
-            id="rfq-required-date"
-            type="date"
-            required
-            min={minRequiredDate()}
-            value={requiredDate}
-            onChange={(e) => setRequiredDate(e.target.value)}
-            disabled={loading}
-            className="w-full rounded-xl border border-aviation-border p-3 text-aviation-dark outline-none transition focus:border-aviation-border focus:ring-2 focus:ring-aviation-primary/10 disabled:bg-aviation-light"
-          />
-
-          <p className="mt-1.5 text-xs text-aviation-muted">
-            At least {RFQ_MIN_LEAD_DAYS} days from today. The supplier can quote until this date.
-          </p>
-
-        </div>
-
-        {/* ===================================================
-            ADDITIONAL REQUIREMENTS
-        =================================================== */}
-
-        <div>
-
-          <label className="mb-2 block font-medium text-aviation-dark">
-            Additional Requirements
-          </label>
-
-          <textarea
-            rows={6}
-            value={message}
-            onChange={(e) =>
-              setMessage(
-                e.target.value
-              )
-            }
-            disabled={loading}
-            placeholder="8130, EASA Form 1, Trace, Fresh OH, delivery requirements, etc."
-            className="w-full rounded-xl border border-aviation-border p-3 outline-none transition focus:border-aviation-border focus:ring-2 focus:ring-aviation-primary/10 disabled:bg-aviation-light"
-          />
-
-        </div>
-
-        {/* ===================================================
-            INFORMATION
-        =================================================== */}
-
-        <div className="rounded-xl bg-aviation-success-soft p-4 text-sm text-aviation-primary">
-
-          <p className="font-medium">
-            RFQ Information
-          </p>
-
-          <p className="mt-1">
-            Your request will be sent directly
-            to the supplier for quotation.
-          </p>
-
-        </div>
-
-        {/* ===================================================
-            SUBMIT
-        =================================================== */}
-
+      <FormFooter>
         <button
           type="button"
           onClick={submitRFQ}
           disabled={loading}
-          className="w-full rounded-xl bg-aviation-primary py-4 font-semibold text-white transition hover:bg-aviation-primary disabled:cursor-not-allowed disabled:opacity-50"
+          className={btnPrimary}
         >
           {loading
             ? "Submitting..."
             : "Submit RFQ"}
         </button>
-
-      </div>
-
-    </div>
+      </FormFooter>
+    </FormCard>
   );
 }

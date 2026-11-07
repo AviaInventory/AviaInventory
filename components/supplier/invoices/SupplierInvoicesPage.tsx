@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import Link from "next/link";
+import { fieldInput, fieldSelect } from "@/components/ui/form";
 import { supabase } from "@/lib/supabase";
 
 import {
@@ -122,32 +123,32 @@ Manage customer invoices and payment records.
           Search & Filters
       ======================================== */}
 
-      <section className="rounded-2xl bg-white p-6 shadow">
+      <section className="compact-form rounded-2xl bg-white p-4 shadow sm:p-5">
 
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
 
           {/* Search */}
 
           <div className="relative w-full lg:max-w-md">
 
             <Search
-              size={18}
-              className="absolute left-3 top-3 text-aviation-muted"
+              size={14}
+              className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--aviation-muted)]"
             />
 
             <input
               type="text"
               placeholder="Search Invoice Number, PO Number or Customer..."
-              className="w-full rounded-xl border py-3 pl-10 pr-4"
+              className={`${fieldInput} pl-8`}
             />
 
           </div>
 
           {/* Filters */}
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2">
 
-            <select className="rounded-xl border px-4 py-3">
+            <select className={`${fieldSelect} w-auto`}>
 
               <option>All Statuses</option>
               <option>Paid</option>
@@ -158,7 +159,7 @@ Manage customer invoices and payment records.
 
             </select>
 
-            <select className="rounded-xl border px-4 py-3">
+            <select className={`${fieldSelect} w-auto`}>
 
               <option>All Dates</option>
               <option>This Week</option>

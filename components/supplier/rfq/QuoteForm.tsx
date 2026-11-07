@@ -9,7 +9,8 @@ import type {
   RFQ,
   CreateQuoteData,
 } from "@/lib/rfqs";
-import RequiredMark from "@/components/ui/RequiredMark";
+import { Send } from "lucide-react";
+import { FieldGroup, FormCard, FormFooter, FormRow, FormSection, btnPrimary, fieldInput, fieldSelect, fieldTextarea } from "@/components/ui/form";
 import { QUOTE_CERTIFICATION_OPTIONS } from "@/lib/rfq-options";
 import { numberInputValue, parseNumberInput } from "@/lib/number-input";
 
@@ -117,83 +118,55 @@ export default function QuoteForm({
   }
 
   return (
-    <section id="submit-quote" className="scroll-mt-28 rounded-2xl bg-white p-8 shadow">
+    <section id="submit-quote" className="scroll-mt-28">
+      <FormCard icon={Send} title="Submit Quotation" subtitle="Your price, lead time and certification for this RFQ.">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          <FormSection title="Price" />
 
-      <h2 className="mb-8 text-2xl font-bold text-aviation-primary">
-        Submit Quotation
-      </h2>
+          <FormRow label="Unit Price" htmlFor="quote-unit-price" required>
+            <FieldGroup>
+              <input
+                id="quote-unit-price"
+                type="number"
+                min={0}
+                step="0.01"
+                required
+                disabled={loading}
+                value={numberInputValue(formData.unit_price)}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    unit_price: parseNumberInput(e.target.value),
+                  })
+                }
+                className={fieldInput}
+              />
+              <select
+                id="quote-currency"
+                aria-label="Currency"
+                disabled={loading}
+                value={formData.currency}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    currency: e.target.value,
+                  })
+                }
+                className={fieldSelect}
+              >
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+                <option value="KES">KES</option>
+              </select>
+            </FieldGroup>
+          </FormRow>
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-6"
-      >
+          <FormSection title="Terms" />
 
-        {/* Price */}
-
-        <div className="grid gap-6 md:grid-cols-2">
-
-          <div>
-
-            <label className="mb-2 block font-medium">
-              Unit Price <RequiredMark />
-            </label>
-
+          <FormRow label="Lead Time" htmlFor="quote-lead-time" required>
             <input
-              type="number"
-              min={0}
-              step="0.01"
-              required
-              disabled={loading}
-              value={numberInputValue(formData.unit_price)}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  unit_price: parseNumberInput(e.target.value),
-                })
-              }
-              className="w-full rounded-xl border p-3 disabled:bg-aviation-light"
-            />
-
-          </div>
-
-          <div>
-
-            <label className="mb-2 block font-medium">
-              Currency
-            </label>
-
-            <select
-              disabled={loading}
-              value={formData.currency}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  currency: e.target.value,
-                })
-              }
-              className="w-full rounded-xl border p-3 disabled:bg-aviation-light"
-            >
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-              <option value="GBP">GBP</option>
-              <option value="KES">KES</option>
-            </select>
-
-          </div>
-
-        </div>
-
-        {/* Lead Time & Warranty */}
-
-        <div className="grid gap-6 md:grid-cols-2">
-
-          <div>
-
-            <label className="mb-2 block font-medium">
-              Lead Time <RequiredMark />
-            </label>
-
-            <input
+              id="quote-lead-time"
               type="text"
               required
               disabled={loading}
@@ -205,18 +178,13 @@ export default function QuoteForm({
                 })
               }
               placeholder="e.g. 7 Days"
-              className="w-full rounded-xl border p-3 disabled:bg-aviation-light"
+              className={fieldInput}
             />
+          </FormRow>
 
-          </div>
-
-          <div>
-
-            <label className="mb-2 block font-medium">
-              Warranty
-            </label>
-
+          <FormRow label="Warranty" htmlFor="quote-warranty">
             <input
+              id="quote-warranty"
               type="text"
               disabled={loading}
               value={formData.warranty}
@@ -227,52 +195,34 @@ export default function QuoteForm({
                 })
               }
               placeholder="e.g. 12 Months"
-              className="w-full rounded-xl border p-3 disabled:bg-aviation-light"
+              className={fieldInput}
             />
+          </FormRow>
 
-          </div>
-
-        </div>
-
-        {/* Certification & Validity */}
-
-        <div className="grid gap-6 md:grid-cols-2">
-
-          <div>
-
-            <label htmlFor="quote-certification" className="mb-2 block font-medium">
-              Certification supplied <RequiredMark />
-            </label>
-
+          <FormRow
+            label="Certification supplied"
+            htmlFor="quote-certification"
+            required
+            hint={requested ? <>Buyer requested: <span className="font-semibold not-italic text-aviation-dark">{requested}</span></> : undefined}
+          >
             <select
               id="quote-certification"
               required
               disabled={loading}
               value={certification}
               onChange={(e) => setCertification(e.target.value)}
-              className="w-full rounded-xl border p-3 disabled:bg-aviation-light"
+              className={fieldSelect}
             >
               <option value="">Select certification</option>
               {QUOTE_CERTIFICATION_OPTIONS.map((option) => (
                 <option key={option} value={option}>{option}</option>
               ))}
             </select>
+          </FormRow>
 
-            {requested && (
-              <p className="mt-1 text-xs text-aviation-muted">
-                Buyer requested: <span className="font-semibold text-aviation-dark">{requested}</span>
-              </p>
-            )}
-
-          </div>
-
-          <div>
-
-            <label className="mb-2 block font-medium">
-              Quote Valid Until <RequiredMark />
-            </label>
-
+          <FormRow label="Quote Valid Until" htmlFor="quote-valid-until" required>
             <input
+              id="quote-valid-until"
               type="date"
               required
               disabled={loading}
@@ -283,84 +233,61 @@ export default function QuoteForm({
                   valid_until: e.target.value,
                 })
               }
-              className="w-full rounded-xl border p-3 disabled:bg-aviation-light"
+              className={`${fieldInput} sm:max-w-[200px]`}
             />
+          </FormRow>
 
-          </div>
+          <FormRow label="Condition" htmlFor="quote-condition">
+            <select
+              id="quote-condition"
+              disabled={loading}
+              value={formData.condition}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  condition: e.target.value,
+                })
+              }
+              className={fieldSelect}
+            >
+              <option value="New">New</option>
+              <option value="New Surplus">New Surplus</option>
+              <option value="Overhauled">Overhauled</option>
+              <option value="Serviceable">Serviceable</option>
+              <option value="Repaired">Repaired</option>
+              <option value="As Removed">As Removed</option>
+            </select>
+          </FormRow>
 
-        </div>
+          <FormSection title="Message" />
 
-        {/* Condition */}
+          <FormRow label="Supplier Message" htmlFor="quote-message" optional>
+            <textarea
+              id="quote-message"
+              rows={5}
+              disabled={loading}
+              value={formData.message}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  message: e.target.value,
+                })
+              }
+              placeholder="Provide any additional information for the buyer..."
+              className={fieldTextarea}
+            />
+          </FormRow>
 
-        <div>
-
-          <label className="mb-2 block font-medium">
-            Condition
-          </label>
-
-          <select
-            disabled={loading}
-            value={formData.condition}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                condition: e.target.value,
-              })
-            }
-            className="w-full rounded-xl border p-3 disabled:bg-aviation-light"
-          >
-            <option value="New">New</option>
-            <option value="New Surplus">New Surplus</option>
-            <option value="Overhauled">Overhauled</option>
-            <option value="Serviceable">Serviceable</option>
-            <option value="Repaired">Repaired</option>
-            <option value="As Removed">As Removed</option>
-          </select>
-
-        </div>
-
-        {/* Message */}
-
-        <div>
-
-          <label className="mb-2 block font-medium">
-            Supplier Message
-          </label>
-
-          <textarea
-            rows={5}
-            disabled={loading}
-            value={formData.message}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                message: e.target.value,
-              })
-            }
-            placeholder="Provide any additional information for the buyer..."
-            className="w-full rounded-xl border p-3 disabled:bg-aviation-light"
-          />
-
-        </div>
-
-        {/* Submit */}
-
-        <div className="flex justify-end">
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-xl bg-aviation-primary px-8 py-3 font-semibold text-white transition hover:bg-aviation-primary disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loading
-              ? "Submitting Quotation..."
-              : "Submit Quotation"}
-          </button>
-
-        </div>
-
-      </form>
-
+          <FormFooter>
+            <button type="submit" disabled={loading} className={btnPrimary}>
+              <Send size={15} aria-hidden="true" />
+              {loading
+                ? "Submitting Quotation..."
+                : "Submit Quotation"}
+            </button>
+          </FormFooter>
+        </form>
+      </FormCard>
     </section>
   );
 }

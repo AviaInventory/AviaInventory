@@ -3,6 +3,10 @@
 import { FormEvent, useState } from "react";
 import { LockKeyhole, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { btnPrimary, fieldInput } from "@/components/ui/form";
+
+const row = "grid gap-x-5 gap-y-1 sm:grid-cols-[120px_minmax(0,1fr)] sm:items-start";
+const label = "text-[13px] font-semibold text-aviation-dark sm:pt-1.5";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -41,65 +45,61 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-aviation-success-soft px-6 py-12">
-      <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-xl">
-        <div className="mb-8 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-aviation-success-soft text-aviation-primary">
-            <ShieldCheck size={34} />
+    <main className="min-h-screen bg-aviation-light py-8 sm:py-16">
+      <div className="mx-auto max-w-xl px-4 sm:px-6">
+        <div className="compact-form overflow-hidden rounded-xl border border-aviation-border bg-white shadow-sm">
+          <div className="flex items-center gap-3 bg-aviation-dark px-5 py-4 text-white sm:px-7">
+            <ShieldCheck size={20} aria-hidden="true" />
+            <div>
+              <h1 className="text-xl font-bold text-white">Administrator Login</h1>
+              <p className="text-xs text-white/70">AviaInventory platform monitoring</p>
+            </div>
           </div>
-          <h1 className="mt-6 text-3xl font-bold text-aviation-primary">
-            Administrator Login
-          </h1>
-          <p className="mt-2 text-sm text-aviation-muted">
-            AviaInventory platform monitoring
-          </p>
+
+          <div className="space-y-4 px-5 py-5 sm:px-7 sm:py-6">
+            <form onSubmit={handleSubmit} className="space-y-3.5">
+              <div className={row}>
+                <label htmlFor="admin-username" className={label}>Username</label>
+                <input
+                  id="admin-username"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  required
+                  autoComplete="username"
+                  className={fieldInput}
+                />
+              </div>
+
+              <div className={row}>
+                <label htmlFor="admin-password" className={label}>Password</label>
+                <div className="relative">
+                  <LockKeyhole className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--aviation-muted)]" size={15} aria-hidden="true" />
+                  <input
+                    id="admin-password"
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                    autoComplete="current-password"
+                    className={`${fieldInput} pl-8`}
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <div role="alert" className="rounded-md bg-aviation-error-soft px-3 py-2 text-[13px] text-aviation-error">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex justify-end border-t border-aviation-border pt-4">
+                <button type="submit" disabled={loading} className={`${btnPrimary} w-full px-5 sm:w-auto`}>
+                  {loading ? "Signing in..." : "Admin Login"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-aviation-dark">
-              Username
-            </label>
-            <input
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              required
-              autoComplete="username"
-              className="w-full rounded-xl border border-aviation-border px-4 py-3 outline-none focus:border-aviation-border focus:ring-2 focus:ring-aviation-primary"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-aviation-dark">
-              Password
-            </label>
-            <div className="relative">
-              <LockKeyhole className="absolute left-4 top-1/2 -translate-y-1/2 text-aviation-muted" size={18} />
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-                autoComplete="current-password"
-                className="w-full rounded-xl border border-aviation-border py-3 pl-11 pr-4 outline-none focus:border-aviation-border focus:ring-2 focus:ring-aviation-primary"
-              />
-            </div>
-          </div>
-
-          {error && (
-            <div className="rounded-xl bg-aviation-error-soft p-4 text-sm text-aviation-error">
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-aviation-primary py-3 font-semibold text-white transition hover:bg-aviation-primary disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loading ? "Signing in..." : "Admin Login"}
-          </button>
-        </form>
       </div>
     </main>
   );

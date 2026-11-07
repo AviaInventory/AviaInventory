@@ -2,6 +2,7 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import type { PartFormData } from "../types";
+import { FormPanel, FormSection, fieldInput, fieldLabel, fieldSelect } from "@/components/ui/form";
 
 interface Props {
   formData: PartFormData;
@@ -13,27 +14,20 @@ export default function AircraftCompatibility({
   setFormData,
 }: Props) {
   return (
-    <section className="rounded-2xl bg-white p-8 shadow-sm">
+    <FormPanel>
 
-      <div className="mb-6">
+      <FormSection
+        title="Aircraft Compatibility"
+        text="Specify the aircraft, engine and ATA chapter that this part supports."
+      />
 
-        <h2 className="text-2xl font-bold text-aviation-primary">
-          Aircraft Compatibility
-        </h2>
-
-        <p className="mt-2 text-aviation-muted">
-          Specify the aircraft, engine and ATA chapter that this part supports.
-        </p>
-
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-x-5 gap-y-3 md:grid-cols-2">
 
         {/* Aircraft Manufacturer */}
 
         <div>
 
-          <label className="mb-2 block font-medium">
+          <label className={fieldLabel}>
             Aircraft Manufacturer
           </label>
 
@@ -45,7 +39,7 @@ export default function AircraftCompatibility({
                 aircraftManufacturer: e.target.value,
               }))
             }
-            className="w-full rounded-xl border p-3 focus:border-aviation-border focus:outline-none"
+            className={fieldSelect}
           >
             <option value="">Select Manufacturer</option>
             <option>Boeing</option>
@@ -67,7 +61,7 @@ export default function AircraftCompatibility({
 
         <div>
 
-          <label className="mb-2 block font-medium">
+          <label className={fieldLabel}>
             Aircraft Model
           </label>
 
@@ -81,7 +75,7 @@ export default function AircraftCompatibility({
               }))
             }
             placeholder="B737-800"
-            className="w-full rounded-xl border p-3 focus:border-aviation-border focus:outline-none"
+            className={fieldInput}
           />
 
         </div>
@@ -90,7 +84,7 @@ export default function AircraftCompatibility({
 
         <div>
 
-          <label className="mb-2 block font-medium">
+          <label className={fieldLabel}>
             Engine Manufacturer
           </label>
 
@@ -102,7 +96,7 @@ export default function AircraftCompatibility({
                 engineManufacturer: e.target.value,
               }))
             }
-            className="w-full rounded-xl border p-3 focus:border-aviation-border focus:outline-none"
+            className={fieldSelect}
           >
             <option value="">Select Manufacturer</option>
             <option>GE Aerospace</option>
@@ -119,7 +113,7 @@ export default function AircraftCompatibility({
 
         <div>
 
-          <label className="mb-2 block font-medium">
+          <label className={fieldLabel}>
             Engine Model
           </label>
 
@@ -133,7 +127,7 @@ export default function AircraftCompatibility({
               }))
             }
             placeholder="CFM56-7B"
-            className="w-full rounded-xl border p-3 focus:border-aviation-border focus:outline-none"
+            className={fieldInput}
           />
 
         </div>
@@ -142,7 +136,7 @@ export default function AircraftCompatibility({
 
         <div>
 
-          <label className="mb-2 block font-medium">
+          <label className={fieldLabel}>
             ATA Chapter
           </label>
 
@@ -156,7 +150,7 @@ export default function AircraftCompatibility({
               }))
             }
             placeholder="27 - Flight Controls"
-            className="w-full rounded-xl border p-3 focus:border-aviation-border focus:outline-none"
+            className={fieldInput}
           />
 
         </div>
@@ -165,7 +159,7 @@ export default function AircraftCompatibility({
 
         <div>
 
-          <label className="mb-2 block font-medium">
+          <label className={fieldLabel}>
             Category
           </label>
 
@@ -177,7 +171,7 @@ export default function AircraftCompatibility({
                 category: e.target.value,
               }))
             }
-            className="w-full rounded-xl border p-3 focus:border-aviation-border focus:outline-none"
+            className={fieldSelect}
           >
             <option value="">Select Category</option>
             <option>Airframe</option>
@@ -195,6 +189,6 @@ export default function AircraftCompatibility({
 
       </div>
 
-    </section>
+    </FormPanel>
   );
 }

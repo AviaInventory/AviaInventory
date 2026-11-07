@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BarChart3, Box, LogOut, PackageCheck, ShoppingCart, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { btnPrimary, btnSecondary } from "@/components/ui/form";
 
 import {
   getAdminOrders,
@@ -31,12 +32,9 @@ export default async function AdminDashboard() {
             </p>
           </div>
 
-          <form action="/api/admin/logout" method="post">
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 rounded-xl border border-aviation-border px-5 py-3 font-semibold text-aviation-dark hover:bg-aviation-light"
-            >
-              <LogOut size={17} />
+          <form action="/api/admin/logout" method="post" className="compact-form">
+            <button type="submit" className={btnSecondary}>
+              <LogOut size={15} />
               Logout
             </button>
           </form>
@@ -87,14 +85,14 @@ export default async function AdminDashboard() {
           </div>
         </section>
 
-        <div className="flex flex-wrap gap-3 text-sm">
-          <Link href="/admin/dashboard/supplier-verifications" className="inline-flex items-center gap-2 rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">Review Supplier Verification</Link>
-          <Link href="/admin/dashboard/listing-certifications" className="inline-flex items-center gap-2 rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">Review Listing Certifications</Link>
-          <Link href="/admin/dashboard/subscriptions" className="rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">Subscriptions</Link>
-          <Link href="/admin/dashboard/promotions" className="rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">Promotions</Link>
-          <Link href="/admin/dashboard/intelligence-reports" className="rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">Market reports</Link>
-          <Link href="/marketplace" className="rounded-xl bg-aviation-primary px-5 py-3 font-semibold text-white">View Marketplace</Link>
-          <Link href="/" className="rounded-xl border border-aviation-border bg-white px-5 py-3 font-semibold text-aviation-dark">Home</Link>
+        <div className="compact-form flex flex-wrap gap-2">
+          <Link href="/admin/dashboard/supplier-verifications" className={btnPrimary}>Review Supplier Verification</Link>
+          <Link href="/admin/dashboard/listing-certifications" className={btnPrimary}>Review Listing Certifications</Link>
+          <Link href="/admin/dashboard/subscriptions" className={btnPrimary}>Subscriptions</Link>
+          <Link href="/admin/dashboard/promotions" className={btnPrimary}>Promotions</Link>
+          <Link href="/admin/dashboard/intelligence-reports" className={btnPrimary}>Market reports</Link>
+          <Link href="/marketplace" className={btnPrimary}>View Marketplace</Link>
+          <Link href="/" className={btnSecondary}>Home</Link>
         </div>
 
         <section className="rounded-3xl bg-white shadow-sm">

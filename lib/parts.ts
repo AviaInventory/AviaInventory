@@ -7,6 +7,7 @@ export const LISTING_CERTIFICATION_TYPES = [
   "EASA Form 1",
   "Dual Release",
   "Certificate of Conformity",
+  "Maintenance Release",
   "OEM documentation",
   "Other",
   "No certification document",

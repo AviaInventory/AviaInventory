@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { btnPrimary, fieldCheckbox, fieldHint, fieldLabel, fieldTextarea } from "@/components/ui/form";
 
 const DECISIONS = [
   { status: "Under Review", hint: "You are reviewing this supplier now." },
@@ -64,36 +65,36 @@ export default function SupplierVerificationDecision({
   const hint = DECISIONS.find((decision) => decision.status === status)?.hint;
 
   return (
-    <form onSubmit={save} className="space-y-4">
+    <form onSubmit={save} className="compact-form space-y-3.5">
       <fieldset>
-        <legend className="text-sm font-semibold text-aviation-dark">Decision</legend>
-        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+        <legend className="text-[13px] font-semibold text-aviation-dark">Decision</legend>
+        <div className="mt-1 grid grid-cols-1 gap-x-4 gap-y-1 min-[420px]:grid-cols-2">
           {DECISIONS.map((decision) => (
             <label
               key={decision.status}
-              className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold ${
-                status === decision.status ? "border-aviation-primary bg-aviation-success-soft text-aviation-primary" : "border-aviation-border bg-white"
+              className={`flex cursor-pointer items-center gap-2 py-0.5 text-[13px] ${
+                status === decision.status ? "font-semibold text-aviation-primary" : "text-aviation-dark"
               }`}
             >
-              <input type="radio" name="decision" value={decision.status} checked={status === decision.status} onChange={() => setStatus(decision.status)} />
+              <input type="radio" name="decision" value={decision.status} checked={status === decision.status} onChange={() => setStatus(decision.status)} className={fieldCheckbox} />
               {decision.status}
             </label>
           ))}
         </div>
-        {hint && <p className="mt-2 text-xs text-[var(--aviation-muted)]">{hint}</p>}
+        {hint && <p className={fieldHint}>{hint}</p>}
       </fieldset>
 
       {status === "More Information Required" && (
         <div>
-          <label htmlFor="missing" className="text-sm font-semibold text-aviation-dark">
+          <label htmlFor="missing" className={fieldLabel}>
             What the supplier must provide <span className="font-normal text-[var(--aviation-muted)]">(one per line)</span>
           </label>
-          <textarea id="missing" rows={4} value={missing} onChange={(event) => setMissing(event.target.value)} className="mt-1 w-full rounded-xl border border-aviation-border px-3 py-2 text-sm" />
+          <textarea id="missing" rows={4} value={missing} onChange={(event) => setMissing(event.target.value)} className={fieldTextarea} />
         </div>
       )}
 
       <div>
-        <label htmlFor="comments" className="text-sm font-semibold text-aviation-dark">
+        <label htmlFor="comments" className={fieldLabel}>
           Comments for the supplier
         </label>
         <textarea
@@ -102,29 +103,27 @@ export default function SupplierVerificationDecision({
           value={comments}
           onChange={(event) => setComments(event.target.value)}
           placeholder="Shown in the supplier's Verification Center."
-          className="mt-1 w-full rounded-xl border border-aviation-border px-3 py-2 text-sm"
+          className={fieldTextarea}
         />
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-aviation-error-soft px-3 py-2 text-sm text-aviation-error">
+        <p role="alert" className="rounded-md bg-aviation-error-soft px-3 py-2 text-[13px] text-aviation-error">
           {error}
         </p>
       )}
       {saved && (
-        <p role="status" className="rounded-lg bg-aviation-success-soft px-3 py-2 text-sm text-aviation-primary">
+        <p role="status" className="rounded-md bg-aviation-success-soft px-3 py-2 text-[13px] text-aviation-primary">
           Decision saved. The supplier sees it in their Verification Center.
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={saving}
-        className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-aviation-primary px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
-      >
-        {saving && <Loader2 size={16} className="animate-spin" />}
-        Save decision
-      </button>
+      <div className="flex justify-end border-t border-aviation-border pt-4">
+        <button type="submit" disabled={saving} className={btnPrimary}>
+          {saving && <Loader2 size={15} className="animate-spin" />}
+          Save decision
+        </button>
+      </div>
     </form>
   );
 }

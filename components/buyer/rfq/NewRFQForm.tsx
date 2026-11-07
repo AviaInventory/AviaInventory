@@ -16,34 +16,43 @@ import {
 
 import SupplierSelector from "./SupplierSelector";
 import MroRFQForm from "./MroRFQForm";
-import { Field, inputClass } from "./RFQFormFields";
 import { RFQ_CERTIFICATION_OPTIONS } from "@/lib/rfq-options";
 import { numberInputValue, parseNumberInput } from "@/lib/number-input";
+import {
+  FormFooter,
+  FormPanel,
+  FormRow,
+  FormSection,
+  btnPrimary,
+  btnSecondary,
+  fieldCheckbox,
+  fieldFile,
+  fieldInput,
+  fieldSelect,
+  fieldTextarea,
+} from "@/components/ui/form";
 
 /** Buyers first choose the kind of RFQ; each kind has its own form. */
 export default function NewRFQForm({ initialType = null }: { initialType?: RFQType | null }) {
   const [rfqType, setRFQType] = useState<RFQType | "">(initialType ?? "");
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-2xl bg-white p-8 shadow">
-        <label htmlFor="rfq-type" className="mb-2 block text-2xl font-bold text-aviation-primary">
-          What do you need a quotation for?
-        </label>
-        <p className="mb-6 text-sm text-aviation-muted">
-          Choose the type of RFQ to open the right form.
-        </p>
-        <select
-          id="rfq-type"
-          value={rfqType}
-          onChange={(event) => setRFQType(event.target.value as RFQType | "")}
-          className={`${inputClass} max-w-xl`}
-        >
-          <option value="">Select RFQ type</option>
-          <option value="parts">{RFQ_TYPE_LABELS.parts}</option>
-          <option value="mro">MRO Services RFQ (Repair / Overhaul of parts / components)</option>
-        </select>
-      </section>
+    <div className="space-y-5">
+      <FormPanel>
+        <FormSection title="What do you need a quotation for?" text="Choose the type of RFQ to open the right form." />
+        <FormRow label="RFQ type" htmlFor="rfq-type">
+          <select
+            id="rfq-type"
+            value={rfqType}
+            onChange={(event) => setRFQType(event.target.value as RFQType | "")}
+            className={`${fieldSelect} sm:max-w-xl`}
+          >
+            <option value="">Select RFQ type</option>
+            <option value="parts">{RFQ_TYPE_LABELS.parts}</option>
+            <option value="mro">MRO Services RFQ (Repair / Overhaul of parts / components)</option>
+          </select>
+        </FormRow>
+      </FormPanel>
 
       {rfqType === "parts" && <PartsRFQForm />}
       {rfqType === "mro" && <MroRFQForm />}
@@ -322,418 +331,217 @@ function PartsRFQForm() {
   const disabled =
     loading || uploading;
 
+
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-8"
-    >
+    <form onSubmit={handleSubmit}>
+      <FormPanel>
+        {/* PART INFORMATION */}
+        <FormSection title="Part Information" text="Provide the details of the aviation part you require." />
 
-      {/* =====================================================
-          PART INFORMATION
-      ====================================================== */}
-
-      <section className="rounded-2xl bg-white p-8 shadow">
-
-        <h2 className="mb-2 text-2xl font-bold text-aviation-primary">
-          Part Information
-        </h2>
-
-        <p className="mb-8 text-sm text-aviation-muted">
-          Provide the details of the aviation part you require.
-        </p>
-
-        <div className="grid gap-6 md:grid-cols-2">
-
-          <Field
-            label="Part Number"
+        <FormRow label="Part Number" htmlFor="rfq-part-number" required>
+          <input
+            id="rfq-part-number"
+            type="text"
             required
+            disabled={disabled}
+            value={formData.part_number}
+            onChange={(e) => updateField("part_number", e.target.value)}
+            placeholder="e.g. 123-45678-001"
+            className={fieldInput}
+          />
+        </FormRow>
+
+        <FormRow label="Category" htmlFor="rfq-category">
+          <select
+            id="rfq-category"
+            disabled={disabled}
+            value={formData.category}
+            onChange={(e) => updateField("category", e.target.value)}
+            className={fieldSelect}
           >
-            <input
-              type="text"
-              required
-              disabled={disabled}
-              value={formData.part_number}
-              onChange={(e) =>
-                updateField(
-                  "part_number",
-                  e.target.value
-                )
-              }
-              placeholder="e.g. 123-45678-001"
-              className={inputClass}
-            />
-          </Field>
+            <option value="">Select category</option>
+            <option value="Airframe">Airframe</option>
+            <option value="Engine">Engine</option>
+            <option value="Avionics">Avionics</option>
+            <option value="Landing Gear">Landing Gear</option>
+            <option value="Propeller">Propeller</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Consumables">Consumables</option>
+            <option value="Other">Other</option>
+          </select>
+        </FormRow>
 
-          <Field label="Category">
-            <select
-              disabled={disabled}
-              value={formData.category}
-              onChange={(e) =>
-                updateField(
-                  "category",
-                  e.target.value
-                )
-              }
-              className={inputClass}
-            >
-              <option value="">
-                Select category
-              </option>
-
-              <option value="Airframe">
-                Airframe
-              </option>
-
-              <option value="Engine">
-                Engine
-              </option>
-
-              <option value="Avionics">
-                Avionics
-              </option>
-
-              <option value="Landing Gear">
-                Landing Gear
-              </option>
-
-              <option value="Propeller">
-                Propeller
-              </option>
-
-              <option value="Electrical">
-                Electrical
-              </option>
-
-              <option value="Consumables">
-                Consumables
-              </option>
-
-              <option value="Other">
-                Other
-              </option>
-            </select>
-          </Field>
-
-        </div>
-
-        <div className="mt-6">
-
-          <Field
-            label="Description"
+        <FormRow label="Description" htmlFor="rfq-description" required>
+          <textarea
+            id="rfq-description"
             required
-          >
-            <textarea
-              required
-              rows={4}
-              disabled={disabled}
-              value={formData.description}
-              onChange={(e) =>
-                updateField(
-                  "description",
-                  e.target.value
-                )
-              }
-              placeholder="Describe the part or item you require..."
-              className={inputClass}
-            />
-          </Field>
+            rows={4}
+            disabled={disabled}
+            value={formData.description}
+            onChange={(e) => updateField("description", e.target.value)}
+            placeholder="Describe the part or item you require..."
+            className={fieldTextarea}
+          />
+        </FormRow>
 
-        </div>
+        {/* AIRCRAFT / ENGINE INFORMATION */}
+        <FormSection title="Aircraft & Engine Information" text="Provide aircraft or engine information where applicable." />
 
-      </section>
+        <FormRow label="Aircraft Manufacturer" htmlFor="rfq-aircraft-manufacturer">
+          <input
+            id="rfq-aircraft-manufacturer"
+            type="text"
+            disabled={disabled}
+            value={formData.aircraft_manufacturer}
+            onChange={(e) => updateField("aircraft_manufacturer", e.target.value)}
+            placeholder="e.g. Boeing"
+            className={fieldInput}
+          />
+        </FormRow>
 
-      {/* =====================================================
-          AIRCRAFT / ENGINE INFORMATION
-      ====================================================== */}
+        <FormRow label="Aircraft Model" htmlFor="rfq-aircraft-model">
+          <input
+            id="rfq-aircraft-model"
+            type="text"
+            disabled={disabled}
+            value={formData.aircraft_model}
+            onChange={(e) => updateField("aircraft_model", e.target.value)}
+            placeholder="e.g. 737-800"
+            className={fieldInput}
+          />
+        </FormRow>
 
-      <section className="rounded-2xl bg-white p-8 shadow">
+        <FormRow label="Engine Manufacturer" htmlFor="rfq-engine-manufacturer">
+          <input
+            id="rfq-engine-manufacturer"
+            type="text"
+            disabled={disabled}
+            value={formData.engine_manufacturer}
+            onChange={(e) => updateField("engine_manufacturer", e.target.value)}
+            placeholder="e.g. CFM International"
+            className={fieldInput}
+          />
+        </FormRow>
 
-        <h2 className="mb-2 text-2xl font-bold text-aviation-primary">
-          Aircraft & Engine Information
-        </h2>
+        <FormRow label="Engine Model" htmlFor="rfq-engine-model">
+          <input
+            id="rfq-engine-model"
+            type="text"
+            disabled={disabled}
+            value={formData.engine_model}
+            onChange={(e) => updateField("engine_model", e.target.value)}
+            placeholder="e.g. CFM56-7B"
+            className={fieldInput}
+          />
+        </FormRow>
 
-        <p className="mb-8 text-sm text-aviation-muted">
-          Provide aircraft or engine information where applicable.
-        </p>
+        <FormRow label="ATA Chapter" htmlFor="rfq-ata-chapter">
+          <input
+            id="rfq-ata-chapter"
+            type="text"
+            disabled={disabled}
+            value={formData.ata_chapter}
+            onChange={(e) => updateField("ata_chapter", e.target.value)}
+            placeholder="e.g. 32"
+            className={`${fieldInput} sm:max-w-[200px]`}
+          />
+        </FormRow>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        {/* REQUIREMENTS */}
+        <FormSection title="Requirements" text="Specify quantity, condition, certification and delivery requirements." />
 
-          <Field label="Aircraft Manufacturer">
-            <input
-              type="text"
-              disabled={disabled}
-              value={
-                formData.aircraft_manufacturer
-              }
-              onChange={(e) =>
-                updateField(
-                  "aircraft_manufacturer",
-                  e.target.value
-                )
-              }
-              placeholder="e.g. Boeing"
-              className={inputClass}
-            />
-          </Field>
-
-          <Field label="Aircraft Model">
-            <input
-              type="text"
-              disabled={disabled}
-              value={
-                formData.aircraft_model
-              }
-              onChange={(e) =>
-                updateField(
-                  "aircraft_model",
-                  e.target.value
-                )
-              }
-              placeholder="e.g. 737-800"
-              className={inputClass}
-            />
-          </Field>
-
-          <Field label="Engine Manufacturer">
-            <input
-              type="text"
-              disabled={disabled}
-              value={
-                formData.engine_manufacturer
-              }
-              onChange={(e) =>
-                updateField(
-                  "engine_manufacturer",
-                  e.target.value
-                )
-              }
-              placeholder="e.g. CFM International"
-              className={inputClass}
-            />
-          </Field>
-
-          <Field label="Engine Model">
-            <input
-              type="text"
-              disabled={disabled}
-              value={
-                formData.engine_model
-              }
-              onChange={(e) =>
-                updateField(
-                  "engine_model",
-                  e.target.value
-                )
-              }
-              placeholder="e.g. CFM56-7B"
-              className={inputClass}
-            />
-          </Field>
-
-          <Field label="ATA Chapter">
-            <input
-              type="text"
-              disabled={disabled}
-              value={
-                formData.ata_chapter
-              }
-              onChange={(e) =>
-                updateField(
-                  "ata_chapter",
-                  e.target.value
-                )
-              }
-              placeholder="e.g. 32"
-              className={inputClass}
-            />
-          </Field>
-
-        </div>
-
-      </section>
-
-      {/* =====================================================
-          REQUIREMENTS
-      ====================================================== */}
-
-      <section className="rounded-2xl bg-white p-8 shadow">
-
-        <h2 className="mb-2 text-2xl font-bold text-aviation-primary">
-          Requirements
-        </h2>
-
-        <p className="mb-8 text-sm text-aviation-muted">
-          Specify quantity, condition, certification and delivery
-          requirements.
-        </p>
-
-        <div className="grid gap-6 md:grid-cols-2">
-
-          <Field
-            label="Quantity"
+        <FormRow label="Quantity" htmlFor="rfq-quantity" required>
+          <input
+            id="rfq-quantity"
+            type="number"
+            min="1"
             required
-          >
-            <input
-              type="number"
-              min="1"
-              required
-              disabled={disabled}
-              value={numberInputValue(formData.quantity)}
-              onChange={(e) =>
-                updateField(
-                  "quantity",
-                  parseNumberInput(e.target.value)
-                )
-              }
-              className={inputClass}
-            />
-          </Field>
+            disabled={disabled}
+            value={numberInputValue(formData.quantity)}
+            onChange={(e) => updateField("quantity", parseNumberInput(e.target.value))}
+            className={`${fieldInput} sm:max-w-[200px]`}
+          />
+        </FormRow>
 
-          <Field
-            label="Required By"
+        <FormRow
+          label="Required By"
+          htmlFor="rfq-required-by"
+          required
+          hint={`At least ${RFQ_MIN_LEAD_DAYS} days from today. Suppliers can quote until this date.`}
+        >
+          <input
+            id="rfq-required-by"
+            type="date"
             required
-            hint={`At least ${RFQ_MIN_LEAD_DAYS} days from today. Suppliers can quote until this date.`}
-          >
-            <input
-              type="date"
-              required
-              disabled={disabled}
-              min={minRequiredDate()}
-              value={
-                formData.required_date
-              }
-              onChange={(e) =>
-                updateField(
-                  "required_date",
-                  e.target.value
-                )
-              }
-              className={inputClass}
-            />
-          </Field>
+            disabled={disabled}
+            min={minRequiredDate()}
+            value={formData.required_date}
+            onChange={(e) => updateField("required_date", e.target.value)}
+            className={`${fieldInput} sm:max-w-[200px]`}
+          />
+        </FormRow>
 
-          <Field
-            label="Preferred Condition"
+        <FormRow label="Preferred Condition" htmlFor="rfq-condition" required>
+          <select
+            id="rfq-condition"
             required
+            disabled={disabled}
+            value={formData.preferred_condition}
+            onChange={(e) => updateField("preferred_condition", e.target.value)}
+            className={fieldSelect}
           >
-            <select
-              required
-              disabled={disabled}
-              value={
-                formData.preferred_condition
-              }
-              onChange={(e) =>
-                updateField(
-                  "preferred_condition",
-                  e.target.value
-                )
-              }
-              className={inputClass}
-            >
-              <option value="New">
-                New
-              </option>
+            <option value="New">New</option>
+            <option value="New Surplus">New Surplus</option>
+            <option value="Overhauled">Overhauled</option>
+            <option value="Serviceable">Serviceable</option>
+            <option value="Repaired">Repaired</option>
+            <option value="As Removed">As Removed</option>
+            <option value="Any">Any Condition</option>
+          </select>
+        </FormRow>
 
-              <option value="New Surplus">
-                New Surplus
-              </option>
-
-              <option value="Overhauled">
-                Overhauled
-              </option>
-
-              <option value="Serviceable">
-                Serviceable
-              </option>
-
-              <option value="Repaired">
-                Repaired
-              </option>
-
-              <option value="As Removed">
-                As Removed
-              </option>
-
-              <option value="Any">
-                Any Condition
-              </option>
-            </select>
-          </Field>
-
-          <Field
-            label="Certification Required"
+        <FormRow label="Certification Required" htmlFor="rfq-certification" required>
+          <select
+            id="rfq-certification"
             required
+            disabled={disabled}
+            value={formData.certification_required}
+            onChange={(e) => updateField("certification_required", e.target.value)}
+            className={fieldSelect}
           >
-            <select
-              required
-              disabled={disabled}
-              value={
-                formData.certification_required
-              }
-              onChange={(e) =>
-                updateField(
-                  "certification_required",
-                  e.target.value
-                )
-              }
-              className={inputClass}
-            >
-              <option value="">Select certification</option>
-              {RFQ_CERTIFICATION_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </Field>
+            <option value="">Select certification</option>
+            {RFQ_CERTIFICATION_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </FormRow>
 
-          <Field
-            label="Delivery Location"
+        <FormRow label="Delivery Location" htmlFor="rfq-delivery-location" required>
+          <input
+            id="rfq-delivery-location"
+            type="text"
             required
-          >
-            <input
-              type="text"
-              required
-              disabled={disabled}
-              value={
-                formData.delivery_location
-              }
-              onChange={(e) =>
-                updateField(
-                  "delivery_location",
-                  e.target.value
-                )
-              }
-              placeholder="e.g. Nairobi, Kenya"
-              className={inputClass}
-            />
-          </Field>
+            disabled={disabled}
+            value={formData.delivery_location}
+            onChange={(e) => updateField("delivery_location", e.target.value)}
+            placeholder="e.g. Nairobi, Kenya"
+            className={fieldInput}
+          />
+        </FormRow>
 
-        </div>
+        {/* SUPPLIER */}
+        <FormSection title="Who should receive this RFQ?" text="Sending to all suppliers gets you more quotations to compare." />
 
-      </section>
-
-      {/* =====================================================
-          SUPPLIER
-      ====================================================== */}
-
-      <section className="rounded-2xl bg-white p-8 shadow">
-        <h2 className="mb-2 text-2xl font-bold text-aviation-primary">
-          Who should receive this RFQ?
-        </h2>
-
-        <p className="mb-6 text-sm text-[var(--aviation-muted)]">
-          Sending to all suppliers gets you more quotations to compare.
-        </p>
-
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div role="radiogroup" aria-label="Who should receive this RFQ?" className="grid gap-2 sm:grid-cols-2">
           {([
             { value: "broadcast", title: "All suppliers", detail: "Every supplier on AviaInventory sees it in their RFQ inbox and can quote." },
             { value: "selected", title: "A specific supplier", detail: "Only the supplier you choose sees it." },
           ] as const).map((option) => (
             <label
               key={option.value}
-              className={`flex cursor-pointer gap-3 rounded-xl border p-4 transition-colors ${
+              className={`flex cursor-pointer items-start gap-2 rounded-md border px-2.5 py-1.5 transition-colors ${
                 formData.distribution_method === option.value ? "border-aviation-primary bg-aviation-success-soft" : "border-aviation-border hover:border-aviation-primary/50"
               }`}
             >
@@ -750,176 +558,105 @@ function PartsRFQForm() {
                     supplier_ids: option.value === "broadcast" ? [] : prev.supplier_ids,
                   }))
                 }
-                className="mt-1"
+                className={`${fieldCheckbox} mt-0.5`}
               />
               <span>
-                <span className="block font-semibold text-aviation-dark">{option.title}</span>
-                <span className="mt-0.5 block text-sm text-[var(--aviation-muted)]">{option.detail}</span>
+                <span className="block text-[13px] font-semibold text-aviation-dark">{option.title}</span>
+                <span className="block text-[11px] leading-4 text-[var(--aviation-muted)]">{option.detail}</span>
               </span>
             </label>
           ))}
         </div>
 
         {formData.distribution_method === "selected" && (
-          <div className="mt-6">
-            <SupplierSelector
-              selectedSuppliers={formData.supplier_ids}
-              onChange={(supplierIds) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  supplier_ids: supplierIds.slice(-1),
-                  distribution_method: "selected",
-                }))
-              }
-            />
-          </div>
+          <SupplierSelector
+            selectedSuppliers={formData.supplier_ids}
+            onChange={(supplierIds) =>
+              setFormData((prev) => ({
+                ...prev,
+                supplier_ids: supplierIds.slice(-1),
+                distribution_method: "selected",
+              }))
+            }
+          />
         )}
-      </section>
 
-      {/* =====================================================
-          NOTES
-      ====================================================== */}
+        {/* NOTES */}
+        <FormSection title="Additional Information" text="Add any information that will help suppliers prepare accurate quotations." />
 
-      <section className="rounded-2xl bg-white p-8 shadow">
-
-        <h2 className="mb-2 text-2xl font-bold text-aviation-primary">
-          Additional Information
-        </h2>
-
-        <p className="mb-8 text-sm text-aviation-muted">
-          Add any information that will help suppliers prepare
-          accurate quotations.
-        </p>
-
-        <Field label="Notes">
-
+        <FormRow label="Notes" htmlFor="rfq-notes">
           <textarea
+            id="rfq-notes"
             rows={6}
             disabled={disabled}
-            value={
-              formData.notes
-            }
-            onChange={(e) =>
-              updateField(
-                "notes",
-                e.target.value
-              )
-            }
+            value={formData.notes}
+            onChange={(e) => updateField("notes", e.target.value)}
             placeholder="Include any additional requirements, shipping instructions, technical details or other information..."
-            className={inputClass}
+            className={fieldTextarea}
+          />
+        </FormRow>
+
+        {/* ATTACHMENTS */}
+        <FormSection title="Attachments" text="Attach specifications, photographs, technical documents or other supporting files." />
+
+        <FormRow label="Files" htmlFor="rfq-attachments" optional>
+          <input
+            id="rfq-attachments"
+            type="file"
+            multiple
+            disabled={disabled}
+            onChange={handleFileSelection}
+            className={fieldFile}
           />
 
-        </Field>
-
-      </section>
-
-      {/* =====================================================
-          ATTACHMENTS
-      ====================================================== */}
-
-      <section className="rounded-2xl bg-white p-8 shadow">
-
-        <h2 className="mb-2 text-2xl font-bold text-aviation-primary">
-          Attachments
-        </h2>
-
-        <p className="mb-6 text-sm text-aviation-muted">
-          Attach specifications, photographs, technical documents
-          or other supporting files.
-        </p>
-
-        <input
-          type="file"
-          multiple
-          disabled={disabled}
-          onChange={handleFileSelection}
-          className="block w-full rounded-xl border border-aviation-border p-3 text-sm"
-        />
-
-        {selectedFiles.length > 0 && (
-
-          <div className="mt-6 space-y-3">
-
-            {selectedFiles.map(
-              (file, index) => (
-
-                <div
+          {selectedFiles.length > 0 && (
+            <ul className="mt-2 divide-y divide-aviation-border rounded-md border border-aviation-border">
+              {selectedFiles.map((file, index) => (
+                <li
                   key={`${file.name}-${file.size}-${index}`}
-                  className="flex items-center justify-between rounded-xl border bg-aviation-light p-4"
+                  className="flex items-center justify-between gap-3 px-2.5 py-1.5"
                 >
-
-                  <div className="min-w-0">
-
-                    <p className="truncate font-medium">
-                      {file.name}
-                    </p>
-
-                    <p className="mt-1 text-xs text-aviation-muted">
-                      {(
-                        file.size /
-                        1024 /
-                        1024
-                      ).toFixed(2)}{" "}
-                      MB
-                    </p>
-
-                  </div>
+                  <span className="min-w-0 text-[13px]">
+                    <span className="block truncate font-medium text-aviation-dark">{file.name}</span>
+                    <span className="block text-xs text-[var(--aviation-muted)]">
+                      {(file.size / 1024 / 1024).toFixed(2)} MB
+                    </span>
+                  </span>
 
                   <button
                     type="button"
                     disabled={disabled}
-                    onClick={() =>
-                      removeFile(index)
-                    }
-                    className="ml-4 text-sm font-medium text-aviation-error hover:underline disabled:opacity-50"
+                    onClick={() => removeFile(index)}
+                    className="shrink-0 text-[13px] font-semibold text-aviation-error hover:underline disabled:opacity-50"
                   >
                     Remove
                   </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </FormRow>
 
-                </div>
+        {/* ACTIONS */}
+        <FormFooter>
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => router.push("/buyer/rfqs")}
+            className={btnSecondary}
+          >
+            Cancel
+          </button>
 
-              )
-            )}
-
-          </div>
-
-        )}
-
-      </section>
-
-      {/* =====================================================
-          ACTIONS
-      ====================================================== */}
-
-      <div className="flex flex-col-reverse gap-4 pb-6 sm:flex-row sm:justify-end">
-
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() =>
-            router.push(
-              "/buyer/rfqs"
-            )
-          }
-          className="rounded-xl border border-aviation-border px-8 py-3 font-semibold text-aviation-dark transition hover:bg-aviation-light disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Cancel
-        </button>
-
-        <button
-          type="submit"
-          disabled={disabled}
-          className="rounded-xl bg-aviation-primary px-8 py-3 font-semibold text-white transition hover:bg-aviation-primary disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {uploading
-            ? "Uploading Attachments..."
-            : loading
-            ? "Creating RFQ..."
-            : "Create RFQ"}
-        </button>
-
-      </div>
-
+          <button type="submit" disabled={disabled} className={btnPrimary}>
+            {uploading
+              ? "Uploading Attachments..."
+              : loading
+              ? "Creating RFQ..."
+              : "Create RFQ"}
+          </button>
+        </FormFooter>
+      </FormPanel>
     </form>
   );
 }

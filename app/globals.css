@@ -39,7 +39,8 @@
 }
 
 * { border-color: var(--aviation-border); }
-button, input, select, textarea { font: inherit; }
+/* In the base layer so text-* utilities on a control can still set its size. */
+@layer base { button, input, select, textarea { font: inherit; } }
 
 
 /* Purposeful interaction primitives: 150–250ms, keyboard-visible, no decorative motion. */
@@ -60,6 +61,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { border-color
   button, a { min-height: 44px; }
   /* Checkboxes and radios keep their own size; a 44px box pushes them out of line with their label. */
   input:not([type="checkbox"]):not([type="radio"]), select, textarea { min-height: 44px; }
+  /* Compact forms (sign-in, sign-up, MRO form) size their own controls: 40px on phones, 32px on desktop. */
+  .compact-form :is(button, a, input, select, textarea) { min-height: 0; }
 }
 .aviation-table-wrap { width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-gutter: stable; }
 .aviation-table-wrap table { min-width: 720px; }

@@ -11,6 +11,8 @@ import {
   type Order,
 } from "@/lib/orders";
 import { nextAction } from "@/components/orders/workflow";
+import { useDisplayCurrency } from "@/components/ui/useDisplayCurrency";
+import { formatMoney } from "@/lib/currency";
 
 const statuses = [
   "Awaiting PO",
@@ -29,6 +31,7 @@ export default function PurchaseOrdersPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const money = useDisplayCurrency();
 
   async function loadOrders() {
     try {
@@ -88,10 +91,13 @@ export default function PurchaseOrdersPage() {
     });
   }, [orders, search, statusFilter]);
 
-  const totalValue = orders.reduce(
-    (sum, order) => sum + Number(order.total_amount ?? 0),
-    0
-  );
+  // Order value in the viewer's currency (KES in Kenya, USD elsewhere), converting each
+  // order from its own currency. Cancelled orders are not counted.
+  const totalValue = money.ready
+    ? orders
+        .filter((order) => order.status !== "Cancelled")
+        .reduce((sum, order) => sum + (money.convert(Number(order.total_amount ?? 0), order.currency) ?? 0), 0)
+    : null;
 
   if (loading) {
     return (
@@ -137,10 +143,7 @@ export default function PurchaseOrdersPage() {
         />
         <SummaryCard
           title="Order Value"
-          value={`USD ${totalValue.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}`}
+          value={totalValue == null ? "…" : formatMoney(totalValue, money.currency)}
         />
       </div>
 
@@ -203,7 +206,12 @@ export default function PurchaseOrdersPage() {
                 <dl className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
                   <Fact label="Quantity">{order.quantity.toLocaleString()}</Fact>
                   <Fact label="Unit price">{order.currency} {Number(order.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</Fact>
-                  <Fact label="Total">{order.currency} {Number(order.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</Fact>
+                  <Fact label="Total">
+                    {order.currency} {Number(order.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    {money.ready && (order.currency || "USD").toUpperCase() !== money.currency && (
+                      <span className="block text-xs font-normal text-[var(--aviation-muted)]">≈ {money.format(Number(order.total_amount), order.currency)}</span>
+                    )}
+                  </Fact>
                 </dl>
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">

@@ -7,7 +7,7 @@ export default async function LoginPage({ searchParams }: Props) {
 
   return (
     <main className="min-h-screen bg-aviation-light py-8 sm:py-16">
-      <div className="mx-auto max-w-lg px-4 sm:px-6">
+      <div className="mx-auto max-w-xl px-4 sm:px-6">
         <LoginForm next={next} notice={message} />
       </div>
     </main>

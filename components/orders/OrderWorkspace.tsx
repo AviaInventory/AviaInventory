@@ -8,6 +8,7 @@ import ScrollToHash from "@/components/common/ScrollToHash";
 import { ArrowLeft, Building2, CheckCircle2, ExternalLink, Loader2, Package, Printer, Truck, XCircle } from "lucide-react";
 import StatusBadge from "@/components/dashboard/StatusBadge";
 import RequiredMark from "@/components/ui/RequiredMark";
+import { btnPrimary, btnSecondary, fieldInput, fieldLabel, fieldTextarea } from "@/components/ui/form";
 import { trackingUrl } from "@/lib/shipments";
 import {
   cancelOrder, confirmOrderReceived, confirmPaymentReceived, formatOrderAmount, formatOrderDate,
@@ -20,11 +21,9 @@ import InvoiceForm from "./InvoiceForm";
 import { InvoiceDocument, PurchaseOrderDocument } from "./OrderDocuments";
 import { nextAction, type OrderRole } from "./workflow";
 
-const button = "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-aviation-primary px-6 py-3 text-sm font-bold text-white disabled:opacity-60";
+const button = btnPrimary;
 /** How often an open order page checks for the other party's progress. */
 const POLL_MS = 15_000;
-
-const field = "min-h-11 w-full rounded-xl border border-aviation-border bg-white px-4 py-2.5 text-sm focus:border-aviation-primary focus:outline-none";
 
 /**
  * One order, for the buyer or the supplier: progress, the current step's action,
@@ -181,7 +180,7 @@ export default function OrderWorkspace({ orderId, role: routeRole }: { orderId: 
     stepBody = (
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-aviation-muted">{next.hint}</p>
-        <button type="button" onClick={() => setEditingPo(true)} className="inline-flex min-h-11 items-center rounded-xl border border-aviation-border px-5 text-sm font-semibold">Edit purchase order</button>
+        <button type="button" onClick={() => setEditingPo(true)} className={btnSecondary}>Edit purchase order</button>
       </div>
     );
   } else if (!buyer && order.status === "PO Issued") {
@@ -205,10 +204,10 @@ export default function OrderWorkspace({ orderId, role: routeRole }: { orderId: 
             {invoice.payment_instructions && <p className="mt-2 whitespace-pre-line">{invoice.payment_instructions}</p>}
           </div>
         )}
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="min-w-0 flex-1"><label htmlFor="pay-ref" className="mb-1.5 block text-sm font-semibold">Payment reference (optional)</label><input id="pay-ref" value={reference} onChange={(event) => setReference(event.target.value)} placeholder="e.g. bank transfer or M-Pesa code" className={field} /></div>
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="min-w-0 flex-1"><label htmlFor="pay-ref" className={fieldLabel}>Payment reference <span className="font-normal text-[var(--aviation-muted)]">(optional)</span></label><input id="pay-ref" value={reference} onChange={(event) => setReference(event.target.value)} placeholder="e.g. bank transfer or M-Pesa code" className={fieldInput} /></div>
           <button type="button" disabled={busy} className={button} onClick={() => run(() => markInvoicePaid(order.id, reference), { title: "Payment marked as sent", message: `Thank you. ${counterpart} will confirm once the payment arrives, then dispatch your order.` })}>
-            {busy ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} Mark invoice as paid
+            {busy ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} Mark invoice as paid
           </button>
         </div>
       </div>
@@ -222,7 +221,7 @@ export default function OrderWorkspace({ orderId, role: routeRole }: { orderId: 
             : <>Waiting for the buyer to pay {formatOrderAmount(total, order.currency)}. If you have already received it, you can confirm now.</>}
         </p>
         <button type="button" disabled={busy} className={button} onClick={() => run(() => confirmPaymentReceived(order.id), { title: "Payment confirmed", message: "The invoice is now marked as paid. Please dispatch the order next.", action: { label: "Mark as dispatched", onClick: goToStep } })}>
-          {busy ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} Confirm payment received
+          {busy ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} Confirm payment received
         </button>
       </div>
     );
@@ -232,15 +231,15 @@ export default function OrderWorkspace({ orderId, role: routeRole }: { orderId: 
         {/* The courier and account come from the buyer's purchase order; the supplier adds tracking only. */}
         <div className="grid gap-3 sm:grid-cols-3">
           <div>
-            <p className="mb-1.5 block text-sm font-semibold">Courier</p>
-            <p className="flex min-h-11 items-center rounded-xl bg-aviation-light px-4 text-sm font-semibold">{order.shipping_method ?? "As agreed"}{order.shipping_account_number ? <span className="ml-2 font-mono font-normal text-aviation-muted">acct {order.shipping_account_number}</span> : null}</p>
+            <p className={fieldLabel}>Courier</p>
+            <p className="flex h-10 items-center rounded-md bg-aviation-light px-2.5 text-[13px] font-semibold sm:h-8">{order.shipping_method ?? "As agreed"}{order.shipping_account_number ? <span className="ml-2 font-mono font-normal text-[var(--aviation-muted)]">acct {order.shipping_account_number}</span> : null}</p>
           </div>
-          <div><label htmlFor="d-track" className="mb-1.5 block text-sm font-semibold">Tracking / waybill number {needsTracking && <RequiredMark />}</label><input id="d-track" value={dispatch.tracking} onChange={(event) => setDispatch({ ...dispatch, tracking: event.target.value })} className={field} /></div>
-          <div><label htmlFor="d-note" className="mb-1.5 block text-sm font-semibold">Note for the buyer</label><input id="d-note" value={dispatch.note} onChange={(event) => setDispatch({ ...dispatch, note: event.target.value })} placeholder={order.shipping_method === "Own pick-up" ? "e.g. ready for collection at our Nairobi office" : ""} className={field} /></div>
+          <div><label htmlFor="d-track" className={fieldLabel}>Tracking / waybill number {needsTracking && <RequiredMark />}</label><input id="d-track" value={dispatch.tracking} onChange={(event) => setDispatch({ ...dispatch, tracking: event.target.value })} className={fieldInput} /></div>
+          <div><label htmlFor="d-note" className={fieldLabel}>Note for the buyer</label><input id="d-note" value={dispatch.note} onChange={(event) => setDispatch({ ...dispatch, note: event.target.value })} placeholder={order.shipping_method === "Own pick-up" ? "e.g. ready for collection at our Nairobi office" : ""} className={fieldInput} /></div>
         </div>
         <div className="flex justify-end">
           <button type="button" disabled={busy || (needsTracking && !dispatch.tracking.trim())} className={button} onClick={() => run(() => markOrderDispatched(order.id, "", dispatch.tracking, dispatch.note), { title: "Order dispatched", message: "The buyer has been notified and will confirm when the order arrives." })}>
-            {busy ? <Loader2 size={16} className="animate-spin" /> : <Truck size={16} />} Mark as dispatched
+            {busy ? <Loader2 size={14} className="animate-spin" /> : <Truck size={14} />} Mark as dispatched
           </button>
         </div>
       </div>
@@ -253,11 +252,11 @@ export default function OrderWorkspace({ orderId, role: routeRole }: { orderId: 
           Dispatched {formatOrderDate(order.dispatched_at)}{order.dispatch_carrier ? ` via ${order.dispatch_carrier}` : ""}{order.tracking_number ? <>, tracking <strong className="font-mono text-aviation-dark">{order.tracking_number}</strong></> : null}.{order.dispatch_note ? ` ${order.dispatch_note}` : ""}
         </p>
         <button type="button" disabled={busy} className={button} onClick={() => run(() => confirmOrderReceived(order.id), { title: "Order complete", message: "Thank you for using AviaInventory. The order is now closed." })}>
-          {busy ? <Loader2 size={16} className="animate-spin" /> : <Package size={16} />} Confirm order received
+          {busy ? <Loader2 size={14} className="animate-spin" /> : <Package size={14} />} Confirm order received
         </button>
         {track && (
-          <a href={track} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-aviation-border px-5 text-sm font-semibold text-aviation-primary">
-            Track shipment <ExternalLink size={15} />
+          <a href={track} target="_blank" rel="noopener noreferrer" className={`${btnSecondary} text-aviation-primary`}>
+            Track shipment <ExternalLink size={14} />
           </a>
         )}
       </div>
@@ -295,7 +294,7 @@ export default function OrderWorkspace({ orderId, role: routeRole }: { orderId: 
       <section ref={stepRef} id="next-step" className={`scroll-mt-28 rounded-2xl border p-5 shadow-sm sm:p-6 ${next.yourTurn ? "border-aviation-primary bg-white" : "border-aviation-border bg-white"}`}>
         <p className="text-xs font-bold uppercase tracking-wider text-aviation-accent">{next.yourTurn ? "Your next step" : "Status"}</p>
         <h2 className="mt-1 text-lg font-bold text-aviation-dark">{next.label}</h2>
-        <div className="mt-4">{stepBody}</div>
+        <div className="compact-form mt-4">{stepBody}</div>
         {error && <p role="alert" className="mt-4 rounded-xl bg-aviation-error-soft p-3 text-sm text-aviation-error">{error}</p>}
       </section>
 
@@ -318,12 +317,12 @@ export default function OrderWorkspace({ orderId, role: routeRole }: { orderId: 
           {!cancelling ? (
             <button type="button" onClick={() => setCancelling(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-aviation-error hover:underline"><XCircle size={16} /> Cancel this order</button>
           ) : (
-            <div className="space-y-3">
-              <label htmlFor="cancel-reason" className="block text-sm font-semibold">Why are you cancelling? The {buyer ? "supplier" : "buyer"} will see this.</label>
-              <textarea id="cancel-reason" rows={2} value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} className={field} />
-              <div className="flex flex-wrap gap-3">
-                <button type="button" disabled={busy || !cancelReason.trim()} onClick={() => run(() => cancelOrder(order.id, cancelReason), { title: "Order cancelled", message: `The ${buyer ? "supplier" : "buyer"} has been notified.` }).then(() => setCancelling(false))} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-aviation-error px-5 text-sm font-bold text-white disabled:opacity-60">Cancel order</button>
-                <button type="button" onClick={() => setCancelling(false)} className="inline-flex min-h-11 items-center rounded-xl border border-aviation-border px-5 text-sm font-semibold">Keep order</button>
+            <div className="compact-form space-y-2">
+              <label htmlFor="cancel-reason" className="block text-[13px] font-semibold text-aviation-dark">Why are you cancelling? The {buyer ? "supplier" : "buyer"} will see this.</label>
+              <textarea id="cancel-reason" rows={2} value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} className={fieldTextarea} />
+              <div className="flex flex-wrap gap-2">
+                <button type="button" disabled={busy || !cancelReason.trim()} onClick={() => run(() => cancelOrder(order.id, cancelReason), { title: "Order cancelled", message: `The ${buyer ? "supplier" : "buyer"} has been notified.` }).then(() => setCancelling(false))} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-md bg-aviation-error px-3.5 text-[13px] font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:h-8">Cancel order</button>
+                <button type="button" onClick={() => setCancelling(false)} className={btnSecondary}>Keep order</button>
               </div>
             </div>
           )}

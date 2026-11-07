@@ -3,9 +3,7 @@
 import { useEffect, useState } from "react";
 import { FileText, Loader2 } from "lucide-react";
 import { formatOrderAmount, getSavedPaymentDetails, issueInvoice, type Order } from "@/lib/orders";
-
-const field = "min-h-11 w-full rounded-xl border border-aviation-border bg-white px-4 py-2.5 text-sm focus:border-aviation-primary focus:outline-none";
-const label = "mb-1.5 block text-sm font-semibold text-aviation-dark";
+import { FormFooter, FormNotice, FormRow, FormSection, btnPrimary, fieldCheckbox, fieldInput, fieldTextarea } from "@/components/ui/form";
 
 // Today's date as the database sees it (UTC): the invoice is payable on receipt.
 function today() {
@@ -64,38 +62,38 @@ export default function InvoiceForm({ order, onIssued }: { order: Order; onIssue
   }
 
   return (
-    <form onSubmit={submit} noValidate className="space-y-5">
-      <div className="rounded-xl bg-aviation-light p-4 text-sm">
-        <p className="text-xs font-bold uppercase tracking-wider text-aviation-muted">Invoice details from {order.po_number ?? "the purchase order"}</p>
-        <div className="mt-2 flex flex-wrap items-baseline justify-between gap-3">
+    <form onSubmit={submit} noValidate className="compact-form space-y-4">
+      <div className="rounded-md bg-aviation-light px-3 py-2.5 text-[13px]">
+        <p className="text-xs font-bold uppercase tracking-wider text-[var(--aviation-muted)]">Invoice details from {order.po_number ?? "the purchase order"}</p>
+        <div className="mt-1.5 flex flex-wrap items-baseline justify-between gap-3">
           <p className="text-aviation-dark">
             {order.quantity.toLocaleString()} × <span className="font-mono font-semibold">{order.part?.part_number ?? "Aviation part"}</span> at {formatOrderAmount(Number(order.unit_price), order.currency)}
           </p>
-          <p className="text-base font-bold text-aviation-primary">Total {formatOrderAmount(Number(order.total_amount), order.currency)}</p>
+          <p className="text-sm font-bold text-aviation-primary">Total {formatOrderAmount(Number(order.total_amount), order.currency)}</p>
         </div>
-        <p className="mt-2 text-xs text-aviation-muted">Billed to {order.buyer_company_name ?? "the buyer"} · ship to {[order.ship_to_city, order.ship_to_country].filter(Boolean).join(", ") || "as on the purchase order"} · {order.shipping_method ?? "shipping as agreed"}. These details come from the purchase order and can&apos;t be changed here.</p>
+        <p className="mt-1.5 text-xs text-[var(--aviation-muted)]">Billed to {order.buyer_company_name ?? "the buyer"} · ship to {[order.ship_to_city, order.ship_to_country].filter(Boolean).join(", ") || "as on the purchase order"} · {order.shipping_method ?? "shipping as agreed"}. These details come from the purchase order and can&apos;t be changed here.</p>
       </div>
 
-      <fieldset className="space-y-4">
-        <legend className="text-sm font-bold uppercase tracking-wider text-aviation-muted">Your payment details</legend>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div><label htmlFor="inv-bank" className={label}>Bank name</label><input id="inv-bank" value={payment.bank_name} onChange={set("bank_name")} placeholder="e.g. NCBA Bank Kenya" className={field} /></div>
-          <div><label htmlFor="inv-branch" className={label}>Branch</label><input id="inv-branch" value={payment.bank_branch} onChange={set("bank_branch")} className={field} /></div>
-          <div><label htmlFor="inv-acname" className={label}>Account name</label><input id="inv-acname" value={payment.bank_account_name} onChange={set("bank_account_name")} className={field} /></div>
-          <div><label htmlFor="inv-acno" className={label}>Account number</label><input id="inv-acno" value={payment.bank_account_number} onChange={set("bank_account_number")} className={field} /></div>
-          <div><label htmlFor="inv-swift" className={label}>SWIFT / BIC</label><input id="inv-swift" value={payment.bank_swift} onChange={set("bank_swift")} placeholder="For international transfers" className={field} /></div>
+      <fieldset className="space-y-3">
+        <legend className="mb-3 w-full"><FormSection title="Your payment details" /></legend>
+        <FormRow label="Bank name" htmlFor="inv-bank"><input id="inv-bank" value={payment.bank_name} onChange={set("bank_name")} placeholder="e.g. NCBA Bank Kenya" className={fieldInput} /></FormRow>
+        <FormRow label="Branch" htmlFor="inv-branch"><input id="inv-branch" value={payment.bank_branch} onChange={set("bank_branch")} className={fieldInput} /></FormRow>
+        <FormRow label="Account name" htmlFor="inv-acname"><input id="inv-acname" value={payment.bank_account_name} onChange={set("bank_account_name")} className={fieldInput} /></FormRow>
+        <FormRow label="Account number" htmlFor="inv-acno"><input id="inv-acno" value={payment.bank_account_number} onChange={set("bank_account_number")} className={fieldInput} /></FormRow>
+        <FormRow label="SWIFT / BIC" htmlFor="inv-swift"><input id="inv-swift" value={payment.bank_swift} onChange={set("bank_swift")} placeholder="For international transfers" className={fieldInput} /></FormRow>
+        <FormRow label="Other payment instructions" htmlFor="inv-instr"><textarea id="inv-instr" rows={2} value={payment.payment_instructions} onChange={set("payment_instructions")} placeholder="e.g. M-Pesa Paybill 123456, account = invoice number" className={fieldTextarea} /></FormRow>
+        <div className="sm:pl-[180px]">
+          <label className="flex cursor-pointer items-center gap-2 text-[13px] text-aviation-dark"><input type="checkbox" checked={saveDefaults} onChange={(event) => setSaveDefaults(event.target.checked)} className={fieldCheckbox} /> Save these payment details for my next invoice</label>
         </div>
-        <div><label htmlFor="inv-instr" className={label}>Other payment instructions</label><textarea id="inv-instr" rows={2} value={payment.payment_instructions} onChange={set("payment_instructions")} placeholder="e.g. M-Pesa Paybill 123456, account = invoice number" className={field} /></div>
-        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={saveDefaults} onChange={(event) => setSaveDefaults(event.target.checked)} className="h-4 w-4 accent-[var(--aviation-primary)]" /> Save these payment details for my next invoice</label>
       </fieldset>
 
-      {error && <p role="alert" className="rounded-xl bg-aviation-error-soft p-3 text-sm text-aviation-error">{error}</p>}
-      <div className="flex justify-end">
-        <button type="submit" disabled={saving} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-aviation-primary px-6 py-3 text-sm font-bold text-white disabled:opacity-60">
-          {saving ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
+      {error && <FormNotice tone="error">{error}</FormNotice>}
+      <FormFooter>
+        <button type="submit" disabled={saving} className={btnPrimary}>
+          {saving ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
           {saving ? "Creating…" : "Send invoice to buyer"}
         </button>
-      </div>
+      </FormFooter>
     </form>
   );
 }

@@ -24,7 +24,7 @@ const STORAGE_KEY = "aviainventory_onboarding_draft_v2";
 
 const categories = ["Airframes", "Engines", "Avionics", "Components", "Landing Gear", "Consumables", "Electrical", "Safety Equipment"];
 const supplierCategories = [...categories, "Rotables", "Aircraft Interiors", "Ground Support Equipment"];
-const certifications = ["FAA 8130-3", "EASA Form 1", "Certificate of Conformity", "ISO / Quality certification", "Other approval"];
+const certifications = ["FAA 8130-3", "EASA Form 1", "Certificate of Conformity", "Maintenance Release", "ISO / Quality certification", "Other approval"];
 const priorities = ["Certification / traceability", "Price", "Lead time", "Supplier reputation", "Location", "Warranty", "AOG availability"];
 const capabilities = ["AOG support", "Repair / overhaul", "Component testing", "Aircraft dismantling", "Engine services", "Avionics services", "Kitting", "Stocking / warehousing"];
 
@@ -74,14 +74,14 @@ const defaults: RegistrationData = {
 };
 
 // Compact form styling: label beside the input on desktop, small controls, inline checkboxes.
-const inputBase = "h-10 w-full rounded-md border bg-white px-3 text-sm outline-none transition focus:ring-2 focus:ring-aviation-primary/20 sm:h-9";
+const inputBase = "h-10 w-full rounded-md border bg-white px-2.5 text-[15px] text-aviation-dark outline-none transition focus:ring-2 focus:ring-aviation-primary/20 sm:h-8 sm:text-[13px]";
 const inputBorder = (error?: string) => (error ? "border-red-500" : "border-aviation-border focus:border-aviation-primary");
-const textareaClass = "w-full rounded-md border border-aviation-border bg-white px-3 py-2 text-sm outline-none focus:border-aviation-primary focus:ring-2 focus:ring-aviation-primary/20";
+const textareaClass = "w-full rounded-md border border-aviation-border bg-white px-2.5 py-1.5 text-[15px] text-aviation-dark outline-none sm:text-[13px] focus:border-aviation-primary focus:ring-2 focus:ring-aviation-primary/20";
 
 function Row({ label, htmlFor, required = false, optional = false, hint, error, errorId, children }: { label: string; htmlFor?: string; required?: boolean; optional?: boolean; hint?: string; error?: string; errorId?: string; children: React.ReactNode }) {
   const LabelTag = htmlFor ? "label" : "p";
-  return <div className="grid gap-x-5 gap-y-1 sm:grid-cols-[170px_minmax(0,1fr)] sm:items-start">
-    <LabelTag {...(htmlFor ? { htmlFor } : {})} className="text-sm font-semibold text-aviation-dark sm:pt-2">{label}{required && <RequiredMark />}{optional && <span className="ml-1 font-normal text-aviation-muted">(optional)</span>}</LabelTag>
+  return <div className="grid gap-x-5 gap-y-1 sm:grid-cols-[160px_minmax(0,1fr)] sm:items-start">
+    <LabelTag {...(htmlFor ? { htmlFor } : {})} className="text-[13px] font-semibold text-aviation-dark sm:pt-1.5">{label}{required && <RequiredMark />}{optional && <span className="ml-1 font-normal text-aviation-muted">(optional)</span>}</LabelTag>
     <div className="min-w-0">
       {children}
       {hint && !error && <p className="mt-1 text-xs italic text-aviation-muted">{hint}</p>}
@@ -104,9 +104,9 @@ function Field({ label, name, register, error, required = false, placeholder, ty
 function ChoiceGrid({ title, description, options, value, onChange, columns = "grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-3" }: { title: string; description?: string; options: string[]; value: string[]; onChange: (next: string[]) => void; columns?: string }) {
   const toggle = (item: string) => onChange(value.includes(item) ? value.filter((v) => v !== item) : [...value, item]);
   return <Row label={title} hint={description}>
-    <div role="group" aria-label={title} className={`grid gap-x-4 gap-y-1.5 sm:pt-2 ${columns}`}>
-      {options.map((item) => <label key={item} className="flex cursor-pointer items-center gap-2 py-0.5 text-sm text-aviation-dark">
-        <input type="checkbox" checked={value.includes(item)} onChange={() => toggle(item)} className="h-4 w-4 shrink-0 rounded border-aviation-border accent-[var(--aviation-primary)]" />
+    <div role="group" aria-label={title} className={`grid gap-x-4 gap-y-1 sm:pt-1.5 ${columns}`}>
+      {options.map((item) => <label key={item} className="flex cursor-pointer items-center gap-2 py-0.5 text-[13px] text-aviation-dark">
+        <input type="checkbox" checked={value.includes(item)} onChange={() => toggle(item)} className="h-3.5 w-3.5 shrink-0 rounded border-aviation-border accent-[var(--aviation-primary)]" />
         <span>{item}</span>
       </label>)}
     </div>
@@ -296,8 +296,8 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
   if (confirmationSentTo) return <CheckEmailNotice email={confirmationSentTo} />;
 
   const accountCards: { type: RegistrationAccountType; title: string; text: string }[] = [
-    { type: "buyer", title: "Buy aircraft parts", text: "Search verified inventory, issue RFQs, compare supplier offers and manage purchases." },
-    { type: "hybrid", title: "Buy & sell aircraft parts", text: "Everything in Buyer, plus the ability to list inventory, respond to RFQs and manage supplier operations." },
+    { type: "buyer", title: "Buy aircraft parts", text: "Search parts, send RFQs, compare quotes." },
+    { type: "hybrid", title: "Buy & sell aircraft parts", text: "Everything in Buyer, plus listings and quoting." },
   ];
 
   const setArray = (name: keyof FormValues) => (next: string[]) => form.setValue(name, next as never, { shouldDirty: true, shouldTouch: true });
@@ -342,7 +342,7 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
         </Row>
         <ChoiceGrid title="Parts you purchase" options={categories} value={form.watch("buyerCategories")} onChange={setArray("buyerCategories")} />
         <ChoiceGrid title="What matters when sourcing" options={priorities} value={form.watch("procurementPriorities")} onChange={setArray("procurementPriorities")} />
-        <ChoiceGrid title="Certification needs" options={["FAA 8130-3", "EASA Form 1", "Certificate of Conformity", "Trace / maintenance records", "No specific requirement"]} value={form.watch("certificationRequirements")} onChange={setArray("certificationRequirements")} />
+        <ChoiceGrid title="Certification needs" options={["FAA 8130-3", "EASA Form 1", "Certificate of Conformity", "Maintenance Release", "Trace / maintenance records", "No specific requirement"]} value={form.watch("certificationRequirements")} onChange={setArray("certificationRequirements")} />
         <ChoiceGrid title="Preferred suppliers" options={["Verified supplier", "Strong rating / reviews", "Local or regional stock", "AOG capability", "Fast response", "Competitive pricing", "Warranty offered"]} value={form.watch("preferredSupplierCriteria")} onChange={setArray("preferredSupplierCriteria")} />
       </div>
     </>;
@@ -374,7 +374,7 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
       <StepHeading title="Trust & compliance" text="Nothing here is required. Verification documents can be uploaded and reviewed after registration." />
       <div className="space-y-5">
         <ChoiceGrid title="Approvals" options={certifications} value={form.watch("certifications")} onChange={setArray("certifications")} />
-        <ChoiceGrid title="Traceability" options={["FAA 8130-3", "EASA Form 1", "Certificate of Conformity", "OEM documentation", "Maintenance records", "Serial / batch trace", "No trace available for some stock"]} value={form.watch("traceabilityCapabilities")} onChange={setArray("traceabilityCapabilities")} />
+        <ChoiceGrid title="Traceability" options={["FAA 8130-3", "EASA Form 1", "Certificate of Conformity", "Maintenance Release", "OEM documentation", "Maintenance records", "Serial / batch trace", "No trace available for some stock"]} value={form.watch("traceabilityCapabilities")} onChange={setArray("traceabilityCapabilities")} />
         <Row label="Quality notes" htmlFor="qualityInformation" optional>
           <textarea id="qualityInformation" rows={3} {...form.register("qualityInformation")} placeholder="Quality systems, approvals, inspection capabilities…" className={textareaClass} />
         </Row>
@@ -411,19 +411,19 @@ export default function RegistrationWizard({ initialAccountType }: { initialAcco
     </>;
   };
 
-  const smallButton = "inline-flex h-10 items-center justify-center gap-1 rounded-md px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 sm:h-9";
+  const smallButton = "inline-flex h-10 items-center justify-center gap-1 rounded-md px-3.5 text-[13px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 sm:h-8";
 
-  return <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:py-10">
+  return <main className="compact-form mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:py-10">
     <div className="overflow-hidden rounded-xl border border-aviation-border bg-white shadow-sm">
       <div className="flex flex-col gap-1 bg-aviation-dark px-5 py-4 text-white sm:flex-row sm:items-end sm:justify-between sm:px-8">
-        <div className="flex items-center gap-3"><PlaneTakeoff size={22} aria-hidden="true" /><div><h1 className="text-xl font-bold sm:text-2xl">Join AviaInventory</h1><p className="text-xs text-white/70">Fill in the form to create your account.</p></div></div>
+        <div className="flex items-center gap-3"><PlaneTakeoff size={22} aria-hidden="true" /><div><h1 className="text-xl font-bold text-white sm:text-2xl">Join AviaInventory</h1><p className="text-xs text-white/70">Fill in the form to create your account.</p></div></div>
         <p className="text-xs text-white/70">{profileCompletion}% profile complete · draft saved automatically</p>
       </div>
 
       <div className="space-y-5 px-5 py-5 sm:px-8 sm:py-6">
         <Row label="Account type" required>
           <div role="radiogroup" aria-label="Account type" className="grid gap-2 sm:grid-cols-2">
-            {accountCards.map((card) => { const selected = accountType === card.type; return <button key={card.type} type="button" role="radio" aria-checked={selected} onClick={() => { form.setValue("accountType", card.type, { shouldDirty: true }); setStep(1); }} disabled={loading} className={`flex items-start gap-2 rounded-md border px-3 py-2 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-aviation-primary/30 ${selected ? "border-aviation-primary bg-aviation-success-soft" : "border-aviation-border hover:border-aviation-primary/50"}`}><span aria-hidden="true" className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${selected ? "border-aviation-primary" : "border-aviation-border"}`}>{selected && <span className="h-2 w-2 rounded-full bg-aviation-primary" />}</span><span><span className="block text-sm font-semibold text-aviation-dark">{card.title}</span><span className="block text-xs leading-5 text-aviation-muted">{card.text}</span></span></button>; })}
+            {accountCards.map((card) => { const selected = accountType === card.type; return <button key={card.type} type="button" role="radio" aria-checked={selected} onClick={() => { form.setValue("accountType", card.type, { shouldDirty: true }); setStep(1); }} disabled={loading} className={`flex items-start gap-2 rounded-md border px-2.5 py-1.5 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-aviation-primary/30 ${selected ? "border-aviation-primary bg-aviation-success-soft" : "border-aviation-border hover:border-aviation-primary/50"}`}><span aria-hidden="true" className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${selected ? "border-aviation-primary" : "border-aviation-border"}`}>{selected && <span className="h-2 w-2 rounded-full bg-aviation-primary" />}</span><span><span className="block text-[13px] font-semibold text-aviation-dark">{card.title}</span><span className="block text-[11px] leading-4 text-[var(--aviation-muted)]">{card.text}</span></span></button>; })}
           </div>
         </Row>
 

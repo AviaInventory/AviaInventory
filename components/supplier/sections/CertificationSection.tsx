@@ -2,6 +2,7 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import type { PartFormData } from "../types";
+import { FormPanel, FormSection, fieldFile, fieldHint, fieldInput, fieldLabel, fieldSelect, fieldTextarea } from "@/components/ui/form";
 
 interface Props {
   formData: PartFormData;
@@ -13,24 +14,19 @@ export default function CertificationSection({
   setFormData,
 }: Props) {
   return (
-    <section className="rounded-2xl bg-white p-8 shadow-sm">
+    <FormPanel>
 
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-aviation-primary">
-          Certification & Traceability
-        </h2>
+      <FormSection
+        title="Certification & Traceability"
+        text="Provide maintenance history and certification details for this part."
+      />
 
-        <p className="mt-2 text-aviation-muted">
-          Provide maintenance history and certification details for this part.
-        </p>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-x-5 gap-y-3 md:grid-cols-2">
 
         {/* Trace Certificate */}
 
         <div>
-          <label className="mb-2 block font-medium">
+          <label className={fieldLabel}>
             Trace Certificate
           </label>
 
@@ -42,13 +38,16 @@ export default function CertificationSection({
                 traceCertificate: e.target.value,
               }))
             }
-            className="w-full rounded-xl border p-3 focus:border-aviation-border focus:outline-none"
+            className={fieldSelect}
           >
             <option value="">Select Certificate</option>
             <option value="FAA 8130-3">FAA 8130-3</option>
             <option value="EASA Form 1">EASA Form 1</option>
             <option value="Certificate of Conformity">
               Certificate of Conformity
+            </option>
+            <option value="Maintenance Release">
+              Maintenance Release
             </option>
             <option value="Dual Release">
               Dual Release
@@ -65,7 +64,7 @@ export default function CertificationSection({
         {/* Time Since New */}
 
         <div>
-          <label className="mb-2 block font-medium">
+          <label className={fieldLabel}>
             Time Since New (TSN)
           </label>
 
@@ -79,7 +78,7 @@ export default function CertificationSection({
                 tsn: e.target.value,
               }))
             }
-            className="w-full rounded-xl border p-3 focus:border-aviation-border focus:outline-none"
+            className={fieldInput}
             placeholder="Hours"
           />
         </div>
@@ -87,7 +86,7 @@ export default function CertificationSection({
         {/* Time Since Overhaul */}
 
         <div>
-          <label className="mb-2 block font-medium">
+          <label className={fieldLabel}>
             Time Since Overhaul (TSO)
           </label>
 
@@ -101,7 +100,7 @@ export default function CertificationSection({
                 tso: e.target.value,
               }))
             }
-            className="w-full rounded-xl border p-3 focus:border-aviation-border focus:outline-none"
+            className={fieldInput}
             placeholder="Hours"
           />
         </div>
@@ -109,7 +108,7 @@ export default function CertificationSection({
         {/* Certification Upload */}
 
         <div>
-          <label className="mb-2 block font-medium">
+          <label className={fieldLabel}>
             Certification Documents
           </label>
 
@@ -125,10 +124,10 @@ export default function CertificationSection({
                   : [],
               }))
             }
-            className="w-full rounded-xl border p-3"
+            className={fieldFile}
           />
 
-          <p className="mt-2 text-sm text-aviation-muted">
+          <p className={fieldHint}>
             Upload FAA 8130-3, EASA Form 1, C of C or supporting documentation.
           </p>
         </div>
@@ -137,9 +136,9 @@ export default function CertificationSection({
 
       {/* Maintenance Notes */}
 
-      <div className="mt-6">
+      <div>
 
-        <label className="mb-2 block font-medium">
+        <label className={fieldLabel}>
           Maintenance Notes
         </label>
 
@@ -152,12 +151,12 @@ export default function CertificationSection({
               maintenanceNotes: e.target.value,
             }))
           }
-          className="w-full rounded-xl border p-3 focus:border-aviation-border focus:outline-none"
+          className={fieldTextarea}
           placeholder="Additional maintenance history, inspections, repair details, storage conditions or other information..."
         />
 
       </div>
 
-    </section>
+    </FormPanel>
   );
 }

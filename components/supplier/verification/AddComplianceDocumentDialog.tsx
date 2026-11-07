@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FileText, Loader2, Lock, UploadCloud, X } from "lucide-react";
 import RequiredMark from "@/components/ui/RequiredMark";
+import { FieldGroup, FormRow, btnPrimary, btnSecondary, fieldError, fieldInput, fieldInputError, fieldLabel, fieldSelect } from "@/components/ui/form";
 
 export const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
 export const ACCEPTED_EXTENSIONS = ["pdf", "png", "jpg", "jpeg", "doc", "docx", "xls", "xlsx"];
@@ -82,9 +83,6 @@ export type NewComplianceDocument = {
   issuing_authority: string;
   file: File;
 };
-
-const inputClass =
-  "min-h-11 w-full rounded-xl border bg-white px-4 py-2.5 text-sm text-aviation-dark outline-none transition focus:border-aviation-primary focus:ring-2 focus:ring-aviation-primary/20";
 
 function formatBytes(bytes: number) {
   return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
@@ -178,7 +176,7 @@ export default function AddComplianceDocumentDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-document-title"
-        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
+        className="compact-form max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
       >
         <div className="flex items-start justify-between gap-4 border-b border-aviation-border px-5 py-4 sm:px-7">
           <div>
@@ -198,33 +196,26 @@ export default function AddComplianceDocumentDialog({
           </button>
         </div>
 
-        <div className="space-y-5 px-5 py-5 sm:px-7">
-          <div>
-            <label htmlFor="doc-type" className="mb-1.5 block text-sm font-semibold text-aviation-dark">
-              Document type <RequiredMark />
-            </label>
-            <select id="doc-type" ref={firstField} value={type} onChange={(event) => changeType(event.target.value)} className={`${inputClass} border-aviation-border`}>
+        <div className="space-y-4 px-5 py-5 sm:px-7">
+          <FormRow label="Document type" htmlFor="doc-type" required hint={meta.hint}>
+            <select id="doc-type" ref={firstField} value={type} onChange={(event) => changeType(event.target.value)} className={fieldSelect}>
               {DOCUMENT_TYPES.map((item) => (
                 <option key={item.type} value={item.type}>
                   {item.type}
                 </option>
               ))}
             </select>
-            <p className="mt-1.5 text-xs text-[var(--aviation-muted)]">{meta.hint}</p>
-          </div>
+          </FormRow>
 
-          <div>
-            <span className="mb-1.5 block text-sm font-semibold text-aviation-dark">
-              File <RequiredMark />
-            </span>
+          <FormRow label="File" required error={show(errors.file, Boolean(fileError)) ? errors.file : undefined}>
             {file ? (
-              <div className="flex items-center gap-3 rounded-xl border border-aviation-primary/40 bg-aviation-success-soft px-4 py-3">
-                <FileText size={22} className="shrink-0 text-aviation-primary" aria-hidden="true" />
+              <div className="flex items-center gap-3 rounded-md border border-aviation-primary/40 bg-aviation-success-soft px-3 py-2">
+                <FileText size={18} className="shrink-0 text-aviation-primary" aria-hidden="true" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-aviation-dark">{file.name}</p>
+                  <p className="truncate text-[13px] font-semibold text-aviation-dark">{file.name}</p>
                   <p className="text-xs text-[var(--aviation-muted)]">{formatBytes(file.size)}</p>
                 </div>
-                <button type="button" onClick={() => setFile(null)} disabled={busy} className="rounded-lg px-2 py-1 text-sm font-semibold text-aviation-primary hover:underline">
+                <button type="button" onClick={() => setFile(null)} disabled={busy} className="rounded-md px-2 py-1 text-[13px] font-semibold text-aviation-primary hover:underline">
                   Change
                 </button>
               </div>
@@ -242,12 +233,12 @@ export default function AddComplianceDocumentDialog({
                   setDragging(false);
                   chooseFile(event.dataTransfer.files?.[0]);
                 }}
-                className={`flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-7 text-center transition ${
+                className={`flex w-full flex-col items-center justify-center gap-1 rounded-md border border-dashed px-3 py-4 text-center transition ${
                   dragging ? "border-aviation-primary bg-aviation-success-soft" : show(errors.file, Boolean(fileError)) ? "border-red-400 bg-red-50/40" : "border-aviation-border bg-aviation-light hover:border-aviation-primary"
                 }`}
               >
-                <UploadCloud size={26} className="text-aviation-primary" aria-hidden="true" />
-                <span className="text-sm font-semibold text-aviation-dark">Drag a file here or click to browse</span>
+                <UploadCloud size={20} className="text-aviation-primary" aria-hidden="true" />
+                <span className="text-[13px] font-semibold text-aviation-dark">Drag a file here or click to browse</span>
                 <span className="text-xs text-[var(--aviation-muted)]">PDF, PNG, JPG, Word or Excel · up to 10 MB</span>
               </button>
             )}
@@ -262,12 +253,11 @@ export default function AddComplianceDocumentDialog({
                 event.currentTarget.value = "";
               }}
             />
-            {show(errors.file, Boolean(fileError)) && <p className="mt-1.5 text-xs font-medium text-red-600">{errors.file}</p>}
-          </div>
+          </FormRow>
 
-          <div className="grid gap-5 sm:grid-cols-2">
+          <FieldGroup>
             <div>
-              <label htmlFor="doc-name" className="mb-1.5 block text-sm font-semibold text-aviation-dark">
+              <label htmlFor="doc-name" className={fieldLabel}>
                 Document name <RequiredMark />
               </label>
               <input
@@ -278,12 +268,12 @@ export default function AddComplianceDocumentDialog({
                   setNameEdited(true);
                 }}
                 placeholder="e.g. EASA Part-145 Approval"
-                className={`${inputClass} ${show(errors.name) ? "border-red-500" : "border-aviation-border"}`}
+                className={show(errors.name) ? fieldInputError : fieldInput}
               />
-              {show(errors.name) && <p className="mt-1.5 text-xs font-medium text-red-600">{errors.name}</p>}
+              {show(errors.name) && <p className={fieldError}>{errors.name}</p>}
             </div>
             <div>
-              <label htmlFor="doc-authority" className="mb-1.5 block text-sm font-semibold text-aviation-dark">
+              <label htmlFor="doc-authority" className={fieldLabel}>
                 Issuing authority
               </label>
               <input
@@ -294,11 +284,11 @@ export default function AddComplianceDocumentDialog({
                   setAuthorityEdited(true);
                 }}
                 placeholder="e.g. KCAA, EASA, FAA"
-                className={`${inputClass} border-aviation-border`}
+                className={fieldInput}
               />
             </div>
             <div>
-              <label htmlFor="doc-issued" className="mb-1.5 block text-sm font-semibold text-aviation-dark">
+              <label htmlFor="doc-issued" className={fieldLabel}>
                 Issue date
               </label>
               <input
@@ -307,12 +297,12 @@ export default function AddComplianceDocumentDialog({
                 max={today()}
                 value={issueDate}
                 onChange={(event) => setIssueDate(event.target.value)}
-                className={`${inputClass} ${errors.issueDate ? "border-red-500" : "border-aviation-border"}`}
+                className={errors.issueDate ? fieldInputError : fieldInput}
               />
-              {errors.issueDate && <p className="mt-1.5 text-xs font-medium text-red-600">{errors.issueDate}</p>}
+              {errors.issueDate && <p className={fieldError}>{errors.issueDate}</p>}
             </div>
             <div>
-              <label htmlFor="doc-expiry" className="mb-1.5 block text-sm font-semibold text-aviation-dark">
+              <label htmlFor="doc-expiry" className={fieldLabel}>
                 Expiry date{" "}
                 <span className="font-normal text-[var(--aviation-muted)]">{meta.usuallyExpires ? "(this document usually expires)" : "(if it has one)"}</span>
               </label>
@@ -322,28 +312,28 @@ export default function AddComplianceDocumentDialog({
                 min={issueDate || undefined}
                 value={expiryDate}
                 onChange={(event) => setExpiryDate(event.target.value)}
-                className={`${inputClass} ${errors.expiryDate ? "border-red-500" : "border-aviation-border"}`}
+                className={errors.expiryDate ? fieldInputError : fieldInput}
               />
-              {errors.expiryDate && <p className="mt-1.5 text-xs font-medium text-red-600">{errors.expiryDate}</p>}
+              {errors.expiryDate && <p className={fieldError}>{errors.expiryDate}</p>}
             </div>
-          </div>
+          </FieldGroup>
 
-          <p className="flex items-start gap-2 rounded-xl bg-aviation-light px-4 py-3 text-xs leading-5 text-[var(--aviation-muted)]">
-            <Lock size={15} className="mt-0.5 shrink-0 text-aviation-primary" aria-hidden="true" />
+          <p className="flex items-start gap-2 rounded-md bg-aviation-light px-3 py-2 text-xs leading-5 text-[var(--aviation-muted)]">
+            <Lock size={14} className="mt-0.5 shrink-0 text-aviation-primary" aria-hidden="true" />
             Stored privately. Only you and AviaInventory reviewers can open it; buyers only see your verification status. Documents close to expiry are flagged on this page.
           </p>
         </div>
 
-        <div className="flex flex-col-reverse gap-3 border-t border-aviation-border px-5 py-4 sm:flex-row sm:justify-end sm:px-7">
-          <button type="button" onClick={onClose} disabled={busy} className="min-h-11 rounded-xl border border-aviation-border px-5 py-2.5 text-sm font-semibold text-aviation-dark disabled:opacity-50">
+        <div className="flex flex-col-reverse gap-2 border-t border-aviation-border px-5 py-3 sm:flex-row sm:justify-end sm:px-7">
+          <button type="button" onClick={onClose} disabled={busy} className={btnSecondary}>
             Cancel
           </button>
           <button
             type="submit"
             disabled={busy || (attempted && !valid)}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-aviation-primary px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+            className={btnPrimary}
           >
-            {busy ? <Loader2 size={17} className="animate-spin" /> : <UploadCloud size={17} />}
+            {busy ? <Loader2 size={14} className="animate-spin" /> : <UploadCloud size={14} />}
             {busy ? "Uploading…" : "Upload document"}
           </button>
         </div>

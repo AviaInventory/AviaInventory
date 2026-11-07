@@ -7,6 +7,7 @@ export const RFQ_CERTIFICATION_OPTIONS = [
   "EASA Form 1",
   "Dual release (FAA 8130-3 + EASA Form 1)",
   "Certificate of Conformity (CoC)",
+  "Maintenance Release",
   "OEM Certificate of Conformity",
   "Any valid airworthiness release",
 ] as const;
@@ -17,6 +18,7 @@ export const QUOTE_CERTIFICATION_OPTIONS = [
   "EASA Form 1",
   "Dual release (FAA 8130-3 + EASA Form 1)",
   "Certificate of Conformity (CoC)",
+  "Maintenance Release",
   "OEM Certificate of Conformity",
   "Other airworthiness release",
   "No certification",

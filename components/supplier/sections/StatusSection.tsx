@@ -2,6 +2,7 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import type { PartFormData } from "../types";
+import { FormPanel, FormSection, fieldCheckbox, fieldLabel, fieldSelect } from "@/components/ui/form";
 
 interface Props {
   formData: PartFormData;
@@ -13,27 +14,20 @@ export default function StatusSection({
   setFormData,
 }: Props) {
   return (
-    <section className="rounded-2xl bg-white p-8 shadow-sm">
+    <FormPanel>
 
-      <div className="mb-6">
+      <FormSection
+        title="Listing Status"
+        text="Choose how this part will appear in the AviaInventory marketplace."
+      />
 
-        <h2 className="text-2xl font-bold text-aviation-primary">
-          Listing Status
-        </h2>
-
-        <p className="mt-2 text-aviation-muted">
-          Choose how this part will appear in the AviaInventory marketplace.
-        </p>
-
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-x-5 gap-y-3 md:grid-cols-2">
 
         {/* Listing Status */}
 
         <div>
 
-          <label className="mb-2 block font-medium">
+          <label className={fieldLabel}>
             Status
           </label>
 
@@ -45,7 +39,7 @@ export default function StatusSection({
                 status: e.target.value,
               }))
             }
-            className="w-full rounded-xl border p-3 focus:border-aviation-border focus:outline-none"
+            className={fieldSelect}
           >
             <option value="Published">Published</option>
             <option value="Draft">Draft</option>
@@ -60,11 +54,12 @@ export default function StatusSection({
 
       {/* Listing Options */}
 
-      <div className="mt-8 space-y-4">
+      <div className="space-y-2">
 
-        <label className="flex items-center gap-4 rounded-xl border p-4">
+        <label className="flex cursor-pointer items-start gap-2">
 
           <input
+            className={`${fieldCheckbox} mt-0.5`}
             type="checkbox"
             checked={formData.featured}
             onChange={(e) =>
@@ -77,11 +72,11 @@ export default function StatusSection({
 
           <div>
 
-            <h3 className="font-semibold">
+            <h3 className="text-[13px] font-semibold text-aviation-dark">
               Featured Listing
             </h3>
 
-            <p className="text-sm text-aviation-muted">
+            <p className="text-xs text-[var(--aviation-muted)]">
               Display this part in the Featured Parts section.
             </p>
 
@@ -89,9 +84,10 @@ export default function StatusSection({
 
         </label>
 
-        <label className="flex items-center gap-4 rounded-xl border p-4">
+        <label className="flex cursor-pointer items-start gap-2">
 
           <input
+            className={`${fieldCheckbox} mt-0.5`}
             type="checkbox"
             checked={formData.hazmat}
             onChange={(e) =>
@@ -104,11 +100,11 @@ export default function StatusSection({
 
           <div>
 
-            <h3 className="font-semibold">
+            <h3 className="text-[13px] font-semibold text-aviation-dark">
               Hazardous Material
             </h3>
 
-            <p className="text-sm text-aviation-muted">
+            <p className="text-xs text-[var(--aviation-muted)]">
               Mark this item as hazardous for shipping and handling purposes.
             </p>
 
@@ -120,90 +116,90 @@ export default function StatusSection({
 
       {/* Summary */}
 
-      <div className="mt-10 rounded-2xl bg-aviation-light p-6">
+      <div className="rounded-md border border-aviation-border bg-aviation-light p-3 sm:p-4">
 
-        <h3 className="text-lg font-semibold text-aviation-primary">
+        <h3 className="text-[13px] font-bold text-aviation-primary">
           Listing Summary
         </h3>
 
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div className="mt-2 grid gap-3 md:grid-cols-2">
 
           <div>
-            <span className="text-sm text-aviation-muted">
+            <span className="text-xs text-[var(--aviation-muted)]">
               Part Number
             </span>
 
-            <p className="font-medium">
+            <p className="text-[13px] font-medium text-aviation-dark">
               {formData.partNumber || "-"}
             </p>
           </div>
 
           <div>
-            <span className="text-sm text-aviation-muted">
+            <span className="text-xs text-[var(--aviation-muted)]">
               Manufacturer
             </span>
 
-            <p className="font-medium">
+            <p className="text-[13px] font-medium text-aviation-dark">
               {formData.manufacturer || "-"}
             </p>
           </div>
 
           <div>
-            <span className="text-sm text-aviation-muted">
+            <span className="text-xs text-[var(--aviation-muted)]">
               Aircraft Model
             </span>
 
-            <p className="font-medium">
+            <p className="text-[13px] font-medium text-aviation-dark">
               {formData.aircraftModel || "-"}
             </p>
           </div>
 
           <div>
-            <span className="text-sm text-aviation-muted">
+            <span className="text-xs text-[var(--aviation-muted)]">
               Condition
             </span>
 
-            <p className="font-medium">
+            <p className="text-[13px] font-medium text-aviation-dark">
               {formData.condition}
             </p>
           </div>
 
           <div>
-            <span className="text-sm text-aviation-muted">
+            <span className="text-xs text-[var(--aviation-muted)]">
               Quantity
             </span>
 
-            <p className="font-medium">
+            <p className="text-[13px] font-medium text-aviation-dark">
               {formData.quantity}
             </p>
           </div>
 
           <div>
-            <span className="text-sm text-aviation-muted">
+            <span className="text-xs text-[var(--aviation-muted)]">
               Price
             </span>
 
-            <p className="font-medium">
+            <p className="text-[13px] font-medium text-aviation-dark">
               {formData.currency} {formData.unitPrice}
             </p>
           </div>
 
           <div>
-            <span className="text-sm text-aviation-muted">
+            <span className="text-xs text-[var(--aviation-muted)]">
               Images
             </span>
 
-            <p className="font-medium">
+            <p className="text-[13px] font-medium text-aviation-dark">
               {formData.images.length}
             </p>
           </div>
 
           <div>
-            <span className="text-sm text-aviation-muted">
+            <span className="text-xs text-[var(--aviation-muted)]">
               Documents
             </span>
 
-            <p className="font-medium">
+            <p className="text-[13px] font-medium text-aviation-dark">
               {formData.documents.length}
             </p>
           </div>
@@ -212,6 +208,6 @@ export default function StatusSection({
 
       </div>
 
-    </section>
+    </FormPanel>
   );
 }
