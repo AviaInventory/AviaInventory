@@ -95,7 +95,14 @@ export async function registerUser(
     // Supabase sends the verification email during sign-up; if the mail server can't be
     // reached it times out (504) or reports a sending error, and no account is created.
     const status = (error as { status?: number }).status;
-    if (status === 504 || status === 500 || /email|smtp|timeout|fetch/i.test(error.message ?? "")) {
+    const message = error.message ?? "";
+    console.error("Sign-up failed:", status, error.code, message);
+    // A failing sign-up trigger returns 500 "Database error saving new user" — not an email problem.
+    if (/database error/i.test(message)) {
+      console.error("Sign-up failed in the database:", error);
+      return { success: false, error: "We couldn't create your account right now. Please try again shortly, or contact support@aviainventory.com." };
+    }
+    if (status === 504 || status === 500 || /email|smtp|timeout|fetch/i.test(message)) {
       return { success: false, error: "We couldn't send your verification email right now, so your account wasn't created. Please try again in a few minutes, or contact support@aviainventory.com." };
     }
     return failure(error, "Unable to create your account.");
